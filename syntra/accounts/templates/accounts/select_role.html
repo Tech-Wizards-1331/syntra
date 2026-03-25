@@ -1,0 +1,35 @@
+{% extends 'accounts/base_auth.html' %}
+
+{% block title %}Select Role | Syntra{% endblock %}
+
+{% block content %}
+    <h1 class="font-display text-3xl font-bold tracking-tight">Pick your role</h1>
+    <p class="mt-1 text-sm text-authMuted">You can continue after choosing your primary role in Syntra.</p>
+
+    <div class="mt-4 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 py-2 text-xs text-cyan-100">
+        This step is required once. It controls your first dashboard and permissions.
+    </div>
+
+    <form method="post" class="mt-6 space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="mb-1.5 block text-sm font-medium" for="{{ form.role.id_for_label }}">Role</label>
+            {{ form.role }}
+            {% for error in form.role.errors %}
+                <p class="mt-1 text-xs text-rose-300">{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="rounded-xl border border-err/40 bg-err/10 px-3 py-2 text-sm text-rose-200">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <button type="submit" class="w-full rounded-xl border border-brand/50 bg-gradient-to-r from-cyan-400/30 to-amber-400/25 px-4 py-2.5 font-semibold text-cyan-100 transition hover:-translate-y-0.5 hover:border-cyan-300/80">
+            Continue to dashboard
+        </button>
+    </form>
+{% endblock %}

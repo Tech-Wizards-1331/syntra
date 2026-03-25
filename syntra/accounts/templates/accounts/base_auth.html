@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Syntra Auth{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        display: ['Space Grotesk', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        authBg: '#050816',
+                        authPanel: '#0f172a',
+                        authPanelSoft: '#111c33',
+                        authLine: '#24324d',
+                        authText: '#d7e7ff',
+                        authMuted: '#9bb0d4',
+                        brand: '#22d3ee',
+                        accent: '#f59e0b',
+                        ok: '#34d399',
+                        err: '#fb7185',
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            background:
+                radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.16), transparent 34%),
+                radial-gradient(circle at 80% 12%, rgba(245, 158, 11, 0.18), transparent 35%),
+                radial-gradient(circle at 70% 75%, rgba(236, 72, 153, 0.12), transparent 38%),
+                #050816;
+        }
+        .auth-grid {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            mask-image: radial-gradient(circle at 50% 20%, black 30%, transparent 95%);
+            -webkit-mask-image: radial-gradient(circle at 50% 20%, black 30%, transparent 95%);
+        }
+        .auth-card {
+            background: linear-gradient(155deg, rgba(17, 28, 51, 0.78), rgba(15, 23, 42, 0.9));
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans text-authText">
+    <div class="auth-grid"></div>
+    <main class="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-12">
+        <section class="auth-card w-full max-w-md rounded-3xl border border-authLine p-7 shadow-2xl shadow-black/40 sm:p-8">
+            <a href="{% url 'home' %}" class="mb-6 inline-flex items-center gap-2 text-sm text-authMuted hover:text-brand">
+                <span>←</span>
+                <span>Back to Syntra</span>
+            </a>
+
+            {% if messages %}
+                <div class="mb-5 space-y-2">
+                    {% for message in messages %}
+                        <div class="rounded-xl border px-3 py-2 text-sm {% if message.tags == 'error' %}border-err/50 bg-err/10 text-rose-200{% elif message.tags == 'success' %}border-ok/50 bg-ok/10 text-emerald-200{% else %}border-brand/40 bg-brand/10 text-cyan-100{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+</body>
+</html>
