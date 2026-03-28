@@ -1,11 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from allauth.socialaccount.models import SocialApp
-from allauth.socialaccount.providers.github.views import oauth2_login as github_oauth2_login
-from allauth.socialaccount.providers.google.views import oauth2_login as google_oauth2_login
 
 from .forms import LoginForm, ProfileCompletionForm, RoleSelectionForm, SignUpForm
 from .models import User
@@ -162,25 +161,40 @@ def complete_profile_view(request):
 
 
 def google_login_entry(request):
-    try:
-        return google_oauth2_login(request)
-    except SocialApp.DoesNotExist:
+    # Legacy entry point kept for templates/backwards compatibility.
+    # Redirect to allauth's canonical provider URL so Google redirect URIs stay stable.
+    app_cfg = (settings.SOCIALACCOUNT_PROVIDERS.get('google') or {}).get('APP') or {}
+    configured = bool(app_cfg.get('client_id') and app_cfg.get('secret'))
+    if not configured:
         messages.error(
             request,
-            'Google login is not configured. Add a Google SocialApp in /admin/.',
+            'Google login is not configured. Set GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET or add a Google SocialApp in /admin/.',
         )
         return redirect('login')
+
+    query_string = request.META.get('QUERY_STRING')
+    target = reverse('google_login')
+    if query_string:
+        target = f'{target}?{query_string}'
+    return redirect(target)
 
 
 def github_login_entry(request):
-    try:
-        return github_oauth2_login(request)
-    except SocialApp.DoesNotExist:
+    # Legacy entry point kept for templates/backwards compatibility.
+    app_cfg = (settings.SOCIALACCOUNT_PROVIDERS.get('github') or {}).get('APP') or {}
+    configured = bool(app_cfg.get('client_id') and app_cfg.get('secret'))
+    if not configured:
         messages.error(
             request,
-            'GitHub login is not configured. Add a GitHub SocialApp in /admin/.',
+            'GitHub login is not configured. Set GITHUB_CLIENT_ID/GITHUB_CLIENT_SECRET or add a GitHub SocialApp in /admin/.',
         )
         return redirect('login')
+
+    query_string = request.META.get('QUERY_STRING')
+    target = reverse('github_login')
+    if query_string:
+        target = f'{target}?{query_string}'
+    return redirect(target)
 
 
 def redirect_by_role(user):

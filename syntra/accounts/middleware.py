@@ -11,7 +11,14 @@ class UserFlowMiddleware:
         if request.path.startswith('/admin'):
             return self.get_response(request)
 
-        if request.path.startswith('/accounts/social/'):
+        # ✅ Allow OAuth flows (login + callback) without role/profile gating
+        # Canonical allauth provider URLs live at /accounts/<provider>/...
+        # Legacy entry points are kept under /accounts/social/... and redirect.
+        if (
+            request.path.startswith('/accounts/social/')
+            or request.path.startswith('/accounts/google/')
+            or request.path.startswith('/accounts/github/')
+        ):
             return self.get_response(request)
 
         # ✅ Only for logged-in users
