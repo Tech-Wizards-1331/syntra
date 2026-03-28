@@ -40,13 +40,7 @@ def profile_complete_view(request):
     return render(request, 'profile_complete.html')
 
 urlpatterns = [
-<<<<<<< HEAD
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('login/', TemplateView.as_view(template_name='login.html'), name='login'),
-    path('profile/complete/', profile_complete_view, name='profile_complete'),
-=======
     # path('', include('super_admin.urls')),
->>>>>>> origin/main
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('super_admin/', include('super_admin.urls')),
@@ -54,10 +48,5 @@ urlpatterns = [
     path('organizer/', include('organizer.urls')),
     path('participant/', include('participant.urls')),
     path('volunteers/', include('volunteers.urls')),
-<<<<<<< HEAD
-    # Uncomment once social-auth-app-django is installed and configured:
-    # path('auth/', include('social_django.urls', namespace='social')),
-=======
     path('', include('core.urls')),
->>>>>>> origin/main
 ]

@@ -49,13 +49,8 @@ INSTALLED_APPS = [
     'organizer',
     'participant',
     'volunteers',
-<<<<<<< HEAD
-    # Uncomment once social-auth-app-django is installed (pip install social-auth-app-django):
-    # 'social_django',
-=======
     'accounts',
     'core',
->>>>>>> origin/main
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
