@@ -11,6 +11,10 @@ class UserFlowMiddleware:
         if request.path.startswith('/admin'):
             return self.get_response(request)
 
+        # ✅ API routes should always return JSON, never redirect to template flows
+        if request.path.startswith('/api/'):
+            return self.get_response(request)
+
         # ✅ Allow OAuth flows (login + callback) without role/profile gating
         # Canonical allauth provider URLs live at /accounts/<provider>/...
         # Legacy entry points are kept under /accounts/social/... and redirect.

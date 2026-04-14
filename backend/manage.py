@@ -1,16 +1,12 @@
 #!/usr/bin/env python
-"""Compatibility manage.py that delegates to the new backend layout."""
+"""Django's command-line utility for administrative tasks."""
 import os
 import sys
-from pathlib import Path
 
 
 def main():
-    repo_root = Path(__file__).resolve().parents[1]
-    backend_root = repo_root / 'backend'
-    sys.path.insert(0, str(backend_root))
-
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'syntra.settings')
+    """Run administrative tasks."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
