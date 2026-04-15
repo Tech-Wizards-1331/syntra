@@ -1,10 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.conf import settings
+from django.core.exceptions import MultipleObjectsReturned
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from allauth.socialaccount.adapter import get_adapter
+from allauth.socialaccount.models import SocialApp
 
 from .forms import LoginForm, ProfileCompletionForm, RoleSelectionForm, SignUpForm
 from .models import User
@@ -160,12 +162,20 @@ def complete_profile_view(request):
     return render(request, 'accounts/complete_profile.html', {'form': form})
 
 
+def _social_provider_configured(request, provider):
+    try:
+        get_adapter(request).get_app(request, provider=provider)
+    except SocialApp.DoesNotExist:
+        return False
+    except MultipleObjectsReturned:
+        return False
+    return True
+
+
 def google_login_entry(request):
     # Legacy entry point kept for templates/backwards compatibility.
     # Redirect to allauth's canonical provider URL so Google redirect URIs stay stable.
-    app_cfg = (settings.SOCIALACCOUNT_PROVIDERS.get('google') or {}).get('APP') or {}
-    configured = bool(app_cfg.get('client_id') and app_cfg.get('secret'))
-    if not configured:
+    if not _social_provider_configured(request, 'google'):
         messages.error(
             request,
             'Google login is not configured. Set GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET or add a Google SocialApp in /admin/.',
@@ -181,9 +191,7 @@ def google_login_entry(request):
 
 def github_login_entry(request):
     # Legacy entry point kept for templates/backwards compatibility.
-    app_cfg = (settings.SOCIALACCOUNT_PROVIDERS.get('github') or {}).get('APP') or {}
-    configured = bool(app_cfg.get('client_id') and app_cfg.get('secret'))
-    if not configured:
+    if not _social_provider_configured(request, 'github'):
         messages.error(
             request,
             'GitHub login is not configured. Set GITHUB_CLIENT_ID/GITHUB_CLIENT_SECRET or add a GitHub SocialApp in /admin/.',

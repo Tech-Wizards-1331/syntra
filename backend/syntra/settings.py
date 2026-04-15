@@ -12,10 +12,12 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-load_dotenv()
+from urllib.parse import urlparse
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR.parent / 'frontend'
+load_dotenv(BASE_DIR.parent / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,7 +29,15 @@ SECRET_KEY = 'django-insecure-qb&_!-xcp+2t)2oy((=_1olwzy3!z0&nunou2n-@wf_wjdhv)d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+SOCIAL_AUTH_BASE_URL = os.getenv('SOCIAL_AUTH_BASE_URL', 'http://localhost:8000').strip().rstrip('/')
+SOCIAL_AUTH_BASE_HOST = urlparse(SOCIAL_AUTH_BASE_URL).netloc
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
+if SOCIAL_AUTH_BASE_HOST:
+    ALLOWED_HOSTS.append(SOCIAL_AUTH_BASE_HOST.split(':', 1)[0])
 
 
 # Application definition
@@ -86,21 +96,24 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_ADAPTER = 'accounts.adapters.SyntraSocialAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_QUERY_EMAIL = True
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
+        'SCOPE': ['profile', 'email'],
         'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'client_id': os.getenv('GOOGLE_CLIENT_ID', '').strip(),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET', '').strip(),
         }
     },
     'github': {
         'SCOPE': ['user:email'],
         'APP': {
-            'client_id': os.getenv('GITHUB_CLIENT_ID'),
-            'secret': os.getenv('GITHUB_CLIENT_SECRET'),
+            'client_id': os.getenv('GITHUB_CLIENT_ID', '').strip(),
+            'secret': os.getenv('GITHUB_CLIENT_SECRET', '').strip(),
         }
     }
 }
