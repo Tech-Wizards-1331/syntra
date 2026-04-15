@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Syntra | Sign In</title>
+
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+
+<body>
+
+	<div class="grid-bg"></div>
+
+	<div class="auth-container" id="authContainer">
+		<div class="card auth-card shadow-lg border-0">
+
+			<!-- LEFT: branding panel -->
+			<div class="brand-panel">
+				<a href="{% url 'home' %}" class="brand-logo">
+					<span class="brand-icon">HH</span>
+					<span class="brand-name">Syntra</span>
+				</a>
+				<h2 class="brand-tagline">Run Hackathons<br>Without Chaos</h2>
+				<p class="brand-sub">One command layer for every moving part.</p>
+			</div>
+
+			<!-- RIGHT: login form -->
+			<div class="form-box login">
+				<div class="w-100">
+
+					{% if messages %}
+						{% for message in messages %}
+							<div class="auth-msg auth-msg-{{ message.tags }}">{{ message }}</div>
+						{% endfor %}
+					{% endif %}
+
+					<h1 class="mb-2">Welcome Back</h1>
+					<p class="mb-4" style="color: var(--text-soft); font-size: 0.95rem;">Sign in to continue to Syntra</p>
+
+					<div id="api-message" class="auth-msg auth-msg-error" style="display:none;"></div>
+
+					<form method="post" class="w-100" id="login-form" data-api-url="/api/auth/login/">
+						{% csrf_token %}
+						<input type="hidden" name="next" value="{{ next }}">
+
+						<div class="mb-3">
+							<label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+							{{ form.email }}
+							{% for error in form.email.errors %}
+								<div class="text-danger small mt-1">{{ error }}</div>
+							{% endfor %}
+						</div>
+
+						<div class="mb-3">
+							<label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+							{{ form.password }}
+							{% for error in form.password.errors %}
+								<div class="text-danger small mt-1">{{ error }}</div>
+							{% endfor %}
+						</div>
+
+						{% if form.non_field_errors %}
+							<div class="auth-msg auth-msg-error">
+								{% for error in form.non_field_errors %}
+									<div>{{ error }}</div>
+								{% endfor %}
+							</div>
+						{% endif %}
+
+						<button type="submit" class="btn btn-primary w-100 mb-4" style="border-radius:12px; padding:0.7rem 1.2rem; font-weight:600;">
+							Login
+						</button>
+					</form>
+
+					<div class="d-flex align-items-center gap-3 mb-3">
+						<div class="flex-grow-1" style="height:1px; background: rgba(148, 163, 184, 0.25);"></div>
+						<div style="font-size:0.85rem; color: var(--text-soft);">or</div>
+						<div class="flex-grow-1" style="height:1px; background: rgba(148, 163, 184, 0.25);"></div>
+					</div>
+
+					<a href="{% url 'google_login_entry' %}" class="oauth-btn google w-100 mb-3 d-flex align-items-center justify-content-center gap-2">
+						<svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+							<path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.1-6.1C34.46 3.1 29.5 1 24 1 14.82 1 7.07 6.48 3.64 14.22l7.1 5.52C12.4 13.67 17.73 9.5 24 9.5z"/>
+							<path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.96-2.2 5.47-4.68 7.16l7.18 5.57C43.44 37.3 46.52 31.36 46.52 24.5z"/>
+							<path fill="#FBBC05" d="M10.74 28.26A14.5 14.5 0 0 1 9.5 24c0-1.48.25-2.91.7-4.26l-7.1-5.52A23.94 23.94 0 0 0 0 24c0 3.87.93 7.53 2.56 10.76l8.18-6.5z"/>
+							<path fill="#34A853" d="M24 47c5.5 0 10.12-1.82 13.5-4.95l-7.18-5.57C28.6 38.1 26.42 39 24 39c-6.27 0-11.6-4.17-13.26-9.74l-8.18 6.5C6.07 43.52 14.46 47 24 47z"/>
+						</svg>
+						Continue with Google
+					</a>
+
+					<a href="{% url 'github_login_entry' %}" class="oauth-btn github w-100 d-flex align-items-center justify-content-center gap-2">
+						<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+							<path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.42 7.86 10.95.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97 0 1.95.13 2.87.39 2.18-1.49 3.14-1.18 3.14-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.7 5.38-5.27 5.67.42.36.79 1.07.79 2.15v3.19c0 .31.21.67.8.56C20.21 21.42 23.5 17.1 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
+						</svg>
+						Continue with GitHub
+					</a>
+
+					<p class="mt-4 text-center" style="font-size:0.9rem; color: var(--text-soft);">
+						Don’t have an account?
+						<a href="{% url 'signup' %}">Sign up</a>
+					</p>
+
+					<p class="mt-5 text-center" style="font-size:0.78rem; color: var(--text-soft);">
+						By continuing you agree to Syntra's
+						<a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+					</p>
+
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<script src="{% static 'js/login.js' %}"></script>
+	<script src="{% static 'js/auth_api.js' %}"></script>
+
+</body>
+</html>
