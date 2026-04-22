@@ -16,3 +16,13 @@
 1. The database layer reflects a structural relationship mapping users as Coordinators to specific hackathons.
 2. An API endpoint exists where a Sub-Admin can query, assign, or remove a Coordinator from a specific hackathon.
 3. Access controls explicitly block a Coordinator of Hackathon A from accessing or mutating data for Hackathon B.
+
+### Phase 3: coordinator login and signup
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 3 to break down)

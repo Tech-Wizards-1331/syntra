@@ -9,3 +9,4 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Accumulated Context
 ### Roadmap Evolution
 - (Roadmap pruned - Phase 3 and 4 removed by user request)
+- Phase 3 added: coordinator login and signup
