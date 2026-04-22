@@ -34,6 +34,7 @@ class User(AbstractUser):
         JUDGE = 'judge', 'Judge'
         VOLUNTEER = 'volunteer', 'Volunteer'
         SUPER_ADMIN = 'super_admin', 'Super Admin'
+        COORDINATOR = 'coordinator', 'Coordinator'
 
     ROLE_CHOICES = (
         (Role.PARTICIPANT, 'Participant'),
@@ -41,6 +42,7 @@ class User(AbstractUser):
         (Role.JUDGE, 'Judge'),
         (Role.VOLUNTEER, 'Volunteer'),
         (Role.SUPER_ADMIN, 'Super Admin'),
+        (Role.COORDINATOR, 'Coordinator'),
     )
 
     username = None

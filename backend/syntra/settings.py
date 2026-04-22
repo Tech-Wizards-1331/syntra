@@ -56,12 +56,14 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
+    'django_celery_beat',
     'super_admin',
     'judge',
     'organizer',
     'participant',
     'volunteers',
     'accounts',
+    'api',
     'core',
 ]
 
@@ -130,6 +132,44 @@ REST_FRAMEWORK = {
     ),
 }
 
+# ── Celery ────────────────────────────────────────────────────────────────────
+# Broker + result backend — both point at Redis.
+# Set REDIS_URL in your .env file: REDIS_URL=redis://127.0.0.1:6379/0
+CELERY_BROKER_URL     = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+
+# Use the same timezone as Django so Beat fires at the right wall-clock time.
+CELERY_TIMEZONE = 'Asia/Kolkata'
+
+# Serialisation — JSON keeps things portable and human-readable.
+CELERY_TASK_SERIALIZER   = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT    = ['json']
+
+# Best-practice: always acknowledge a task *after* it's executed, not before.
+CELERY_TASK_ACKS_LATE = True
+
+# Prevent a single hanging task from hogging a worker process forever.
+CELERY_TASK_SOFT_TIME_LIMIT = 60   # seconds — raises SoftTimeLimitExceeded
+CELERY_TASK_TIME_LIMIT      = 90   # hard kill after 90 s
+
+# Beat schedule — using Celery's built-in timedelta schedule.
+# django-celery-beat also supports crontab() if you prefer.
+from celery.schedules import timedelta as celery_timedelta  # noqa: E402
+CELERY_BEAT_SCHEDULE = {
+    'update-hackathon-registration-statuses': {
+        'task':     'organizer.tasks.update_hackathon_registration_statuses',
+        'schedule': celery_timedelta(seconds=60),
+    },
+}
+# Suppress "broker_connection_retry" deprecation warning in Celery 5.3+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# Windows: prefork pool doesn't support SIGUSR1 (soft timeouts).
+# Use 'solo' in dev. Remove in production (Linux prefork works fine).
+CELERY_WORKER_POOL = 'solo'
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 ROOT_URLCONF = 'syntra.urls'
 
 TEMPLATES = [
@@ -152,6 +192,10 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     FRONTEND_DIR / 'static',
 ]
+
+# ── Media files (user uploads) ───────────────────────────────────────────────
+MEDIA_URL  = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
