@@ -26,3 +26,13 @@
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 3 to break down)
+
+### Phase 4: IMPLEMENT INVITE EMAIL DELIVERY
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 3
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 4 to break down)
