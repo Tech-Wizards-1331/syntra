@@ -22,39 +22,8 @@
       })();
     </script>
     <style>
-        /* Coordinator-specific styles */
-        .hackathon-card {
-            background: var(--glass-bg, rgba(255,255,255,0.04));
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .hackathon-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 32px rgba(0,212,170,0.12);
-        }
-        .hackathon-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-        }
-        .hackathon-card-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            margin: 0;
-        }
-        .hackathon-card-desc {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-bottom: 1rem;
-            line-height: 1.5;
-        }
-        .hackathon-card-resps {
-            margin-bottom: 1rem;
-        }
+        /* Coordinator-specific overrides */
+        .hackathon-card-resps { margin-bottom: 0.5rem; }
         .resp-badge {
             display: inline-flex;
             align-items: center;
@@ -70,7 +39,7 @@
             margin-bottom: 4px;
         }
         .hackathon-card-stats {
-            padding-top: 0.75rem;
+            padding-top: 0.5rem;
             border-top: 1px solid rgba(255,255,255,0.06);
         }
         .mini-stat {
@@ -81,19 +50,6 @@
             color: #94a3b8;
         }
         .mini-stat i { color: #00d4aa; }
-
-        .status-badge {
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .badge-draft      { background: rgba(148,163,184,0.15); color: #94a3b8; }
-        .badge-published   { background: rgba(0,212,170,0.15);  color: #00d4aa; }
-        .badge-ongoing     { background: rgba(251,191,36,0.15); color: #fbbf24; }
-        .badge-completed   { background: rgba(129,140,248,0.15); color: #818cf8; }
     </style>
 </head>
 <body>
@@ -187,10 +143,10 @@
                 </div>
             </div>
 
-            <!-- Hackathon Cards -->
+            <!-- Hackathon Cards Grid -->
             <div class="row g-4 mt-2" id="hackathon-list"></div>
 
-            <!-- Empty State (shown when no assignments) -->
+            <!-- Empty State -->
             <div class="empty-state mt-5" id="empty-state">
                 <div class="empty-glow"></div>
                 <div class="empty-inner">
@@ -202,6 +158,106 @@
 
         </div>
     </main>
+</div>
+
+<!-- ── Manage Modal (Dynamic Tabs based on responsibilities) ── -->
+<div class="modal fade" id="manageModal" tabindex="-1" aria-labelledby="manageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content glass-modal">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="manageModalLabel">Manage</h5>
+                    <p class="modal-subtitle">Manage your assigned responsibilities</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <input type="hidden" id="manage-hackathon-id">
+                <!-- Dynamic Tabs -->
+                <ul class="nav manage-tabs" id="manageTabs"></ul>
+                <div class="tab-content manage-tab-body" id="manageTabContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Details Modal ── -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content glass-modal">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="detailsModalLabel">Hackathon Details</h5>
+                    <p class="modal-subtitle">Full information about this event</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-name-row">
+                    <h3 class="detail-main-title" id="detail-name">—</h3>
+                    <span id="detail-status" class="status-badge"></span>
+                </div>
+
+                <div class="detail-block mt-4">
+                    <div class="detail-block-label"><i class="fas fa-align-left me-2"></i>Description</div>
+                    <p class="detail-block-value" id="detail-description">—</p>
+                </div>
+
+                <div class="detail-section-label mt-4">Schedule</div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="detail-info-card">
+                            <div class="dic-icon dic-teal"><i class="fas fa-door-open"></i></div>
+                            <div>
+                                <div class="dic-label">Registration Opens</div>
+                                <div class="dic-value" id="detail-reg-start">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="detail-info-card">
+                            <div class="dic-icon dic-pink"><i class="fas fa-door-closed"></i></div>
+                            <div>
+                                <div class="dic-label">Registration Closes</div>
+                                <div class="dic-value" id="detail-reg-end">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="detail-info-card">
+                            <div class="dic-icon dic-green"><i class="fas fa-play-circle"></i></div>
+                            <div>
+                                <div class="dic-label">Event Start</div>
+                                <div class="dic-value" id="detail-start">—</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="detail-info-card">
+                            <div class="dic-icon dic-yellow"><i class="fas fa-flag-checkered"></i></div>
+                            <div>
+                                <div class="dic-label">Event End</div>
+                                <div class="dic-value" id="detail-end">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section-label mt-4">Team Settings</div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="detail-info-card">
+                            <div class="dic-icon dic-blue"><i class="fas fa-users"></i></div>
+                            <div>
+                                <div class="dic-label">Team Size</div>
+                                <div class="dic-value" id="detail-team-size">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
