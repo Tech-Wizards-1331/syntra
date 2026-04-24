@@ -3,10 +3,178 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Participant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participant Dashboard - Testing UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card { @apply bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6; }
+        .input { @apply w-full border border-gray-300 p-2 rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500; }
+        .btn { @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition; }
+        .res-box { @apply mt-3 p-3 bg-gray-100 rounded text-sm font-mono overflow-auto max-h-48 hidden; }
+    </style>
 </head>
-<body>
-	<button type="button" onclick="syntraLogout()" style="position:fixed; top:16px; right:16px;">Logout</button>
-	<script src="{% static 'js/logout.js' %}"></script>
+<body class="bg-gray-50 text-gray-800 font-sans p-8">
+    <div style="display:none;">{% csrf_token %}</div>
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Participant Dashboard (API Testing UI)</h1>
+            <button type="button" onclick="syntraLogout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">Logout</button>
+        </div>
+
+        <!-- 1. Discovery -->
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">1. Participant Discovery</h2>
+            <div class="flex gap-3">
+                <input type="text" id="disc-skill" placeholder="Skill (e.g. react)" class="input flex-1">
+                <input type="number" id="disc-hackathon" placeholder="Hackathon ID (Optional)" class="input flex-1">
+                <button onclick="testDiscovery()" class="btn">Search</button>
+            </div>
+            <pre id="res-discovery" class="res-box"></pre>
+        </div>
+
+        <!-- 2. Create Team -->
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">2. Create Team</h2>
+            <input type="text" id="team-name" placeholder="Team Name" class="input">
+            <input type="number" id="team-hackathon" placeholder="Hackathon ID" class="input">
+            <button onclick="testCreateTeam()" class="btn">Create Team</button>
+            <pre id="res-team" class="res-box"></pre>
+        </div>
+
+        <!-- 3. Add Team Member -->
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">3. Add Team Member</h2>
+            <input type="text" id="member-team" placeholder="Team UUID" class="input">
+            <input type="number" id="member-user" placeholder="Registered User ID (Optional)" class="input">
+            <p class="text-sm text-gray-500 mb-2">OR Add unregistered user:</p>
+            <input type="text" id="member-name" placeholder="Name" class="input">
+            <input type="email" id="member-email" placeholder="Email" class="input">
+            <button onclick="testAddMember()" class="btn">Add Member</button>
+            <pre id="res-member" class="res-box"></pre>
+        </div>
+
+        <!-- 4. Join via Invite -->
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">4. Join Team via Invite</h2>
+            <input type="text" id="join-token" placeholder="Invite Token (UUID)" class="input">
+            <button onclick="testJoinTeam()" class="btn">Join Team</button>
+            <pre id="res-join" class="res-box"></pre>
+        </div>
+
+        <!-- 5. Hackathon Registration -->
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">5. Register Team for Hackathon</h2>
+            <input type="text" id="reg-team" placeholder="Team UUID" class="input">
+            <input type="number" id="reg-hackathon" placeholder="Hackathon ID" class="input">
+            <input type="number" id="reg-problem" placeholder="Problem Statement ID (Optional)" class="input">
+            <button onclick="testRegistration()" class="btn">Register</button>
+            <pre id="res-reg" class="res-box"></pre>
+        </div>
+
+    </div>
+
+    <script src="{% static 'js/logout.js' %}"></script>
+    <script>
+        // CSRF Helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            };
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            try {
+                const response = await fetch(endpoint, options);
+                let result;
+                if (response.status === 204) {
+                    result = { success: true };
+                } else {
+                    result = await response.json();
+                }
+                return { status: response.status, data: result };
+            } catch (err) {
+                return { status: 500, data: { error: err.message } };
+            }
+        }
+
+        function showResult(boxId, result) {
+            const box = document.getElementById(boxId);
+            box.style.display = 'block';
+            box.innerText = `Status: ${result.status}\n\n` + JSON.stringify(result.data, null, 2);
+        }
+
+        async function testDiscovery() {
+            const skill = document.getElementById('disc-skill').value;
+            const hackathon = document.getElementById('disc-hackathon').value;
+            let url = '/api/participant/discovery/?';
+            if (skill) url += `skill=${skill}&`;
+            if (hackathon) url += `hackathon_id=${hackathon}`;
+            const res = await apiCall(url);
+            showResult('res-discovery', res);
+        }
+
+        async function testCreateTeam() {
+            const name = document.getElementById('team-name').value;
+            const hackathon = document.getElementById('team-hackathon').value;
+            const res = await apiCall('/api/participant/teams/', 'POST', {
+                name: name,
+                hackathon: hackathon
+            });
+            showResult('res-team', res);
+        }
+
+        async function testAddMember() {
+            const team = document.getElementById('member-team').value;
+            const user = document.getElementById('member-user').value;
+            const name = document.getElementById('member-name').value;
+            const email = document.getElementById('member-email').value;
+            
+            const payload = { team: team };
+            if (user) payload.user = user;
+            if (name) payload.name = name;
+            if (email) payload.email = email;
+
+            const res = await apiCall('/api/participant/team-members/', 'POST', payload);
+            showResult('res-member', res);
+        }
+
+        async function testJoinTeam() {
+            const token = document.getElementById('join-token').value;
+            const res = await apiCall('/api/participant/teams/join/', 'POST', { invite_token: token });
+            showResult('res-join', res);
+        }
+
+        async function testRegistration() {
+            const team = document.getElementById('reg-team').value;
+            const hackathon = document.getElementById('reg-hackathon').value;
+            const problem = document.getElementById('reg-problem').value;
+            
+            const payload = { team: team, hackathon: hackathon };
+            if (problem) payload.problem_statement = problem;
+
+            const res = await apiCall('/api/participant/registrations/', 'POST', payload);
+            showResult('res-reg', res);
+        }
+    </script>
 </body>
 </html>

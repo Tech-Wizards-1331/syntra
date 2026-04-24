@@ -68,14 +68,9 @@ def _compute_registration_status(hackathon: Hackathon, now, team_count: int) -> 
 
 
 def _get_team_count(hackathon: Hackathon) -> int:
-    """Return the current number of registered teams for this hackathon.
-
-    TODO: Replace with the real Team queryset once the participant app ships:
-        from participant.models import Team
-        return Team.objects.filter(hackathon=hackathon).count()
-    """
-    # Placeholder — no Team model yet.
-    return 0
+    """Return the current number of registered teams for this hackathon."""
+    from participant.models import Team
+    return Team.objects.filter(hackathon=hackathon).count()
 
 
 # ---------------------------------------------------------------------------
