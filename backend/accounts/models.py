@@ -30,6 +30,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=255, blank=True)
+    is_profile_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
