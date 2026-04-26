@@ -1,8 +1,6 @@
 """
 accounts/views.py — Thin view layer.
-
-Views handle HTTP concerns only: reading request data, calling services,
-setting messages, and returning responses. No business logic lives here.
+Handles basic authentication (login, signup, logout) without business logic.
 """
 
 from __future__ import annotations
@@ -11,7 +9,6 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -23,16 +20,9 @@ from django.views.decorators.http import require_POST
 from allauth.socialaccount.adapter import get_adapter
 from allauth.socialaccount.models import SocialApp
 
-from .forms import LoginForm, ProfileCompletionForm, RoleSelectionForm, SignUpForm
+from .forms import LoginForm, SignUpForm
 from .models import User
-from .services import (
-    get_dashboard_url,
-    get_role_config,
-    has_social_account,
-    resolve_post_login_destination,
-    save_profile,
-    switch_user_role,
-)
+from .services import resolve_post_login_destination
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +49,6 @@ def _redirect_by_state(user: User) -> HttpResponse:
     """Redirect a user to the right place based on their current state."""
     destination = resolve_post_login_destination(user)
 
-    # destination is either a URL name or a full path
     if destination.startswith('/'):
         return redirect(destination)
     return redirect(destination)
@@ -79,11 +68,10 @@ def signup_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST' and form.is_valid():
         user = form.save(commit=False)
         user.set_password(form.cleaned_data['password1'])
-        user.role = None
         user.save()
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        messages.success(request, 'Account created successfully. Please select your role to continue.')
-        return redirect('select_role')
+        messages.success(request, 'Account created successfully.')
+        return _redirect_by_state(user)
 
     return render(request, 'accounts/signup.html', {'form': form})
 
@@ -119,125 +107,17 @@ def login_view(request: HttpRequest) -> HttpResponse:
 @require_POST
 @login_required
 def logout_view(request: HttpRequest) -> HttpResponse:
-    """Log the user out and redirect to login.
-
-    Returns JSON for fetch() calls (Accept: application/json),
-    otherwise redirects to the login page.
-    """
+    """Log the user out and redirect to login."""
     logout(request)
 
-    # fetch()-based logout → return JSON so JS can handle redirect
     if 'application/json' in request.headers.get('Accept', ''):
         resp = JsonResponse({'ok': True})
         resp.delete_cookie('sessionid')
         return resp
 
-    # Regular form POST fallback
     response = redirect('/accounts/login/')
     response.delete_cookie('sessionid')
     return response
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Onboarding Views
-# ──────────────────────────────────────────────────────────────────────────────
-
-@never_cache
-@login_required
-def select_role_view(request: HttpRequest) -> HttpResponse:
-    """Let the user pick (or change) their role before profile completion."""
-    user = request.user
-
-    # Auto-assign super_admin role for superusers
-    if user.is_superuser and not user.role:
-        switch_user_role(user, User.Role.SUPER_ADMIN)
-        return _redirect_by_state(user)
-
-    # Lock role selection once profile IS complete
-    if user.role and user.is_profile_complete:
-        return _redirect_by_state(user)
-
-    form = RoleSelectionForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        selected_role = form.cleaned_data['role']
-        switch_user_role(user, selected_role)
-        messages.success(request, 'Role selected successfully.')
-        return redirect('complete_profile')
-
-    return render(request, 'accounts/select_role.html', {'form': form})
-
-
-@never_cache
-@login_required
-def complete_profile_view(request: HttpRequest) -> HttpResponse:
-    """Render and process the role-specific profile completion form.
-
-    The @never_cache decorator sets Cache-Control, Pragma, and Expires headers
-    to prevent browsers from serving a stale cached version.
-    """
-    # Always re-fetch from DB to guarantee fresh role data
-    user = User.objects.get(pk=request.user.pk)
-
-    # Guard: superusers skip profile completion
-    if user.is_superuser and not user.is_profile_complete:
-        user.is_profile_complete = True
-        user.save(update_fields=['is_profile_complete', 'updated_at'])
-        return _redirect_by_state(user)
-
-    # Guard: already complete → dashboard
-    if user.is_profile_complete:
-        return _redirect_by_state(user)
-
-    # Guard: no role selected yet
-    if not user.role:
-        return redirect('select_role')
-
-    # Resolve the role's profile configuration
-    config = get_role_config(user.role)
-    if not config:
-        # Unmapped role (shouldn't happen) — mark complete and move on
-        user.is_profile_complete = True
-        user.save(update_fields=['is_profile_complete', 'updated_at'])
-        return _redirect_by_state(user)
-
-    # Get or create the profile instance for the current role
-    profile, _ = config.model.objects.get_or_create(user=user)
-
-    # Detect GitHub social link for conditional form rendering
-    user_has_github = has_social_account(user, 'github')
-    is_participant = user.role == User.Role.PARTICIPANT
-
-    # Build the role-specific form
-    form_kwargs: dict = {'instance': profile}
-    if is_participant:
-        form_kwargs['hide_github'] = user_has_github
-
-    # Base user form (full_name)
-    user_form = ProfileCompletionForm(request.POST or None, instance=user)
-
-    if request.method == 'POST':
-        profile_form = config.form(request.POST, **form_kwargs)
-
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            save_profile(
-                user,
-                profile_form,
-                skills_csv=request.POST.get('skills', ''),
-            )
-            messages.success(request, 'Profile completed successfully!')
-            return _redirect_by_state(user)
-    else:
-        profile_form = config.form(**form_kwargs)
-
-    context = {
-        'form': user_form,
-        'profile_form': profile_form,
-        'user_role': user.role,
-        'has_github': user_has_github,
-        'is_participant': is_participant,
-    }
-    return render(request, 'accounts/complete_profile.html', context)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -246,7 +126,7 @@ def complete_profile_view(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def social_login_redirect(request: HttpRequest) -> HttpResponse:
-    """Post-social-login routing — sends user to role selection or dashboard."""
+    """Post-social-login routing — sends user to dashboard."""
     return _redirect_by_state(request.user)
 
 

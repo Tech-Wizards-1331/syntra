@@ -24,8 +24,6 @@ class RegisterAPIView(APIView):
                     'id': user.id,
                     'email': user.email,
                     'full_name': user.full_name,
-                    'role': user.role,
-                    'is_profile_complete': user.is_profile_complete,
                 },
                 'tokens': {
                     'refresh': str(refresh),
@@ -54,8 +52,6 @@ class LoginAPIView(APIView):
                     'id': user.id,
                     'email': user.email,
                     'full_name': user.full_name,
-                    'role': user.role,
-                    'is_profile_complete': user.is_profile_complete,
                 },
                 'tokens': {
                     'refresh': str(refresh),
@@ -76,8 +72,6 @@ class MeAPIView(APIView):
                 'id': user.id,
                 'email': user.email,
                 'full_name': user.full_name,
-                'role': user.role,
-                'is_profile_complete': user.is_profile_complete,
             },
             status=status.HTTP_200_OK,
         )

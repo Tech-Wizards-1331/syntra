@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
+import dj_database_url
 from dotenv import load_dotenv
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,18 +18,26 @@ from urllib.parse import urlparse
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR.parent / 'frontend'
-load_dotenv(BASE_DIR.parent / '.env')
+
+# Load .env from project root (local dev) — harmless if missing on Render
+_env_path = BASE_DIR.parent / '.env'
+if _env_path.exists():
+    load_dotenv(_env_path)
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qb&_!-xcp+2t)2oy((=_1olwzy3!z0&nunou2n-@wf_wjdhv)d'
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-qb&_!-xcp+2t)2oy((=_1olwzy3!z0&nunou2n-@wf_wjdhv)d',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
+# ── Host configuration ───────────────────────────────────────────────────────
 SOCIAL_AUTH_BASE_URL = os.getenv('SOCIAL_AUTH_BASE_URL', 'http://localhost:8000').strip().rstrip('/')
 SOCIAL_AUTH_BASE_HOST = urlparse(SOCIAL_AUTH_BASE_URL).netloc
 
@@ -36,8 +45,24 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
 ]
+# Add Render's .onrender.com domain and any custom domain
+_render_host = os.getenv('RENDER_EXTERNAL_HOSTNAME', '')
+if _render_host:
+    ALLOWED_HOSTS.append(_render_host)
+# Add any explicitly set hosts
+_extra_hosts = os.getenv('ALLOWED_HOSTS', '')
+if _extra_hosts:
+    ALLOWED_HOSTS.extend([h.strip() for h in _extra_hosts.split(',') if h.strip()])
 if SOCIAL_AUTH_BASE_HOST:
     ALLOWED_HOSTS.append(SOCIAL_AUTH_BASE_HOST.split(':', 1)[0])
+
+# ── CSRF trusted origins (required for POST requests on HTTPS) ───────────────
+CSRF_TRUSTED_ORIGINS = []
+if _render_host:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{_render_host}')
+_extra_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if _extra_origins:
+    CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _extra_origins.split(',') if o.strip()])
 
 
 # Application definition
@@ -56,19 +81,15 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    'super_admin',
-    'judge',
-    'organizer',
-    'participant',
-    'volunteers',
+    'django_celery_beat',
     'accounts',
-    'core',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',          # ← static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -76,7 +97,6 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'accounts.middleware.UserFlowMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -130,6 +150,9 @@ REST_FRAMEWORK = {
     ),
 }
 
+# ── Celery configuration removed (only auth remains) ──────────────
+
+
 ROOT_URLCONF = 'syntra.urls'
 
 TEMPLATES = [
@@ -148,20 +171,43 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'syntra.wsgi.application'
+
+# ── Static files ─────────────────────────────────────────────────────────────
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     FRONTEND_DIR / 'static',
 ]
-
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+STATIC_ROOT = BASE_DIR / 'staticfiles'                   # ← collectstatic output
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
 }
+
+# ── Media files (user uploads) ───────────────────────────────────────────────
+MEDIA_URL  = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ── Database ─────────────────────────────────────────────────────────────────
+# Uses DATABASE_URL env var in production (Supabase PostgreSQL).
+# Falls back to SQLite for local development.
+_database_url = os.getenv('DATABASE_URL', '')
+if _database_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        ),
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -195,10 +241,10 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
+# Default primary key field type
+# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
-STATIC_URL = 'static/'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── Social Auth (Google + GitHub OAuth) ──────────────────────────────────────
 # 1. pip install social-auth-app-django
@@ -220,3 +266,34 @@ STATIC_URL = 'static/'
 # LOGIN_REDIRECT_URL  = '/'
 # LOGOUT_REDIRECT_URL = '/login/'
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ── Email Configuration ──────────────────────────────────────────────────────
+# To send REAL emails, set these in your .env file:
+#   EMAIL_HOST_USER=your-email@gmail.com
+#   EMAIL_HOST_PASSWORD=xxxx-xxxx-xxxx-xxxx   (Gmail App Password)
+#
+# If EMAIL_HOST_USER is empty, emails print to the console (dev mode).
+_email_user = os.getenv('EMAIL_HOST_USER', '').strip()
+
+if _email_user:
+    EMAIL_BACKEND  = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST     = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT     = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS  = True
+    EMAIL_HOST_USER     = _email_user
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '').strip()
+    DEFAULT_FROM_EMAIL  = os.getenv('DEFAULT_FROM_EMAIL', f'Syntra <{_email_user}>')
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'Syntra <noreply@syntra.dev>'
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Security hardening for production ────────────────────────────────────────
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31_536_000          # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
