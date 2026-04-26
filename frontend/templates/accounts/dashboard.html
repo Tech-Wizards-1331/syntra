@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl text-center">
+        <h1 class="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
+            Welcome, {{ user.full_name|default:user.email }}!
+        </h1>
+        <p class="text-slate-400 mb-8">You have successfully authenticated.</p>
+        
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="w-full rounded-lg bg-red-500/10 border border-red-500/50 py-3 text-sm font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300">
+                Log Out
+            </button>
+        </form>
+    </div>
+</body>
+</html>
