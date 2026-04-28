@@ -83,6 +83,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'django_celery_beat',
     'accounts',
+    'organizer',
+    'participant',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
