@@ -18,19 +18,15 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth.decorators import login_required
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.api_urls')),
     path('accounts/', include('accounts.urls')),
-    path('super_admin/', include('super_admin.urls')),
-    path('judge/', include('judge.urls')),
-    path('organizer/', include('organizer.urls')),
-    path('participant/', include('participant.urls')),
-    path('volunteers/', include('volunteers.urls')),
-    # Uncomment once social-auth-app-django is installed and configured:
-    # path('auth/', include('social_django.urls', namespace='social')),
-    path('', include('core.urls')),
+    # Render a basic authenticated dashboard at the root
+    path('', login_required(TemplateView.as_view(template_name='accounts/dashboard.html')), name='home'),
 ]
 
 # Serve uploaded media files during development

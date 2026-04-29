@@ -1,0 +1,35 @@
+# render.yaml — Render Blueprint for one-click deploy
+# Docs: https://docs.render.com/blueprint-spec
+
+services:
+  - type: web
+    name: syntra
+    runtime: python
+    region: oregon                          # closest free-tier region
+    plan: free
+    rootDir: backend
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn syntra.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true                 # Render auto-generates a 64-char secret
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        sync: false                         # you'll paste your Supabase URL here
+      - key: SOCIAL_AUTH_BASE_URL
+        sync: false                         # https://<your-app>.onrender.com
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12.3"

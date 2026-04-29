@@ -56,32 +56,4 @@ class LoginForm(forms.Form):
     )
 
 
-class ProfileCompletionForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['full_name']
-        widgets = {
-            'full_name': forms.TextInput(
-                attrs={'class': INPUT_CLASS, 'placeholder': 'Your full name'}
-            ),
-        }
 
-    def clean_full_name(self):
-        full_name = (self.cleaned_data.get('full_name') or '').strip()
-        if not full_name:
-            raise forms.ValidationError('Please enter your full name.')
-        return full_name
-
-
-class RoleSelectionForm(forms.Form):
-    ROLE_OPTIONS = [
-        (User.Role.PARTICIPANT, 'Participant'),
-        (User.Role.ORGANIZER, 'Organizer'),
-        (User.Role.JUDGE, 'Judge'),
-        (User.Role.VOLUNTEER, 'Volunteer'),
-    ]
-
-    role = forms.ChoiceField(
-        choices=ROLE_OPTIONS,
-        widget=forms.Select(attrs={'class': INPUT_CLASS}),
-    )

@@ -5,9 +5,31 @@ __pycache__/
 
 # Environment variables
 .env
+.env.production
 
 # Django
 *.sqlite3
 __pycache__/
 *.pyc
-.env
+
+# Static files collected for production
+backend/staticfiles/
+
+# Media uploads
+backend/media/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# GSD / Planning (optional — keep if you want planning in repo)
+# .planning/
