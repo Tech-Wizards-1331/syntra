@@ -20,7 +20,8 @@ from django.views.decorators.http import require_POST
 from allauth.socialaccount.adapter import get_adapter
 from allauth.socialaccount.models import SocialApp
 
-from .forms import LoginForm, SignUpForm
+from .forms import LoginForm, SignUpForm, ParticipantProfileForm
+from .services import has_social_account
 from .models import User
 from .services import resolve_post_login_destination
 
@@ -68,10 +69,11 @@ def signup_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST' and form.is_valid():
         user = form.save(commit=False)
         user.set_password(form.cleaned_data['password1'])
+        user.role = 'participant'
         user.save()
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, 'Account created successfully.')
-        return _redirect_by_state(user)
+        return redirect('complete_profile')
 
     return render(request, 'accounts/signup.html', {'form': form})
 
@@ -118,6 +120,61 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     response = redirect('/accounts/login/')
     response.delete_cookie('sessionid')
     return response
+
+
+@never_cache
+@login_required
+def complete_profile_view(request: HttpRequest) -> HttpResponse:
+    """Show and process the profile-completion form for participants."""
+    user = request.user
+    user_role = user.role or 'participant'
+    is_participant = user_role == 'participant'
+
+    from participant.models import ParticipantProfile, Skill
+
+    # Get or prepare the profile instance
+    try:
+        profile = user.participant_profile
+    except ParticipantProfile.DoesNotExist:
+        profile = None
+
+    if request.method == 'POST':
+        profile_form = ParticipantProfileForm(
+            request.POST, instance=profile
+        )
+        full_name = request.POST.get('full_name', '').strip()
+        if full_name:
+            user.full_name = full_name
+
+        if profile_form.is_valid():
+            p = profile_form.save(commit=False)
+            p.user = user
+            p.save()
+
+            # Handle skills
+            skills_raw = request.POST.get('skills', '')
+            if skills_raw:
+                skill_names = [s.strip() for s in skills_raw.split(',') if s.strip()]
+                skill_objs = []
+                for name in skill_names[:10]:
+                    obj, _ = Skill.objects.get_or_create(name=name)
+                    skill_objs.append(obj)
+                p.skills.set(skill_objs)
+
+            user.is_profile_complete = True
+            user.save(update_fields=['full_name', 'is_profile_complete'])
+            messages.success(request, 'Profile completed successfully!')
+            return redirect('dashboard')
+    else:
+        profile_form = ParticipantProfileForm(instance=profile)
+
+    context = {
+        'profile_form': profile_form,
+        'user_role': user_role,
+        'is_participant': is_participant,
+        'has_github': has_social_account(user, 'github'),
+    }
+    return render(request, 'accounts/complete_profile.html', context)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
