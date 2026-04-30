@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Team, TeamMember, HackathonRegistration, Skill, ParticipantProfile
+from .models import Team, TeamMember, Skill, ParticipantProfile
 from accounts.models import User
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -77,11 +77,29 @@ class TeamSerializer(serializers.ModelSerializer):
         )
         return team
 
-class HackathonRegistrationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HackathonRegistration
-        fields = ['id', 'team', 'hackathon', 'problem_statement', 'status', 'registered_at']
-        read_only_fields = ['id', 'status', 'registered_at']
-
 class JoinTeamSerializer(serializers.Serializer):
     invite_token = serializers.UUIDField(required=True)
+
+
+class SelectProblemStatementSerializer(serializers.Serializer):
+    problem_statement_id = serializers.IntegerField(required=True)
+
+
+class ParticipantProblemStatementSerializer(serializers.ModelSerializer):
+    """Read-only serializer for participants to view problem statements with capacity info."""
+    current_teams_count = serializers.IntegerField(read_only=True)
+    is_full = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        from organizer.models import ProblemStatement
+        model = ProblemStatement
+        fields = [
+            'id',
+            'title',
+            'description',
+            'pdf_file',
+            'max_teams_allowed',
+            'current_teams_count',
+            'is_full',
+        ]
+        read_only_fields = fields

@@ -1,15 +1,19 @@
 from rest_framework import generics, viewsets, status, permissions
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
+from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Count, Case, When, F, Value, BooleanField
 from django.utils import timezone
 
-from organizer.models import Hackathon
-from .models import Team, TeamMember, HackathonRegistration, ParticipantProfile, Skill
+from organizer.models import Hackathon, ProblemStatement
+from .models import Team, TeamMember, ParticipantProfile, Skill
 from .api_serializers import (
-    TeamSerializer, TeamMemberSerializer, HackathonRegistrationSerializer,
-    ParticipantDiscoverySerializer, JoinTeamSerializer
+    TeamSerializer, TeamMemberSerializer,
+    ParticipantDiscoverySerializer, JoinTeamSerializer,
+    SelectProblemStatementSerializer, ParticipantProblemStatementSerializer
 )
 
 
@@ -50,6 +54,61 @@ class TeamViewSet(viewsets.ModelViewSet):
         # Users can only see teams they are part of
         return Team.objects.filter(members__user=self.request.user).distinct()
 
+    @action(detail=True, methods=['post'])
+    def select_problem_statement(self, request, pk=None):
+        """
+        Concurrency-safe problem statement selection.
+        Uses select_for_update() to acquire a row lock, then checks capacity.
+        Once a team selects, it is locked in permanently (D-01).
+        """
+        team = self.get_object()
+
+        # Only the team leader can select
+        if team.leader != request.user:
+            raise PermissionDenied("Only the team leader can select a problem statement.")
+
+        # D-01: Selection is permanent
+        if team.selected_problem_statement is not None:
+            return Response(
+                {"detail": "Problem statement is already locked in and cannot be changed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = SelectProblemStatementSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ps_id = serializer.validated_data['problem_statement_id']
+
+        with transaction.atomic():
+            try:
+                ps = ProblemStatement.objects.select_for_update().get(
+                    id=ps_id, hackathon=team.hackathon, is_active=True
+                )
+            except ProblemStatement.DoesNotExist:
+                return Response(
+                    {"detail": "Problem statement not found or inactive."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # D-02 + D-03: Check capacity under lock
+            current_count = ps.selected_by_teams.count()
+            if current_count >= ps.max_teams_allowed:
+                return Response(
+                    {"detail": "This problem statement has reached its capacity limit."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            team.selected_problem_statement = ps
+            team.save(update_fields=['selected_problem_statement'])
+
+            # Invalidate the cached problem statement list for this hackathon
+            cache_key = f"problem_statements_list_{team.hackathon.id}"
+            cache.delete(cache_key)
+
+        return Response(
+            {"detail": "Problem statement selected successfully."},
+            status=status.HTTP_200_OK,
+        )
+
 
 class TeamMemberViewSet(viewsets.ModelViewSet):
     serializer_class = TeamMemberSerializer
@@ -66,38 +125,6 @@ class TeamMemberViewSet(viewsets.ModelViewSet):
         
         # Enforce hackathon_id from team
         serializer.save(hackathon=team.hackathon)
-
-
-class HackathonRegistrationViewSet(viewsets.ModelViewSet):
-    serializer_class = HackathonRegistrationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return HackathonRegistration.objects.filter(team__members__user=self.request.user).distinct()
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        team = serializer.validated_data['team']
-        hackathon = serializer.validated_data['hackathon']
-        
-        if team.leader != request.user:
-            return Response({"detail": "Only the team leader can register for the hackathon."}, status=status.HTTP_403_FORBIDDEN)
-
-        with transaction.atomic():
-            # Lock the hackathon row to check capacity
-            h = Hackathon.objects.select_for_update().get(pk=hackathon.id)
-            
-            # Check capacity
-            current_team_count = Team.objects.filter(hackathon=h).count()
-            if h.is_registration_full(current_team_count):
-                return Response({"detail": "Registration is closed - hackathon is full."}, status=status.HTTP_400_BAD_REQUEST)
-                
-            # Perform registration
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class JoinTeamAPIView(APIView):
@@ -132,3 +159,45 @@ class JoinTeamAPIView(APIView):
             member_role='Member'
         )
         return Response({"detail": "Successfully joined team."}, status=status.HTTP_200_OK)
+
+
+class ParticipantProblemStatementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only endpoint for participants to browse problem statements.
+    Implements Cache-Aside pattern:
+      - Reads check cache first (sub-millisecond).
+      - On cache miss, fetches from DB, annotates with capacity metrics, caches result.
+      - Cache is invalidated by TeamViewSet.select_problem_statement on writes.
+    """
+    serializer_class = ParticipantProblemStatementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ProblemStatement.objects.filter(is_active=True).annotate(
+            current_teams_count=Count('selected_by_teams'),
+            is_full=Case(
+                When(current_teams_count__gte=F('max_teams_allowed'), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+        )
+
+    def list(self, request, *args, **kwargs):
+        hackathon_id = request.query_params.get('hackathon_id')
+        if not hackathon_id:
+            return Response(
+                {"detail": "hackathon_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cache_key = f"problem_statements_list_{hackathon_id}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        # Cache miss — fetch from DB, annotate, serialize, cache
+        queryset = self.get_queryset().filter(hackathon_id=hackathon_id)
+        serializer = self.get_serializer(queryset, many=True)
+        cache.set(cache_key, serializer.data, timeout=3600)
+        return Response(serializer.data)

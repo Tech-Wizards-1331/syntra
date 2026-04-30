@@ -8,6 +8,9 @@ PyJWT==2.12.1
 cryptography==46.0.5
 django-celery-beat==2.9.0
 
+# ── Caching ──
+django-redis==5.4.0
+
 # ── Production dependencies ──
 psycopg2-binary==2.9.12
 whitenoise==6.12.0

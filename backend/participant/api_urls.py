@@ -4,15 +4,15 @@ from rest_framework.routers import DefaultRouter
 from .api_views import (
     TeamViewSet, 
     TeamMemberViewSet, 
-    HackathonRegistrationViewSet,
     ParticipantDiscoveryAPIView,
-    JoinTeamAPIView
+    JoinTeamAPIView,
+    ParticipantProblemStatementViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'teams', TeamViewSet, basename='team')
 router.register(r'team-members', TeamMemberViewSet, basename='teammember')
-router.register(r'registrations', HackathonRegistrationViewSet, basename='registration')
+router.register(r'problem-statements', ParticipantProblemStatementViewSet, basename='participant-problem-statement')
 
 urlpatterns = [
     path('discovery/', ParticipantDiscoveryAPIView.as_view(), name='participant_discovery'),
