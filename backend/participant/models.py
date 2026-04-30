@@ -31,6 +31,13 @@ class Team(models.Model):
     qr_code = models.ImageField(upload_to='team_qr_codes/', blank=True, null=True)
     food_tokens_total = models.PositiveIntegerField(default=0)
     food_tokens_used = models.PositiveIntegerField(default=0)
+    selected_problem_statement = models.ForeignKey(
+        'organizer.ProblemStatement',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='selected_by_teams',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

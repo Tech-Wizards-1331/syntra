@@ -24,6 +24,8 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.api_urls')),
+    path('api/organizer/', include('organizer.api_urls')),
+    path('api/participant/', include('participant.api_urls')),
     path('accounts/', include('accounts.urls')),
     # Public landing page
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
