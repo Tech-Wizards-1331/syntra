@@ -1,21 +1,26 @@
-# Structure
+# Project Structure: Transition to Next.js
 
 ## Directory Layout
-- `backend/`: Root directory for the Django project.
-  - `syntra/`: Project configuration, core routing, WSGI/ASGI entry points.
-  - `accounts/`: Application for user management, profiles, and auth.
-  - `organizer/`: Application containing hackathon management features.
-  - `participant/`: Application containing participant dashboard features.
-  - `media/`: Development directory for user-uploaded files (e.g., PDFs).
-  - `staticfiles/`: Target directory for collected static files for production.
-  - `manage.py`: Django command-line utility.
-  - `requirements.txt`: Python package dependencies.
-  - `build.sh`: Build script used by Render for deployment.
-- `frontend/`: Root directory for all frontend assets.
-  - `templates/`: Global Django templates.
-  - `static/`: Global static files (CSS, JS, images).
-- `/`: Workspace root containing configuration and deployment files (e.g., `render.yaml`, `.env`).
 
-## Naming Conventions
-- Django applications follow standard lower-case naming based on the domain boundary (e.g., `organizer`, `participant`).
-- Environment variables are standard uppercase (e.g., `DATABASE_URL`, `SOCIAL_AUTH_BASE_URL`).
+### Legacy Django Project (`/backend` & `/frontend`)
+- **`backend/`**: Django backend codebase
+  - `syntra/`: Django project configuration & entry points.
+  - `accounts/`: User model & auth logic.
+  - `organizer/`: Organizer services (seating, CRUD).
+  - `participant/`: Participant registration & QR services.
+- **`frontend/`**: Legacy asset pipeline & Django MVT templates
+  - `templates/`: Django HTML templates.
+  - `static/`: Frontend assets (CSS, JS).
+
+---
+
+### New Next.js Full-Stack App (Root `/`)
+During Phase 1, the new Next.js structure is initialized in the workspace:
+- **`app/`**: Next.js App Router folders defining routes, layouts, and pages (e.g., `/admin`, `/organizer`, `/participant`, `/api/auth`).
+- **`components/`**: Shared, reusable UI components.
+- **`lib/`**: Business logic, database client instance, and ported services (e.g., `seating-service.ts`, `razorpay.ts`).
+- **`prisma/`**: Contains `schema.prisma` mapping active database models and migration definitions.
+- **`public/`**: Static assets for Next.js.
+- **`package.json`**: Node dependencies, scripts (`dev`, `build`, `start`).
+- **`.env`**: Combined environment variables for Next.js, Prisma, and external APIs.
+

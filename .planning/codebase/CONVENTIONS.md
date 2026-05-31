@@ -1,15 +1,23 @@
-# Conventions
+# Coding Conventions: Next.js & TypeScript
 
-## Code Style
-- **Python:** Standard PEP-8 conventions via Django standard practices.
-- **Settings:** Environment variables manage all secure and environment-specific configurations via `python-dotenv` locally and cloud provider native env vars in production.
+## Code Style & Language
+*   **TypeScript:** Strict typing must be enforced. Do not use `any` unless absolutely necessary, and prefer explicit return types for service functions.
+*   **Next.js App Router:** Follow folder-based routing standards in `/app` (e.g. `layout.tsx`, `page.tsx`, `error.tsx`).
+*   **React Components:** Functional components using TailwindCSS for styling. Maintain high responsiveness and clean UI patterns.
 
 ## Application Boundaries
-- The system is built around Domain-Driven Design concepts inside Django apps.
-- `organizer` handles the event orchestration logic.
-- `participant` handles user consumption and registration.
-- Shared models (like the User model) are kept inside `accounts`.
+*   Keep business and domain logic inside `/lib/services/` (e.g., seating, payments, user services).
+*   Enforce a clear separation of routing layouts:
+    *   `/app/admin/*` (Super Admins)
+    *   `/app/organizer/*` (Organizers and Coordinators)
+    *   `/app/participant/*` (Participants and Team Leaders)
+
+## Database & Models
+*   Do not perform manual migrations that modify database structure. The schema is defined by Prisma introspection from the live database.
+*   Use Prisma Client singleton pattern (`/lib/db.ts`) to avoid establishing too many concurrent connections to the database.
 
 ## Security
-- Strict deployment checks in `settings.py` for SSL redirection (`SECURE_SSL_REDIRECT`), secure cookies (`SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`), and HSTS.
-- WhiteNoise is configured for static file compression and caching.
+*   Strict role access control via Next.js Middleware.
+*   Secure cookies for session storage via Auth.js.
+*   Proper sanitization of all user-uploaded files and secure verification of payment webhooks.
+
