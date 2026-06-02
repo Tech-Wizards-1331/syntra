@@ -53,3 +53,10 @@ Desktop.ini
  
 # Workspace planning notes (local only)
 /planning/
+
+/app/generated/prisma
+
+# Next.js
+.next/
+out/
+next-env.d.ts
