@@ -13,7 +13,7 @@ Migrate Syntra from Django/DRF to a unified, production-ready, type-safe full-st
 ## Requirements
 
 ### Validated
-- [ ] Database introspection successfully mapping all original tables to a unified Prisma Schema.
+- [x] Database introspection successfully mapping all original tables to a unified Prisma Schema — Phase 1
 
 ### Active
 - [ ] **Auth Parity**: Implement Auth.js with Google, GitHub, and email/password login. Maintain support for original Django password hashing (PBKDF2/MD5) for existing user accounts.
@@ -45,10 +45,11 @@ Migrate Syntra from Django/DRF to a unified, production-ready, type-safe full-st
 
 | Decision | Rationale | Status |
 |----------|-----------|--------|
-| Introspect DB | Automatically generates Prisma schemas from existing tables, avoiding manual table-mapping errors. | Active |
+| Introspect DB | Automatically generates Prisma schemas from existing tables, avoiding manual table-mapping errors. | Validated — Phase 1 |
+| SQLite Type Corrections | Replaced custom `bool` and mismatched relation types with `Boolean` and `Int` in Prisma schema for SQLite compatibility. | Validated — Phase 1 |
 | Custom Password Verifier | Necessary to verify Django's custom PBKDF2/MD5 hash formatting in Auth.js Credentials provider. | Active |
 | TypeScript Port of Seating Service | Preserves the tested greedy layout-aware seating assignment logic while converting it to a modern TS implementation. | Active |
 | Admin Interface | A dedicated admin route `/admin` will be created in Next.js since the Django Admin panel will no longer be available. | Active |
 
 ## Evolution
-This document is updated at phase boundaries using `/gsd-transition`.
+This document is updated at phase boundaries after Phase 1.
