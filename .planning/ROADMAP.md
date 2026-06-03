@@ -7,9 +7,9 @@ This roadmap details the systematic migration of the Syntra hackathon management
 
 ## Phases
 
-- [ ] **Phase 1: Environment Setup & Prisma Introspection**
-- [ ] **Phase 2: Authentication & Custom Password Hashing**
-- [ ] **Phase 3: Seating Service & Razorpay Port**
+- [x] **Phase 1: Environment Setup & Prisma Introspection** (completed 2026-06-02)
+- [x] **Phase 2: Authentication & Custom Password Hashing** (completed 2026-06-02)
+- [x] **Phase 3: Seating Service & Razorpay Port** (completed 2026-06-03)
 - [ ] **Phase 4: Profile Management**
 - [ ] **Phase 5: Hackathons, Problem Statements & Categories**
 - [ ] **Phase 6: Team Registration, QR Code & Scanner UI**
