@@ -28,6 +28,11 @@ vi.mock("@/auth", () => ({
   auth: vi.fn(),
 }));
 
+// Mock next/cache
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 // Mock prisma
 vi.mock("@/lib/prisma", () => {
   const mockPrisma = {
@@ -156,10 +161,10 @@ describe("Hackathon Actions", () => {
 
   describe("createHackathon", () => {
     it("should reject if dates are mathematically invalid", async () => {
-      vi.mocked(auth).mockResolvedValueOnce({
+      vi.mocked(auth).mockResolvedValue({
         user: { id: "10", role: "organizer" },
       } as any);
-      vi.mocked(prisma.organizer_organizerprofile.findUnique).mockResolvedValueOnce({
+      vi.mocked(prisma.organizer_organizerprofile.findUnique).mockResolvedValue({
         id: 1,
       } as any);
 

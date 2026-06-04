@@ -218,7 +218,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Uses DATABASE_URL env var in production (Supabase PostgreSQL).
 # Falls back to SQLite for local development.
 _database_url = os.getenv('DATABASE_URL', '')
-if _database_url:
+if _database_url and not _database_url.startswith('prisma+postgres'):
     DATABASES = {
         'default': dj_database_url.config(
             default=_database_url,
