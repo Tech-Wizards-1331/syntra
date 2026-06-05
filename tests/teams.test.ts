@@ -61,6 +61,7 @@ vi.mock("@/lib/prisma", () => {
       findUnique: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
     participant_teammember: {
       count: vi.fn(),
@@ -609,6 +610,30 @@ describe("submitTeamRegistration", () => {
 
     await expect(submitTeamRegistration(100)).rejects.toThrow(
       "Member details are incomplete."
+    );
+  });
+
+  it("blocks if the hackathon has reached its maximum allowed team registrations limit", async () => {
+    mockPrisma.participant_team.findUnique.mockResolvedValue({
+      id: 100,
+      leader_id: 1,
+      hackathon_id: 10,
+      is_registered: false,
+    });
+    mockPrisma.organizer_hackathon.findUnique.mockResolvedValue({
+      ...mockHackathon,
+      room_configuration: JSON.stringify([
+        { room_no: "METADATA", type: "metadata", max_teams: 3 },
+      ]),
+    });
+    mockPrisma.participant_team.count.mockResolvedValue(3);
+    mockPrisma.participant_teammember.findMany.mockResolvedValue([
+      { id: 200, name: "Leader", email: "leader@test.com", college: "Col", degree: "Deg", semester: 4 },
+      { id: 201, name: "Member", email: "member@test.com", college: "Col", degree: "Deg", semester: 4 },
+    ]);
+
+    await expect(submitTeamRegistration(100)).rejects.toThrow(
+      "This hackathon has reached its maximum allowed team registrations."
     );
   });
 });

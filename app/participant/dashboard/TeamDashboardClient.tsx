@@ -175,12 +175,14 @@ export default function TeamDashboardClient({
   hackathons,
   selectedHackathonId,
   userTeams,
+  isHackathonFull = false,
 }: {
   userId: number;
   team: TeamData | null;
   hackathons: Hackathon[];
   selectedHackathonId: number | null;
   userTeams: UserTeam[];
+  isHackathonFull?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -1023,6 +1025,15 @@ export default function TeamDashboardClient({
             {/* ─── Submission Section (Django parity: save_draft + complete_registration) ─── */}
             {isLeader && !team.is_registered && (
               <div className="pt-4 border-t border-slate-800/40 flex flex-col gap-4">
+                {isHackathonFull && (
+                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-3 text-sm animate-fade-in">
+                    <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 animate-bounce" />
+                    <div className="flex-1">
+                      <h5 className="font-semibold mb-0.5">Registration Limit Reached</h5>
+                      <p>This hackathon has reached its maximum allowed team registrations. You cannot complete registration for your team.</p>
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Requires <strong>{team.organizer_hackathon.min_team_size} to {team.organizer_hackathon.max_team_size}</strong> members. Currently: <strong className="text-white">{memberCount}</strong>.
                 </p>
@@ -1050,12 +1061,13 @@ export default function TeamDashboardClient({
                     disabled={
                       isPending ||
                       memberCount < team.organizer_hackathon.min_team_size ||
-                      memberCount > team.organizer_hackathon.max_team_size
+                      memberCount > team.organizer_hackathon.max_team_size ||
+                      isHackathonFull
                     }
                     className="btn-cta-shimmer px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex items-center gap-1.5 cursor-pointer justify-center flex-1 sm:flex-none shadow-[0_4px_15px_rgba(20,184,166,0.25)]"
                   >
                     {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Complete Registration
+                    {isHackathonFull ? "Hackathon Registration Full" : "Complete Registration"}
                   </button>
                 </div>
               </div>

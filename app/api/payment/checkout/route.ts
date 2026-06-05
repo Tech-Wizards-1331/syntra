@@ -62,6 +62,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This hackathon does not require payment" }, { status: 400 });
     }
 
+    // Check Hackathon Total Registered Teams Capacity Limit
+    let maxTeamsLimit: number | null = null;
+    if (hackathon.room_configuration) {
+      try {
+        const parsed = JSON.parse(hackathon.room_configuration);
+        if (Array.isArray(parsed)) {
+          const meta = parsed.find((el: any) => el.room_no === "METADATA" && el.type === "metadata");
+          if (meta && typeof meta.max_teams === "number") {
+            maxTeamsLimit = meta.max_teams;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse room_configuration for max_teams", e);
+      }
+    }
+
+    if (maxTeamsLimit !== null) {
+      const registeredCount = await prisma.participant_team.count({
+        where: {
+          hackathon_id: hackathon.id,
+          is_registered: true,
+        },
+      });
+      if (registeredCount >= maxTeamsLimit) {
+        return NextResponse.json(
+          { error: "Validation Failed: This hackathon has reached its maximum allowed team registrations." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Verify team size and complete member details
     const members = await prisma.participant_teammember.findMany({
       where: { team_id: teamIdNum },
@@ -116,7 +147,7 @@ export async function POST(req: NextRequest) {
 
     let finalFeeAmount = baseFee;
     if (hackathon.fee_type === "participant") {
-      finalFeeAmount = baseFee * memberCount;
+      finalFeeAmount = baseFee * currentSlots;
     }
 
     const receipt = `team_${team.id}_user_${userIdNum}`;

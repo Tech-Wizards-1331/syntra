@@ -100,35 +100,44 @@ function newRoom(): RoomConfig {
   };
 }
 
-function roomsToJson(rooms: RoomConfig[]): string {
-  return JSON.stringify(
-    rooms.map((r) => {
-      if (r.type === "configured") {
-        return {
-          room_no: r.room_no || "Unnamed Room",
-          type: "configured",
-          columns: r.columns.map((c) => ({
-            bench_count: c.bench_count,
-            capacity: c.capacity,
-          })),
-        };
-      } else {
-        return {
-          room_no: r.room_no || "Unnamed Room",
-          type: "open",
-          total_seats: r.total_seats,
-          seats_per_row: r.seats_per_row,
-        };
-      }
-    })
-  );
+function roomsToJson(rooms: RoomConfig[], maxTeams?: number): string {
+  const roomsList = rooms.map((r) => {
+    if (r.type === "configured") {
+      return {
+        room_no: r.room_no || "Unnamed Room",
+        type: "configured",
+        columns: r.columns.map((c) => ({
+          bench_count: c.bench_count,
+          capacity: c.capacity,
+        })),
+      };
+    } else {
+      return {
+        room_no: r.room_no || "Unnamed Room",
+        type: "open",
+        total_seats: r.total_seats,
+        seats_per_row: r.seats_per_row,
+      };
+    }
+  });
+
+  if (maxTeams !== undefined && maxTeams !== null) {
+    return JSON.stringify([
+      { room_no: "METADATA", type: "metadata", max_teams: maxTeams },
+      ...roomsList
+    ]);
+  }
+  return JSON.stringify(roomsList);
 }
 
-function parseJsonToRooms(json: string): RoomConfig[] {
+function parseJsonToRooms(json: string): { rooms: RoomConfig[]; maxTeams?: number } {
   try {
     const parsed = JSON.parse(json);
-    if (!Array.isArray(parsed)) return [newRoom()];
-    return parsed.map((r: any) => ({
+    if (!Array.isArray(parsed)) return { rooms: [newRoom()] };
+    const meta = parsed.find((el: any) => el.room_no === "METADATA" && el.type === "metadata");
+    const maxTeams = meta?.max_teams;
+    const roomsFiltered = parsed.filter((el: any) => !(el.room_no === "METADATA" && el.type === "metadata"));
+    const rooms: RoomConfig[] = roomsFiltered.map((r: any) => ({
       id: crypto.randomUUID(),
       room_no: r.room_no || "",
       type: r.type === "open" ? "open" : "configured",
@@ -142,8 +151,9 @@ function parseJsonToRooms(json: string): RoomConfig[] {
       total_seats: Number(r.total_seats) || 30,
       seats_per_row: Number(r.seats_per_row) || 5,
     }));
+    return { rooms, maxTeams };
   } catch {
-    return [newRoom()];
+    return { rooms: [newRoom()] };
   }
 }
 
@@ -441,6 +451,7 @@ export default function SeatingAllocationPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [rooms, setRooms] = useState<RoomConfig[]>(DEFAULT_ROOMS);
+  const [maxTeamsLimit, setMaxTeamsLimit] = useState<number | null>(null);
   const [allocationResult, setAllocationResult] = useState<any | null>(null);
   const [hackathonName, setHackathonName] = useState<string>("");
 
@@ -465,7 +476,9 @@ export default function SeatingAllocationPage() {
       try {
         const ctx = await getSeatingContext(selectedHackathonId as number);
         setHackathonName(ctx.hackathonName);
-        setRooms(ctx.roomConfiguration ? parseJsonToRooms(ctx.roomConfiguration) : DEFAULT_ROOMS);
+        const parsedData = ctx.roomConfiguration ? parseJsonToRooms(ctx.roomConfiguration) : { rooms: DEFAULT_ROOMS };
+        setRooms(parsedData.rooms);
+        setMaxTeamsLimit(parsedData.maxTeams ?? null);
         if (ctx.seatingAllocation) {
           try { setAllocationResult(JSON.parse(ctx.seatingAllocation)); } catch { setAllocationResult(null); }
         } else {
@@ -490,7 +503,7 @@ export default function SeatingAllocationPage() {
     setLoading(true);
     setMessage(null);
     try {
-      const result = await performAllocation(selectedHackathonId as number, roomsToJson(rooms));
+      const result = await performAllocation(selectedHackathonId as number, roomsToJson(rooms, maxTeamsLimit ?? undefined));
       setAllocationResult(result);
       setMessage({ type: "success", text: "Seating allocation simulated successfully!" });
     } catch (err: any) {
@@ -505,7 +518,11 @@ export default function SeatingAllocationPage() {
     setSaving(true);
     setMessage(null);
     try {
-      await saveSeatingAllocation(selectedHackathonId as number, JSON.stringify(allocationResult));
+      await saveSeatingAllocation(
+        selectedHackathonId as number,
+        roomsToJson(rooms, maxTeamsLimit ?? undefined),
+        JSON.stringify(allocationResult)
+      );
       setMessage({ type: "success", text: "Seating layout saved to database." });
     } catch (err: any) {
       setMessage({ type: "error", text: err.message || "Failed to save allocation." });
@@ -608,6 +625,39 @@ export default function SeatingAllocationPage() {
               <Plus className="w-3.5 h-3.5" />
               Add Room
             </button>
+          </div>
+
+          {/* Max Teams Limit Card */}
+          <div className="rounded-2xl bg-slate-900/40 border border-slate-900/60 p-4 flex flex-col gap-3">
+            <div>
+              <h3 className="text-xs font-bold text-white">Registration Capacity</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Limit the total number of registered/paid teams allowed in the hackathon</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <input
+                  id="enable_limit"
+                  type="checkbox"
+                  checked={maxTeamsLimit !== null}
+                  onChange={(e) => {
+                    setMaxTeamsLimit(e.target.checked ? 10 : null);
+                  }}
+                  className="w-4 h-4 rounded border-slate-850 bg-slate-950 text-teal-500 focus:ring-teal-500 accent-teal-500 cursor-pointer"
+                />
+                <label htmlFor="enable_limit" className="text-xs text-slate-400 font-medium cursor-pointer select-none">
+                  Enable limit
+                </label>
+              </div>
+              {maxTeamsLimit !== null && (
+                <NumberStepper
+                  label="Max Teams"
+                  value={maxTeamsLimit}
+                  min={1}
+                  max={1000}
+                  onChange={(v) => setMaxTeamsLimit(v)}
+                />
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">

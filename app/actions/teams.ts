@@ -465,6 +465,34 @@ export async function submitTeamRegistration(teamId: number) {
     throw new Error("This hackathon requires payment. Please use the payment checkout to complete registration.");
   }
 
+  // Check Hackathon Total Registered Teams Capacity Limit
+  let maxTeamsLimit: number | null = null;
+  if (hackathon.room_configuration) {
+    try {
+      const parsed = JSON.parse(hackathon.room_configuration);
+      if (Array.isArray(parsed)) {
+        const meta = parsed.find((el: any) => el.room_no === "METADATA" && el.type === "metadata");
+        if (meta && typeof meta.max_teams === "number") {
+          maxTeamsLimit = meta.max_teams;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse room_configuration for max_teams", e);
+    }
+  }
+
+  if (maxTeamsLimit !== null) {
+    const registeredCount = await prisma.participant_team.count({
+      where: {
+        hackathon_id: hackathon.id,
+        is_registered: true,
+      },
+    });
+    if (registeredCount >= maxTeamsLimit) {
+      throw new Error("This hackathon has reached its maximum allowed team registrations.");
+    }
+  }
+
   const leaderUser = await prisma.accounts_user.findUnique({
     where: { id: team.leader_id },
     select: { email: true, full_name: true },

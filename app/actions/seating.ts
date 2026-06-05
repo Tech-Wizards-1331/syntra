@@ -51,7 +51,7 @@ export async function getSeatingContext(hackathonId: number) {
   };
 }
 
-export async function saveSeatingAllocation(hackathonId: number, allocationJson: string) {
+export async function saveSeatingAllocation(hackathonId: number, roomConfigJson: string, allocationJson: string) {
   const session = await auth();
   if (!session || !session.user || session.user.role !== "organizer") {
     throw new Error("Unauthorized");
@@ -60,6 +60,7 @@ export async function saveSeatingAllocation(hackathonId: number, allocationJson:
   await prisma.organizer_hackathon.update({
     where: { id: hackathonId },
     data: {
+      room_configuration: roomConfigJson,
       seating_allocation: allocationJson,
       updated_at: new Date(),
     },

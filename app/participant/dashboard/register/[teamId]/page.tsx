@@ -45,6 +45,7 @@ export default async function TeamRegisterPage(props: {
           is_paid: true,
           fee_amount: true,
           fee_type: true,
+          room_configuration: true,
         },
       },
       accounts_user: {
@@ -88,6 +89,29 @@ export default async function TeamRegisterPage(props: {
     isPaid: team.organizer_hackathon.is_paid,
     feeAmount: team.organizer_hackathon.fee_amount ? Number(team.organizer_hackathon.fee_amount) : 0,
   };
+
+  // Check if hackathon registration capacity is full
+  const registeredCount = await prisma.participant_team.count({
+    where: {
+      hackathon_id: team.organizer_hackathon.id,
+      is_registered: true,
+    },
+  });
+
+  let maxTeamsLimit: number | null = null;
+  if (team.organizer_hackathon.room_configuration) {
+    try {
+      const parsed = JSON.parse(team.organizer_hackathon.room_configuration);
+      if (Array.isArray(parsed)) {
+        const meta = parsed.find((el: any) => el.room_no === "METADATA" && el.type === "metadata");
+        if (meta && typeof meta.max_teams === "number") {
+          maxTeamsLimit = meta.max_teams;
+        }
+      }
+    } catch {}
+  }
+
+  const isHackathonFull = maxTeamsLimit !== null && registeredCount >= maxTeamsLimit;
 
   // Check if leader email is present in team members
   const leaderEmail = team.accounts_user.email;
@@ -261,6 +285,7 @@ export default async function TeamRegisterPage(props: {
             hackathons={[]}
             selectedHackathonId={team.organizer_hackathon.id}
             userTeams={[]}
+            isHackathonFull={isHackathonFull}
           />
         </div>
 
