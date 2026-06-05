@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/lib/services/razorpay";
+import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,11 +61,13 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Update team registration
+        // Update team registration with QR token
         await tx.participant_team.update({
           where: { id: payment.team_id },
           data: {
             is_registered: true,
+            qr_token: randomUUID(),
+            is_qr_active: true,
             updated_at: new Date(),
           },
         });

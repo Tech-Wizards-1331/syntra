@@ -62,19 +62,71 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This hackathon does not require payment" }, { status: 400 });
     }
 
-    const feeAmount = hackathon.fee_amount ? Number(hackathon.fee_amount) : 0;
-    if (feeAmount <= 0) {
+    // Verify team size and complete member details
+    const members = await prisma.participant_teammember.findMany({
+      where: { team_id: teamIdNum },
+    });
+
+    const leaderUser = await prisma.accounts_user.findUnique({
+      where: { id: team.leader_id },
+      select: { email: true },
+    });
+    if (!leaderUser) {
+      return NextResponse.json({ error: "Leader user not found" }, { status: 404 });
+    }
+
+    const leaderInMembers = members.some(
+      (m) => m.email.toLowerCase() === leaderUser.email.toLowerCase()
+    );
+
+    const currentSlots = leaderInMembers ? members.length : 1 + members.length;
+    if (currentSlots < hackathon.min_team_size) {
+      return NextResponse.json(
+        { error: `Validation Failed: Team size must be at least ${hackathon.min_team_size} members.` },
+        { status: 400 }
+      );
+    }
+    if (currentSlots > hackathon.max_team_size) {
+      return NextResponse.json(
+        { error: `Validation Failed: Team size cannot exceed ${hackathon.max_team_size} members.` },
+        { status: 400 }
+      );
+    }
+
+    for (const member of members) {
+      if (
+        !member.name?.trim() ||
+        !member.email?.trim() ||
+        !member.college?.trim() ||
+        !member.degree?.trim() ||
+        member.semester === null ||
+        member.semester === undefined
+      ) {
+        return NextResponse.json(
+          { error: `Validation Failed: Team member details are incomplete for '${member.name || "Unnamed"}'.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const baseFee = hackathon.fee_amount ? Number(hackathon.fee_amount) : 0;
+    if (baseFee <= 0) {
       return NextResponse.json({ error: "Invalid fee amount" }, { status: 400 });
     }
 
+    let finalFeeAmount = baseFee;
+    if (hackathon.fee_type === "participant") {
+      finalFeeAmount = baseFee * memberCount;
+    }
+
     const receipt = `team_${team.id}_user_${userIdNum}`;
-    const order = await createRazorpayOrder(feeAmount, receipt);
+    const order = await createRazorpayOrder(finalFeeAmount, receipt);
 
     // Create a pending payment log in the database
     const payment = await prisma.participant_payment.create({
       data: {
         razorpay_order_id: order.id,
-        amount: feeAmount,
+        amount: finalFeeAmount,
         status: "pending",
         created_at: new Date(),
         updated_at: new Date(),

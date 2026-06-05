@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CreditCard, CheckCircle2, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
+import { CreditCard, CheckCircle2, ShieldCheck, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 interface CheckoutCardProps {
   teamId: number;
@@ -121,17 +121,20 @@ export default function CheckoutCard({
 
   if (isRegistered) {
     return (
-      <div className="p-6 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-glass">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400">
-            <ShieldCheck className="w-6 h-6" />
+      <div className="glass-card rounded-2xl p-6 border-teal-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 flex items-center justify-center text-teal-400 animate-glow-pulse">
+            <ShieldCheck className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="font-bold text-white mb-0.5">Registration Confirmed</h3>
-            <p className="text-xs text-teal-300">Your team has paid the registration fee and is confirmed for the hackathon.</p>
+            <h3 className="font-bold text-white mb-0.5 flex items-center gap-2">
+              Registration Confirmed
+              <Sparkles className="w-4 h-4 text-teal-400" />
+            </h3>
+            <p className="text-xs text-teal-300/80">Your team has paid the registration fee and is confirmed for the hackathon.</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+        <div className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-teal-500/15 text-teal-300 border border-teal-500/25">
           <CheckCircle2 className="w-3.5 h-3.5" />
           Paid & Verified
         </div>
@@ -140,11 +143,11 @@ export default function CheckoutCard({
   }
 
   return (
-    <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 shadow-glass flex flex-col gap-4">
+    <div className="glass-card rounded-2xl p-6 flex flex-col gap-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-850 border border-slate-800 flex items-center justify-center text-teal-400">
-            <CreditCard className="w-6 h-6" />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-slate-800/60 border border-slate-700/40 flex items-center justify-center text-teal-400">
+            <CreditCard className="w-7 h-7" />
           </div>
           <div>
             <h3 className="font-bold text-white mb-0.5">Complete Registration</h3>
@@ -152,13 +155,13 @@ export default function CheckoutCard({
           </div>
         </div>
         <div className="text-right">
-          <span className="text-xs text-slate-500 block uppercase tracking-wider font-bold">Total Fee</span>
-          <span className="text-xl font-black text-white">₹{amount}</span>
+          <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-bold">Total Fee</span>
+          <span className="text-2xl font-black text-white">₹{amount}</span>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span className="font-medium">{errorMsg}</span>
         </div>
@@ -167,7 +170,7 @@ export default function CheckoutCard({
       <button
         onClick={handleCheckout}
         disabled={loading}
-        className="w-full py-3 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 hover:from-teal-450 hover:to-emerald-350 text-slate-950 font-bold transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 disabled:opacity-55 cursor-pointer text-sm"
+        className="btn-cta-shimmer w-full py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 hover:brightness-110 text-slate-950 font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 disabled:opacity-55 cursor-pointer text-sm hover:scale-[1.01] active:scale-[0.99] hover:shadow-teal-500/30"
       >
         {loading ? (
           <>

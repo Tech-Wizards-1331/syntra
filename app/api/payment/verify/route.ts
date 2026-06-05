@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { verifySignature } from "@/lib/services/razorpay";
+import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,11 +58,62 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Update team registration
+      // Add leader to team members if not already present (Django parity)
+      const leaderUser = await tx.accounts_user.findUnique({
+        where: { id: payment.participant_team.leader_id },
+        select: { email: true, full_name: true },
+      });
+      if (leaderUser) {
+        const existingMember = await tx.participant_teammember.findFirst({
+          where: {
+            team_id: payment.team_id,
+            email: leaderUser.email,
+          },
+        });
+        if (!existingMember) {
+          const leaderProfile = await tx.participant_participantprofile.findUnique({
+            where: { user_id: payment.participant_team.leader_id },
+            select: {
+              college: true,
+              semester: true,
+              degree: true,
+              participant_participantprofile_skills: {
+                select: { skill_id: true },
+              },
+            },
+          });
+          if (leaderProfile) {
+            const member = await tx.participant_teammember.create({
+              data: {
+                team_id: payment.team_id,
+                name: leaderUser.full_name || leaderUser.email,
+                email: leaderUser.email,
+                college: leaderProfile.college,
+                semester: leaderProfile.semester,
+                degree: leaderProfile.degree,
+                created_at: new Date(),
+              },
+            });
+
+            if (leaderProfile.participant_participantprofile_skills?.length > 0) {
+              await tx.participant_teammember_skills.createMany({
+                data: leaderProfile.participant_participantprofile_skills.map((ps) => ({
+                  teammember_id: member.id,
+                  skill_id: ps.skill_id,
+                })),
+              });
+            }
+          }
+        }
+      }
+
+      // Update team registration with QR token
       await tx.participant_team.update({
         where: { id: payment.team_id },
         data: {
           is_registered: true,
+          qr_token: randomUUID(),
+          is_qr_active: true,
           updated_at: new Date(),
         },
       });
