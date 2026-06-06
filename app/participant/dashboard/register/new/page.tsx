@@ -5,7 +5,6 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar, AlertTriangle, Layers } from "lucide-react";
 import CreateTeamForm from "./CreateTeamForm";
-import ParticipantShell from "../../ParticipantShell";
 
 export const metadata = {
   title: "New Team Registration | Syntra",
@@ -68,9 +67,9 @@ export default async function NewTeamRegistrationPage(props: {
   }
 
   return (
-    <ParticipantShell>
+    <main className="relative flex-1 max-w-4xl mx-auto w-full px-6 py-10 z-10 flex flex-col gap-6 animate-fade-in-up">
       {/* Navigation Breadcrumb */}
-      <div className="animate-fade-in-up">
+      <div>
         <Link
           href="/participant/dashboard"
           className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-teal-400 transition group"
@@ -81,7 +80,7 @@ export default async function NewTeamRegistrationPage(props: {
       </div>
 
       {/* Hackathon Details and Form Card */}
-      <div className="glass-card gradient-border rounded-2xl p-6 animate-fade-in-up stagger-1">
+      <div className="glass-card gradient-border rounded-2xl p-6">
         <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
           <Calendar className="w-5 h-5 text-teal-400" />
           Team Registration
@@ -90,7 +89,7 @@ export default async function NewTeamRegistrationPage(props: {
         <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/40 space-y-4">
           <div>
             <h4 className="font-bold text-white text-base mb-1">{hackathon.name}</h4>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed font-medium">
               {hackathon.description || "No description provided."}
             </p>
           </div>
@@ -137,6 +136,6 @@ export default async function NewTeamRegistrationPage(props: {
           <CreateTeamForm hackathonId={hackathonIdNum} />
         </div>
       </div>
-    </ParticipantShell>
+    </main>
   );
 }

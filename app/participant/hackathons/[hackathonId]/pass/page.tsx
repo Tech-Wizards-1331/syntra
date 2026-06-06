@@ -94,16 +94,18 @@ export default async function TeamPassPage({ params }: PassPageProps) {
   }
 
   return (
-    <TeamPassClient
-      hackathonName={hackathon.name}
-      hackathonId={hackathon.id}
-      teamName={team.name}
-      qrToken={team.qr_token!}
-      members={team.participant_teammember.map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-      }))}
-    />
+    <main className="flex-1 flex items-center justify-center p-4 md:p-6 animate-fade-in-up">
+      <TeamPassClient
+        hackathonName={hackathon.name}
+        hackathonId={hackathon.id}
+        teamName={team.name}
+        qrToken={team.qr_token!}
+        members={team.participant_teammember.map((m) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+        }))}
+      />
+    </main>
   );
 }

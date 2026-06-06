@@ -2,7 +2,7 @@
 
 import React from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Users, QrCode, ArrowLeft, Smartphone } from "lucide-react";
+import { Users, ArrowLeft, Smartphone } from "lucide-react";
 import Link from "next/link";
 
 interface TeamPassClientProps {
@@ -21,15 +21,9 @@ export default function TeamPassClient({
   members,
 }: TeamPassClientProps) {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative selection:bg-teal-500 selection:text-slate-900">
-      {/* Background gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-60 h-60 bg-emerald-500/5 rounded-full blur-3xl" />
-      </div>
-
+    <div className="flex flex-col w-full max-w-md mx-auto relative z-10 select-none">
       {/* Header */}
-      <header className="relative w-full max-w-md mx-auto px-6 pt-6 pb-4 flex items-center justify-between z-10">
+      <header className="w-full py-4 flex items-center justify-between">
         <Link
           href={`/participant/hackathons/${hackathonId}/hub`}
           className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition"
@@ -44,7 +38,7 @@ export default function TeamPassClient({
       </header>
 
       {/* Main Pass Content */}
-      <main className="relative flex-1 max-w-md mx-auto w-full px-6 py-6 z-10 flex flex-col items-center gap-6">
+      <div className="w-full flex flex-col items-center gap-6">
         {/* Pass Card */}
         <div className="w-full rounded-3xl bg-gradient-to-b from-slate-900/80 to-slate-900/40 border border-slate-800 shadow-2xl overflow-hidden">
           {/* Top gradient band */}
@@ -120,11 +114,11 @@ export default function TeamPassClient({
         {/* Back link */}
         <Link
           href={`/participant/hackathons/${hackathonId}/hub`}
-          className="text-xs text-slate-500 hover:text-slate-300 transition"
+          className="text-xs text-slate-500 hover:text-slate-355 transition mb-6"
         >
           ← Back to Hackathon Hub
         </Link>
-      </main>
+      </div>
     </div>
   );
 }

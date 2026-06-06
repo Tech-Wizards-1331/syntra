@@ -7,7 +7,6 @@ import { ArrowLeft, QrCode, CheckCircle2, Users, ClipboardList } from "lucide-re
 import CheckoutCard from "../../CheckoutCard";
 import TeamDashboardClient from "../../TeamDashboardClient";
 import QrDisplay from "../../QrDisplay";
-import ParticipantShell from "../../ParticipantShell";
 
 export const metadata = {
   title: "Team Registration Details | Syntra",
@@ -158,9 +157,9 @@ export default async function TeamRegisterPage(props: {
   ];
 
   return (
-    <ParticipantShell>
+    <main className="relative flex-1 max-w-7xl mx-auto w-full px-6 py-10 z-10 flex flex-col gap-6 animate-fade-in-up">
       {/* Navigation Breadcrumb */}
-      <div className="animate-fade-in-up">
+      <div>
         <Link
           href="/participant/dashboard"
           className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-teal-400 transition group"
@@ -171,7 +170,7 @@ export default async function TeamRegisterPage(props: {
       </div>
 
       {/* Workspace Title Header */}
-      <div className="glass-card gradient-border rounded-2xl p-6 animate-fade-in-up stagger-1">
+      <div className="glass-card gradient-border rounded-2xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-[10px] text-teal-400 font-mono uppercase tracking-[0.2em]">
@@ -180,7 +179,7 @@ export default async function TeamRegisterPage(props: {
             <h2 className="text-2xl font-bold text-white mt-1">
               Team: {team.name}
             </h2>
-            <p className="text-sm text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5 font-medium">
               {team.organizer_hackathon.name} · {memberCount} members
             </p>
           </div>
@@ -245,7 +244,7 @@ export default async function TeamRegisterPage(props: {
 
       {/* Checkout Card for Paid Registered Team */}
       {isPaidHackathon.isPaid && team.is_registered && (
-        <div className="animate-fade-in-up stagger-2">
+        <div className="animate-fade-in-up">
           <CheckoutCard
             teamId={team.id}
             teamName={team.name}
@@ -259,7 +258,7 @@ export default async function TeamRegisterPage(props: {
       )}
 
       {/* Two-Column Grid for Workspace Form & QR Passes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up stagger-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <TeamDashboardClient
             userId={userIdNum}
@@ -297,18 +296,18 @@ export default async function TeamRegisterPage(props: {
               isQrActive={team.is_qr_active}
             />
           ) : (
-            <div className="glass-card rounded-2xl p-6 text-center flex flex-col items-center justify-center min-h-[200px] border-dashed border-slate-800">
-              <div className="w-14 h-14 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-3 animate-float">
+            <div className="glass-card rounded-2xl p-6 text-center flex flex-col items-center justify-center min-h-[200px] border-dashed border-slate-805">
+              <div className="w-14 h-14 rounded-xl bg-slate-805/60 border border-slate-700/50 flex items-center justify-center mb-3 animate-float">
                 <QrCode className="w-7 h-7 text-slate-500" />
               </div>
               <p className="text-sm font-semibold text-slate-400">QR Pass Locked</p>
-              <p className="text-xs text-slate-500 mt-1 max-w-[200px]">
+              <p className="text-xs text-slate-500 mt-1 max-w-[200px] leading-relaxed">
                 Your check-in QR pass will generate instantly once your registration is finalized.
               </p>
             </div>
           )}
         </div>
       </div>
-    </ParticipantShell>
+    </main>
   );
 }

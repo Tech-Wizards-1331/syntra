@@ -5,10 +5,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import {
   ArrowLeft,
-  LogOut,
   Trophy,
 } from "lucide-react";
-import { signOut } from "@/auth";
 import HubClient from "./HubClient";
 
 export async function generateMetadata({
@@ -197,23 +195,6 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     })
   );
 
-  // Pending sent invites (for leader of non-fully-registered teams)
-  let pendingSentInvites: { id: number; receiverName: string; receiverEmail: string }[] = [];
-  if (isLeader && !team.is_registered) {
-    const invites = await prisma.participant_teamrequest.findMany({
-      where: { team_id: team.id, status: "pending" },
-      include: {
-        accounts_user: { select: { full_name: true, email: true } },
-      },
-      orderBy: { created_at: "desc" },
-    });
-    pendingSentInvites = invites.map((inv) => ({
-      id: inv.id,
-      receiverName: inv.accounts_user.full_name || inv.accounts_user.email,
-      receiverEmail: inv.accounts_user.email,
-    }));
-  }
-
   // Prepare serializable data for client component
   const hackathonData = {
     id: hackathon.id,
@@ -289,15 +270,9 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative selection:bg-teal-500 selection:text-slate-900">
-      {/* Background gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 -left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/3 right-0 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
-      </div>
-
-      {/* Header */}
-      <header className="relative w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between border-b border-slate-900 z-10">
+    <main className="relative flex-1 max-w-7xl mx-auto w-full px-6 py-10 z-10 animate-fade-in-up">
+      {/* Dynamic Header */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-900">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20">
             <Trophy className="w-5 h-5 text-slate-950" />
@@ -312,46 +287,23 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/participant/dashboard"
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 transition duration-300 flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </Link>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <button
-              type="submit"
-              className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 hover:text-red-400 transition duration-300 flex items-center gap-2 text-sm font-medium cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
-      </header>
+        <Link
+          href="/participant/dashboard"
+          className="p-2 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Dashboard
+        </Link>
+      </div>
 
-      {/* Main Content */}
-      <main className="relative flex-1 max-w-7xl mx-auto w-full px-6 py-10 z-10">
-        <HubClient
-          hackathon={hackathonData}
-          team={teamData}
-          isLeader={isLeader}
-          leaderName={leader?.full_name || leader?.email || "Unknown"}
-          problemStatements={psWithCounts}
-          teamSeating={teamSeating as Record<string, unknown> | null}
-        />
-      </main>
-
-      {/* Footer */}
-      <footer className="relative w-full max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between border-t border-slate-900 text-xs text-slate-500 gap-4 z-10">
-        <p>&copy; {new Date().getFullYear()} Syntra next-gen framework migration.</p>
-      </footer>
-    </div>
+      <HubClient
+        hackathon={hackathonData}
+        team={teamData}
+        isLeader={isLeader}
+        leaderName={leader?.full_name || leader?.email || "Unknown"}
+        problemStatements={psWithCounts}
+        teamSeating={teamSeating as Record<string, unknown> | null}
+      />
+    </main>
   );
 }

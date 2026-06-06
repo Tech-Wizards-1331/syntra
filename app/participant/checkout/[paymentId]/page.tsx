@@ -6,10 +6,7 @@ import CheckoutClient from "./CheckoutClient";
 /**
  * Payment Checkout Page — matches Django's PaymentCheckoutView.
  * 
- * Django flow: complete_registration → redirect('payment-checkout', pk=payment.id)
- * Next.js flow: handleSubmitRegistration → router.push('/participant/checkout/[paymentId]')
- * 
- * This page renders a dedicated checkout UI with Razorpay payment button.
+ * Renders a dedicated, focused checkout UI centered on the page.
  */
 export default async function PaymentCheckoutPage({
   params,
@@ -46,26 +43,20 @@ export default async function PaymentCheckoutPage({
     redirect("/participant/dashboard");
   }
 
-  // Guard: payment must belong to current user (matches Django's get_object_or_404(Payment, pk=pk, user=request.user))
+  // Guard: payment must belong to current user
   const userIdNum = Number(session.user.id);
   if (payment.user_id !== userIdNum) {
     redirect("/participant/dashboard");
   }
 
-  // Guard: if already paid, redirect to dashboard (matches Django's status='pending' filter)
+  // Guard: if already paid, redirect to dashboard
   if (payment.status !== "pending") {
     redirect("/participant/dashboard");
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative selection:bg-teal-500 selection:text-slate-900">
-      {/* Background gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-teal-500/5 blur-3xl" />
-        <div className="absolute top-1/3 -left-40 w-[400px] h-[400px] rounded-full bg-emerald-600/5 blur-3xl" />
-      </div>
-
-      <main className="flex-1 relative z-10 p-4 md:p-8">
+    <main className="flex-1 flex items-center justify-center p-4 md:p-8 animate-fade-in-up">
+      <div className="w-full max-w-md">
         <CheckoutClient
           paymentId={payment.id}
           orderId={payment.razorpay_order_id}
@@ -76,7 +67,7 @@ export default async function PaymentCheckoutPage({
           userEmail={session.user.email || ""}
           userName={session.user.name || ""}
         />
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
