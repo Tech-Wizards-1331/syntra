@@ -3,24 +3,22 @@ import { auth } from "@/auth";
 import {
   User,
   Mail,
-  Shield,
   QrCode,
   Compass,
-  ExternalLink,
   Trophy,
-  ArrowRight,
   Users,
   Sparkles,
-  CheckCircle2,
   AlertCircle,
   Calendar,
   ChevronRight,
+  Settings,
+  ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Participant Control Center | Syntra",
+  title: "Participant Dashboard | Syntra",
   description: "Manage your hackathon teams, profile, registrations, and check-in passes.",
 };
 
@@ -135,7 +133,6 @@ export default async function ParticipantDashboard(props: {
   });
 
   const activeRegistrations = userTeams.filter((t) => t.isRegistered);
-  const draftRegistrations = userTeams.filter((t) => !t.isRegistered);
 
   // Get hackathons in registration phase (excluding ones they already have a team in)
   const userTeamHackathonIds = allUserTeams.map((ut) => ut.hackathon_id);
@@ -158,41 +155,6 @@ export default async function ParticipantDashboard(props: {
     orderBy: { registration_deadline: "asc" },
     take: 3, // Limit to top 3 upcoming on dashboard
   });
-
-  // Fetch participant profile info for completion score calculation
-  const participantProfile = await prisma.participant_participantprofile.findUnique({
-    where: { user_id: userIdNum },
-    select: {
-      visibility: true,
-      college: true,
-      semester: true,
-      degree: true,
-      participant_participantprofile_skills: {
-        select: { skill_id: true }
-      }
-    },
-  });
-
-  // Calculate profile completion percentage
-  let profileCompletionScore = 0;
-  if (participantProfile) {
-    if (participantProfile.college && participantProfile.college !== "Not Specified") {
-      profileCompletionScore += 20;
-    }
-    if (participantProfile.semester && participantProfile.semester > 0) {
-      profileCompletionScore += 20;
-    }
-    if (participantProfile.degree && participantProfile.degree !== "Not Specified") {
-      profileCompletionScore += 20;
-    }
-    if (
-      participantProfile.participant_participantprofile_skills &&
-      participantProfile.participant_participantprofile_skills.length > 0
-    ) {
-      profileCompletionScore += 20;
-    }
-    profileCompletionScore += 20; // Document created, recruiting preference checked
-  }
 
   // Count pending invites
   const pendingInvitesCount = await prisma.participant_teamrequest.count({
@@ -218,150 +180,121 @@ export default async function ParticipantDashboard(props: {
   };
 
   return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 z-10 flex flex-col gap-6 animate-fade-in-up">
-      {/* ─── HEADER & PROFILE BANNER ─── */}
-      <div className="glass-card rounded-2xl p-6 md:p-8 gradient-border">
+    <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 z-10 flex flex-col gap-6 animate-fade-in-up">
+      {/* ─── INTEGRATED HEADER & PROFILE BANNER ─── */}
+      <div className="glass-card rounded-2xl p-6 gradient-border">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-lg md:text-xl shadow-lg shadow-teal-500/20 shrink-0">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-base md:text-lg shadow-lg shadow-teal-500/20 shrink-0">
               {getInitials(session?.user?.name || "P")}
             </div>
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white leading-tight">
+              <h2 className="text-lg md:text-xl font-black text-white leading-tight">
                 Welcome back, {session?.user?.name || "Participant"}!
               </h2>
-              <p className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
                 <span>{session?.user?.email}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-800" />
-                <span className="text-teal-400 font-semibold uppercase tracking-wider text-[10px]">
-                  Role: {session?.user?.role}
+                <span className="w-1 h-1 rounded-full bg-slate-800" />
+                <span className="text-teal-400 font-bold uppercase tracking-wider text-[9px]">
+                  Participant Profile
                 </span>
               </p>
             </div>
           </div>
 
-          {/* Core Stats Overview */}
+          {/* Header Stats */}
           <div className="flex gap-4 shrink-0">
-            <div className="text-center px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-900/60 min-w-[80px]">
-              <p className="text-xl font-black text-white">{userTeams.length}</p>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Total Teams</p>
+            <div className="text-center px-3 py-2 rounded-xl bg-slate-900/30 border border-slate-900/60 min-w-[70px]">
+              <p className="text-lg font-black text-white leading-none">{userTeams.length}</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Total Teams</p>
             </div>
-            <div className="text-center px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-900/60 min-w-[80px]">
-              <p className="text-xl font-black text-emerald-400">{activeRegistrations.length}</p>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Active</p>
+            <div className="text-center px-3 py-2 rounded-xl bg-slate-900/30 border border-slate-900/60 min-w-[70px]">
+              <p className="text-lg font-black text-teal-400 leading-none">{activeRegistrations.length}</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Registered</p>
             </div>
           </div>
+        </div>
+
+        {/* Integrated Quick Action Button Pills */}
+        <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-800/40">
+          <Link
+            href="/participant/hackathons"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition"
+          >
+            <Compass className="w-3.5 h-3.5 text-teal-400" />
+            Explore Hackathons
+          </Link>
+          <Link
+            href="/participant/registrations"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition"
+          >
+            <Trophy className="w-3.5 h-3.5 text-teal-400" />
+            My Registrations
+          </Link>
+          <Link
+            href="/participant/inbox"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition relative"
+          >
+            <Mail className="w-3.5 h-3.5 text-teal-400" />
+            Team Inbox
+            {pendingInvitesCount > 0 && (
+              <span className="flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black bg-teal-500 text-slate-950 ml-1 shadow-[0_0_8px_rgba(20,184,166,0.3)]">
+                {pendingInvitesCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/participant/profile"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition"
+          >
+            <Settings className="w-3.5 h-3.5 text-teal-400" />
+            Profile Settings
+          </Link>
         </div>
       </div>
 
       {/* ─── PENDING INVITES ALERT BANNER ─── */}
       {pendingInvitesCount > 0 && (
-        <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-between gap-3 text-xs md:text-sm animate-pulse-light">
+        <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/15 text-teal-400 flex items-center justify-between gap-3 text-xs md:text-sm animate-pulse-light">
           <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-5 h-5 shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <div>
               <span className="font-bold">You have pending invitations!</span> You have been invited to join {pendingInvitesCount} hackathon team(s).
             </div>
           </div>
           <Link
             href="/participant/inbox"
-            className="px-3.5 py-1.5 rounded-lg bg-teal-500 text-slate-950 font-bold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+            className="px-3 py-1 rounded-md bg-teal-500 text-slate-950 font-bold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center gap-0.5 cursor-pointer"
           >
-            Open Inbox <ChevronRight className="w-3.5 h-3.5" />
+            Open Inbox <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
       )}
 
-      {/* ─── GRID LAYOUT: LEFT SIDE FOR ACTIONS/STATUS, RIGHT SIDE FOR HACKATHONS ─── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left 2 Columns */}
-        <div className="xl:col-span-2 flex flex-col gap-6">
-          {/* Quick Actions Panel */}
-          <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col gap-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Quick Actions</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Link
-                href="/participant/hackathons"
-                className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/65 hover:bg-slate-900/80 hover:border-slate-800 transition text-center flex flex-col items-center gap-2 group"
-              >
-                <Compass className="w-5 h-5 text-teal-400 group-hover:rotate-45 transition-transform" />
-                <span className="text-[11px] font-bold text-slate-200">Explore Hackathons</span>
-              </Link>
-              <Link
-                href="/participant/registrations"
-                className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/65 hover:bg-slate-900/80 hover:border-slate-800 transition text-center flex flex-col items-center gap-2 group"
-              >
-                <Trophy className="w-5 h-5 text-teal-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-bold text-slate-200">My Registrations</span>
-              </Link>
-              <Link
-                href="/participant/inbox"
-                className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/65 hover:bg-slate-900/80 hover:border-slate-800 transition text-center flex flex-col items-center gap-2 group relative"
-              >
-                <Mail className="w-5 h-5 text-teal-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-bold text-slate-200">Team Inbox</span>
-                {pendingInvitesCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-teal-500 animate-ping" />
-                )}
-              </Link>
-              <Link
-                href="/participant/profile"
-                className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/65 hover:bg-slate-900/80 hover:border-slate-800 transition text-center flex flex-col items-center gap-2 group"
-              >
-                <User className="w-5 h-5 text-teal-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-bold text-slate-200">My Profile</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Profile Completion Progress Card */}
+      {/* ─── TWO COLUMN GRID LAYOUT (Option A) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column (Active Teams Console) */}
+        <div className="lg:col-span-2 flex flex-col gap-5">
           <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Profile Setup Progress</h3>
-              <span className="text-xs font-black text-teal-400">{profileCompletionScore}%</span>
-            </div>
-            <div>
-              <div className="h-2 bg-slate-900 border border-slate-900/60 rounded-full overflow-hidden mb-3">
-                <div
-                  className="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-700"
-                  style={{ width: `${profileCompletionScore}%` }}
-                />
-              </div>
-              {profileCompletionScore < 100 ? (
-                <p className="text-[11px] text-slate-400 flex items-start gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0 mt-0.5" />
-                  Complete your profile details to unlock recruiting visibility, letting event coordinators and team leaders invite you directly.
-                  <Link href="/participant/profile" className="text-teal-400 font-bold hover:underline ml-1 inline-flex items-center gap-0.5">
-                    Finish Profile <ChevronRight className="w-3 h-3" />
-                  </Link>
-                </p>
-              ) : (
-                <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Your profile is fully complete! Recruiting visibility is active.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Active Teams & Status Control Panel */}
-          <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Active Teams</h3>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Trophy className="w-4 h-4 text-teal-400" />
+                Active Teams
+              </h3>
               <Link
                 href="/participant/registrations"
-                className="text-[10px] text-teal-400 hover:text-teal-300 font-bold flex items-center gap-0.5"
+                className="text-[10px] text-teal-400 hover:text-teal-350 font-bold flex items-center gap-0.5"
               >
-                View All <ChevronRight className="w-3 h-3" />
+                Manage All <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
 
             {userTeams.length > 0 ? (
               <div className="flex flex-col gap-3">
-                {userTeams.slice(0, 2).map((team) => (
+                {userTeams.slice(0, 3).map((team) => (
                   <div
                     key={team.id}
-                    className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="p-4 rounded-xl bg-slate-900/20 border border-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-800/80 transition duration-200"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -376,29 +309,29 @@ export default async function ParticipantDashboard(props: {
                           {team.isRegistered ? "Registered" : "Draft"}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">{team.hackathonName}</p>
+                      <p className="text-[10px] text-slate-455 mt-1 font-medium">{team.hackathonName}</p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between sm:justify-start gap-4">
                       {/* Teammates count */}
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-500" />
-                        <span className="text-xs font-bold text-slate-300">
+                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>
                           {team.memberCount} / {team.maxMembers}
                         </span>
                       </div>
                       <Link
                         href={`/participant/dashboard/register/${team.id}`}
-                        className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold transition-all text-center cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/60 text-slate-200 text-xs font-bold transition-all text-center cursor-pointer"
                       >
-                        {team.isRegistered ? "Manage Team" : "Continue"}
+                        {team.isRegistered ? "Manage" : "Continue"}
                       </Link>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
+              <div className="text-center py-10 border border-dashed border-slate-800/80 rounded-xl">
                 <p className="text-xs text-slate-500">You are not currently in any teams.</p>
                 <Link
                   href="/participant/hackathons"
@@ -411,35 +344,26 @@ export default async function ParticipantDashboard(props: {
           </div>
         </div>
 
-        {/* Right 1 Column - Upcoming Hackathons & Dates */}
-        <div className="flex flex-col gap-6">
+        {/* Right Column (Upcoming Events Timeline) */}
+        <div className="flex flex-col gap-5">
           <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Upcoming Events</h3>
-              <Link
-                href="/participant/hackathons"
-                className="text-[10px] text-teal-400 hover:text-teal-300 font-bold flex items-center gap-0.5"
-              >
-                Browse All <ChevronRight className="w-3 h-3" />
-              </Link>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-teal-400" />
+                Upcoming Events
+              </h3>
             </div>
 
             {availableHackathons.length > 0 ? (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 {availableHackathons.map((h) => (
                   <div
                     key={h.id}
-                    className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/60 flex flex-col gap-2 hover:border-slate-800 transition"
+                    className="p-4 rounded-xl bg-slate-900/20 border border-slate-900/60 flex flex-col gap-1.5 hover:border-slate-800 transition"
                   >
                     <h4 className="text-xs font-bold text-slate-200">{h.name}</h4>
-                    <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">
-                      {h.description || "No description provided."}
-                    </p>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/45 text-[10px]">
-                      <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                        <Calendar className="w-3.5 h-3.5 shrink-0" />
-                        Deadline: {formatDate(h.registration_deadline)}
-                      </div>
+                    <div className="flex items-center justify-between mt-1 text-[10px] text-slate-500 font-semibold">
+                      <span>Ends {formatDate(h.registration_deadline)}</span>
                       <Link
                         href={`/participant/dashboard/register/new?hackathonId=${h.id}`}
                         className="text-teal-450 hover:text-teal-350 font-bold flex items-center gap-0.5"
@@ -451,8 +375,8 @@ export default async function ParticipantDashboard(props: {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-xs text-slate-500">No upcoming hackathons open for registration.</p>
+              <div className="text-center py-10 border border-dashed border-slate-800/80 rounded-xl">
+                <p className="text-xs text-slate-500">No open hackathons found.</p>
               </div>
             )}
           </div>

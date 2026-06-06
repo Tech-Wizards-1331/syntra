@@ -51,4 +51,5 @@ Decisions are logged in PROJECT.md Key Decisions table.
 |---------|-------------|----------------|
 | 260605-vl9 | Fix team size and capacity calculations | 2026-06-05 |
 | 260605-mt4 | Implement registered teams capacity limit | 2026-06-05 |
+| 260606-dsh | Clean and streamline participant dashboard | 2026-06-06 |
 
