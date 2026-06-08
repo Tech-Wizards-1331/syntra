@@ -223,6 +223,13 @@ export default async function OrganizerDashboard({ searchParams }: PageProps) {
                   {/* Actions buttons */}
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
+                      href={`/organizer/scan?hackathonId=${h.id}`}
+                      className="p-2.5 rounded-xl bg-slate-950 border border-slate-850 hover:bg-slate-900 text-slate-400 hover:text-teal-400 transition text-xs font-semibold flex items-center gap-1.5"
+                    >
+                      <Scan className="w-3.5 h-3.5" />
+                      Scan
+                    </Link>
+                    <Link
                       href={`/organizer/dashboard/seating?hackathonId=${h.id}`}
                       className="p-2.5 rounded-xl bg-slate-950 border border-slate-850 hover:bg-slate-900 text-slate-400 hover:text-teal-400 transition text-xs font-semibold flex items-center gap-1.5"
                     >
