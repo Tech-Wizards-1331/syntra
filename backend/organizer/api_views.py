@@ -2,13 +2,28 @@ import csv
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 
-from .models import ProblemStatement, Hackathon
-from .api_serializers import ProblemStatementSerializer
+from django.db import models, transaction, IntegrityError
+from django.db.models import Q, Count
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from .models import ProblemStatement, Hackathon, ScanCategory, ScanRecord, HackathonCoordinator
+from .api_serializers import ProblemStatementSerializer, ScanCategorySerializer, ScannerScanRequestSerializer, ScannerSubmitRequestSerializer
+from .permissions import IsScannerAuthorized
+from participant.models import Team
 from .services.seating import get_teams_for_allocation, allocate
+
+
+
+class StandardResultsPagePagination(PageNumberPagination):
+    """20 results per page; clients can request up to 100 via ?page_size=N."""
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class IsOrganizerPermission(permissions.BasePermission):
     """Only allow users with the 'organizer' role."""
 
@@ -30,6 +45,7 @@ class ProblemStatementViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ProblemStatementSerializer
     permission_classes = [permissions.IsAuthenticated, IsOrganizerPermission]
+    pagination_class = StandardResultsPagePagination
 
     def get_queryset(self):
         return ProblemStatement.objects.filter(
@@ -88,11 +104,26 @@ class AllocateSeatsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        allocation_result = allocate(teams, rooms_config)
-        hackathon.seating_allocation = allocation_result
-        hackathon.save()
+        from django.db import transaction
 
-        return Response(allocation_result, status=status.HTTP_200_OK)
+        try:
+            allocation_result = allocate(teams, rooms_config)
+            with transaction.atomic():
+                locked_hackathon = Hackathon.objects.select_for_update().get(id=hackathon_id)
+                locked_hackathon.seating_allocation = allocation_result
+                locked_hackathon.save(update_fields=['seating_allocation'])
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to allocate seating: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response(
+            {
+                "message": "Seating allocation completed successfully."
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class ExportSeatingCSVView(APIView):
@@ -133,3 +164,219 @@ class ExportSeatingCSVView(APIView):
                         ])
 
         return response
+
+
+class ScanCategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = ScanCategorySerializer
+    permission_classes = [permissions.IsAuthenticated, IsScannerAuthorized]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'super_admin':
+            queryset = ScanCategory.objects.all()
+        else:
+            queryset = ScanCategory.objects.filter(
+                Q(hackathon__organizer__user=user) |
+                Q(hackathon__coordinators__user=user, hackathon__coordinators__is_active=True)
+            ).distinct()
+            
+        hackathon_id = self.request.query_params.get('hackathon')
+        if hackathon_id:
+            queryset = queryset.filter(hackathon_id=hackathon_id)
+        return queryset.annotate(scan_count=Count('scan_records')).order_by('display_order', 'created_at')
+
+    def perform_create(self, serializer):
+        hackathon = serializer.validated_data['hackathon']
+        user = self.request.user
+        is_authorized = False
+        if user.is_staff or getattr(user, 'role', None) == 'super_admin':
+            is_authorized = True
+        elif getattr(user, 'role', None) == 'organizer' and hackathon.organizer.user == user:
+            is_authorized = True
+        else:
+            is_authorized = hackathon.coordinators.filter(user=user, is_active=True).exists()
+            
+        if not is_authorized:
+            raise PermissionDenied("You can only add categories to hackathons you organize or coordinate.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        hackathon = serializer.validated_data.get('hackathon', serializer.instance.hackathon)
+        user = self.request.user
+        is_authorized = False
+        if user.is_staff or getattr(user, 'role', None) == 'super_admin':
+            is_authorized = True
+        elif getattr(user, 'role', None) == 'organizer' and hackathon.organizer.user == user:
+            is_authorized = True
+        else:
+            is_authorized = hackathon.coordinators.filter(user=user, is_active=True).exists()
+            
+        if not is_authorized:
+            raise PermissionDenied("You can only edit categories for hackathons you organize or coordinate.")
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.scan_records.exists():
+            raise ValidationError(
+                {"detail": "Cannot delete category as it already has associated scan records."}
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class ScannerScanView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsScannerAuthorized]
+
+    def post(self, request):
+        serializer = ScannerScanRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        qr_token = serializer.validated_data['qr_token']
+        scan_category_id = serializer.validated_data['scan_category_id']
+        
+        # 1. Fetch Team and validate qr_active (with query optimization)
+        try:
+            team = Team.objects.select_related('hackathon', 'hackathon__organizer__user').get(qr_token=qr_token)
+        except Team.DoesNotExist:
+            raise ValidationError({"qr_token": "Invalid QR token."})
+            
+        if not team.is_qr_active:
+            raise ValidationError({"qr_token": "This team's QR code is inactive."})
+            
+        # 2. Fetch ScanCategory
+        try:
+            scan_category = ScanCategory.objects.select_related('hackathon').get(id=scan_category_id)
+        except ScanCategory.DoesNotExist:
+            raise ValidationError({"scan_category_id": "Invalid scan category."})
+            
+        # 3. Verify team and scan category belong to the same hackathon
+        if team.hackathon_id != scan_category.hackathon_id:
+            raise ValidationError({"detail": "Team and scan category must belong to the same hackathon."})
+            
+        # 4. Scoped Contextual Authorization Check
+        hackathon = team.hackathon
+        is_authorized = False
+        
+        # Super admin / staff bypasses
+        if request.user.is_staff or request.user.role == 'super_admin':
+            is_authorized = True
+        elif request.user.role == 'organizer' and hackathon.organizer.user == request.user:
+            is_authorized = True
+        else:
+            # Check coordinator assigned to this specific hackathon
+            is_authorized = HackathonCoordinator.objects.filter(
+                hackathon=hackathon,
+                user=request.user,
+                is_active=True
+            ).exists()
+            
+        if not is_authorized:
+            raise PermissionDenied("You are not authorized to scan for this hackathon.")
+            
+        # 5. Fetch team members using prefetch_related for scan records
+        # Optimize query: filter members belonging to this team, prefetch their scan records for this category
+        members = team.members.prefetch_related(
+            models.Prefetch(
+                'scan_records',
+                queryset=ScanRecord.objects.filter(scan_category=scan_category),
+                to_attr='category_scans'
+            )
+        )
+        
+        member_data = []
+        for m in members:
+            # Check if scanned (already prefetched)
+            already_scanned = len(m.category_scans) > 0
+            member_data.append({
+                "id": m.id,
+                "name": m.name,
+                "already_scanned": already_scanned
+            })
+            
+        return Response({
+            "team_name": team.name,
+            "members": member_data
+        }, status=status.HTTP_200_OK)
+
+
+class ScannerSubmitView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsScannerAuthorized]
+
+    def post(self, request):
+        serializer = ScannerSubmitRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        qr_token = serializer.validated_data['qr_token']
+        scan_category_id = serializer.validated_data['scan_category_id']
+        member_ids = serializer.validated_data['member_ids']
+        device_id = serializer.validated_data.get('device_id')
+        
+        # 1. Fetch Team and validate qr_active (with query optimization)
+        try:
+            team = Team.objects.select_related('hackathon', 'hackathon__organizer__user').get(qr_token=qr_token)
+        except Team.DoesNotExist:
+            raise ValidationError({"qr_token": "Invalid QR token."})
+            
+        if not team.is_qr_active:
+            raise ValidationError({"qr_token": "This team's QR code is inactive."})
+            
+        # 2. Fetch ScanCategory
+        try:
+            scan_category = ScanCategory.objects.select_related('hackathon').get(id=scan_category_id)
+        except ScanCategory.DoesNotExist:
+            raise ValidationError({"scan_category_id": "Invalid scan category."})
+            
+        # 3. Verify team and scan category belong to the same hackathon
+        if team.hackathon_id != scan_category.hackathon_id:
+            raise ValidationError({"detail": "Team and scan category must belong to the same hackathon."})
+            
+        # 4. Scoped Contextual Authorization Check
+        hackathon = team.hackathon
+        is_authorized = False
+        
+        if request.user.is_staff or request.user.role == 'super_admin':
+            is_authorized = True
+        elif request.user.role == 'organizer' and hackathon.organizer.user == request.user:
+            is_authorized = True
+        else:
+            is_authorized = HackathonCoordinator.objects.filter(
+                hackathon=hackathon,
+                user=request.user,
+                is_active=True
+            ).exists()
+            
+        if not is_authorized:
+            raise PermissionDenied("You are not authorized to scan for this hackathon.")
+            
+        # 5. Validate that all member_ids belong to this team
+        team_member_ids = set(team.members.values_list('id', flat=True))
+        if not set(member_ids).issubset(team_member_ids):
+            raise ValidationError({"member_ids": "One or more members do not belong to the scanned team."})
+            
+        # 6. Database writes in a transaction block, handling IntegrityError
+        try:
+            with transaction.atomic():
+                scan_records_to_create = []
+                for m_id in member_ids:
+                    # Double scan check at code level first to give better warning, but DB uniqueness is final guard
+                    if ScanRecord.objects.filter(team_member_id=m_id, scan_category=scan_category).exists():
+                        raise ValidationError({"detail": "One or more team members have already been scanned for this category."})
+                    
+                    scan_records_to_create.append(
+                        ScanRecord(
+                            team_member_id=m_id,
+                            scan_category=scan_category,
+                            scanned_by=request.user,
+                            device_id=device_id
+                        )
+                    )
+                ScanRecord.objects.bulk_create(scan_records_to_create)
+        except IntegrityError:
+            # Handles concurrent duplicate scans from other requests reaching the DB bulk_create at the same time
+            raise ValidationError({"detail": "One or more team members have already been scanned for this category."})
+            
+        return Response({
+            "status": "success",
+            "message": f"Scanned {len(member_ids)} members successfully"
+        }, status=status.HTTP_200_OK)
+

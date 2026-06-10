@@ -205,10 +205,8 @@
                 <div class="section-label label-teal">Account</div>
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label">Full Name</label>
-                        <div class="field-value {% if not user.full_name %}empty{% endif %}">
-                            {{ user.full_name|default:"Not provided" }}
-                        </div>
+                        <label class="form-label">Full Name <span style="color:#f87171">*</span></label>
+                        {{ form.full_name }}
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Email</label>

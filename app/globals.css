@@ -1,0 +1,355 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Apple Design Tokens ────────────────────────────────────────── */
+:root {
+  --primary: #0066cc;
+  --primary-focus: #0071e3;
+  --primary-dark: #2997ff;
+  --ink: #1d1d1f;
+  --ink-muted: #7a7a7a;
+  --ink-dark: #333333;
+  --canvas: #ffffff;
+  --canvas-parchment: #f5f5f7;
+  --canvas-pearl: #fafafc;
+  
+  --tile-1: #272729;
+  --tile-2: #2a2a2c;
+  --tile-3: #252527;
+  --tile-black: #000000;
+
+  --success: #24a148;
+  --warning: #ff9f0a;
+  --danger: #ff453a;
+  --info: #0a84ff;
+
+  --font-sf-display: "SF Pro Display", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-sf-text: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+
+  --transition-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body {
+  color: var(--ink);
+  background: var(--canvas-parchment);
+  font-family: var(--font-sf-text), 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Keyframe Animations ────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes progress-countdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── Animation Utilities ────────────────────────────────────────── */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s var(--transition-smooth) both;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s var(--transition-smooth) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.35s var(--transition-smooth) both;
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+}
+
+.animate-progress-countdown {
+  animation: progress-countdown 4s linear forwards;
+}
+
+.animate-backdrop-in {
+  animation: backdrop-in 0.2s ease-out both;
+}
+
+.animate-modal-in {
+  animation: modal-in 0.3s var(--transition-bounce) both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Stagger delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* ─── Custom Scrollbar (Apple Light) ─────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Focus Ring (Apple Primary) ─────────────────────────────────── */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+}
+
+/* ─── Skeleton Loaders (Apple Light Theme) ────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.08) 40%,
+    rgba(0, 0, 0, 0.06) 50%,
+    rgba(0, 0, 0, 0.08) 60%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text-sm {
+  height: 10px;
+  margin-bottom: 6px;
+}
+
+.skeleton-text-lg {
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+.skeleton-heading {
+  height: 28px;
+  margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.skeleton-avatar-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.skeleton-badge {
+  height: 24px;
+  width: 80px;
+  border-radius: 9999px;
+}
+
+.skeleton-button {
+  height: 40px;
+  border-radius: 12px;
+}
+
+.skeleton-card {
+  border-radius: 16px;
+  padding: 20px;
+  background: var(--canvas);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.skeleton-progress {
+  height: 6px;
+  border-radius: 9999px;
+}
+
+/* ─── Apple UX Utilities ─────────────────────────────────────────── */
+.font-apple-hero {
+  font-family: var(--font-sf-display), Inter, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.07;
+}
+
+.font-apple-display {
+  font-family: var(--font-sf-display), Inter, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.font-apple-tagline {
+  font-family: var(--font-sf-display), Inter, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.011em;
+  line-height: 1.19;
+}
+
+.apple-press-effect {
+  transition: transform 0.12s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.apple-press-effect:active {
+  transform: scale(0.96);
+}
+
+.apple-hairline {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.apple-hairline-dark {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.apple-shadow-product {
+  box-shadow: 3px 5px 30px rgba(0, 0, 0, 0.22);
+}
+
+.apple-shadow-overlay {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Apple Glassmorphism Utilities (VisionOS Style) ────────────── */
+.apple-glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.apple-glass-panel {
+  background: rgba(245, 245, 247, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.apple-glass-modal {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.apple-glass-nav {
+  background: rgba(245, 245, 247, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.apple-mesh-bg {
+  background-color: var(--canvas-parchment);
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(200, 220, 255, 0.2) 0px, transparent 60%),
+    radial-gradient(at 80% 20%, rgba(240, 210, 255, 0.2) 0px, transparent 50%),
+    radial-gradient(at 30% 60%, rgba(255, 220, 230, 0.2) 0px, transparent 60%),
+    radial-gradient(at 90% 80%, rgba(210, 240, 255, 0.2) 0px, transparent 50%);
+  background-attachment: fixed;
+  background-size: 100vw 100vh;
+}

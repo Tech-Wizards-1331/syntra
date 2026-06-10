@@ -1,0 +1,262 @@
+"use client";
+
+import React, { useState, useEffect, useTransition } from "react";
+import {
+  getIncomingInvites,
+  acceptTeamInvite,
+  declineTeamInvite,
+  toggleRecruitingVisibility,
+} from "@/app/actions/teamRequests";
+import { Mail, Check, X, Loader2, EyeOff, Eye, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import CustomModal from "./CustomModal";
+import ToastContainer, { ToastMessage } from "./ToastContainer";
+
+/**
+ * Inbox & Recruiting section — matches Django's dashboard "Inbox & Recruiting" section.
+ * Shows:
+ * - Recruiting Profile visibility toggle
+ * - Incoming team invites with Accept/Decline buttons
+ */
+export default function InboxSection({
+  initialVisibility,
+  hasTeam,
+}: {
+  initialVisibility: boolean;
+  hasTeam: boolean;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [visible, setVisible] = useState(initialVisibility);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
+  const [invites, setInvites] = useState<
+    { id: number; teamName: string; hackathonName: string; createdAt: string }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  // UX Enhancements States
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    type: "confirm" | "alert";
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+  }>({
+    title: "",
+    message: "",
+    type: "alert",
+    onConfirm: () => {},
+  });
+
+  const addToast = (message: string, type: "success" | "error" | "warning") => {
+    setToasts((prev) => [...prev, { id: Date.now(), message, type }]);
+  };
+
+  const showConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    confirmText = "Confirm",
+    cancelText = "Cancel"
+  ) => {
+    setModalConfig({
+      title,
+      message,
+      type: "confirm",
+      confirmText,
+      cancelText,
+      onConfirm: () => {
+        onConfirm();
+        setModalOpen(false);
+      },
+    });
+    setModalOpen(true);
+  };
+
+  useEffect(() => {
+    loadInvites();
+  }, []);
+
+  const loadInvites = async () => {
+    try {
+      const data = await getIncomingInvites();
+      setInvites(data);
+    } catch { /* ignore */ } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleVisibility = async () => {
+    const newVis = !visible;
+    setTogglingVisibility(true);
+    try {
+      await toggleRecruitingVisibility(newVis);
+      setVisible(newVis);
+      if (!newVis) {
+        setInvites([]); // Turning off clears pending invites (Django parity)
+      }
+    } catch { /* ignore */ } finally {
+      setTogglingVisibility(false);
+    }
+  };
+
+  const handleAccept = async (id: number, teamName: string) => {
+    showConfirm(
+      "Accept Invitation",
+      `Are you sure you want to join team "${teamName}"?`,
+      async () => {
+        setProcessingId(id);
+        try {
+          await acceptTeamInvite(id);
+          addToast(`Successfully joined team "${teamName}"!`, "success");
+          setInvites((prev) => prev.filter((inv) => inv.id !== id));
+          setTimeout(() => {
+            router.refresh();
+          }, 1000);
+        } catch (e: any) {
+          addToast(e.message || "Failed to accept invite.", "error");
+        } finally {
+          setProcessingId(null);
+        }
+      },
+      "Join Team",
+      "Cancel"
+    );
+  };
+
+  const handleDecline = async (id: number, teamName: string) => {
+    showConfirm(
+      "Decline Invitation",
+      `Are you sure you want to decline the invitation from team "${teamName}"?`,
+      async () => {
+        setProcessingId(id);
+        try {
+          await declineTeamInvite(id);
+          addToast(`Declined invitation from team "${teamName}".`, "success");
+          setInvites((prev) => prev.filter((inv) => inv.id !== id));
+        } catch (e: any) {
+          addToast(e.message || "Failed to decline invite.", "error");
+        } finally {
+          setProcessingId(null);
+        }
+      },
+      "Decline",
+      "Cancel"
+    );
+  };
+
+  return (
+    <div>
+      {/* Header with toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
+          <Mail className="w-4 h-4 text-primary" />
+          Inbox & Recruiting
+        </h2>
+        <div className="flex items-center gap-3 bg-canvas-parchment border border-black/[0.06] rounded-md px-4 py-2.5">
+          <div>
+            <p className="text-[11px] font-semibold text-ink">Recruiting Profile</p>
+            <p className="text-[10px] text-ink-muted">
+              {hasTeam ? "Disabled (Already in a team)" : "Let teams find you"}
+            </p>
+          </div>
+          <button
+            onClick={handleToggleVisibility}
+            disabled={hasTeam || togglingVisibility}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+              visible ? "bg-primary" : "bg-black/[0.12]"
+            }`}
+            aria-pressed={visible}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                visible ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      {!visible ? (
+        <div className="rounded-md border border-dashed border-black/[0.12] bg-canvas-parchment/50 py-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-canvas-parchment flex items-center justify-center mx-auto mb-3 border border-black/[0.04]">
+            <EyeOff className="w-5 h-5 text-ink-muted" />
+          </div>
+          <p className="text-sm font-medium text-ink">Your profile is hidden</p>
+          <p className="text-xs text-ink-muted mt-1">
+            Turn on visibility to allow Team Leaders to find you and send invitations.
+          </p>
+        </div>
+      ) : loading ? (
+        <div className="py-8 text-center">
+          <Loader2 className="w-5 h-5 text-ink-muted animate-spin mx-auto" />
+        </div>
+      ) : invites.length === 0 ? (
+        <div className="rounded-md border border-dashed border-black/[0.12] bg-canvas-parchment/50 py-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 border border-primary/10">
+            <Eye className="w-5 h-5 text-primary/50" />
+          </div>
+          <p className="text-sm text-ink-muted font-medium">No pending team invitations.</p>
+          <p className="text-xs text-ink-muted mt-1">Your profile is visible — teams can find and invite you.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {invites.map((inv, idx) => (
+            <div
+              key={inv.id}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-black/[0.06] bg-canvas-parchment/30 hover:bg-canvas-parchment/60 gap-3 transition-all animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink">{inv.teamName}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">Hackathon: {inv.hackathonName}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={() => handleAccept(inv.id, inv.teamName)}
+                  disabled={processingId === inv.id}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-success-light hover:bg-success/10 border border-success/15 text-success text-xs font-semibold rounded-md transition-all apple-press-effect cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-3 h-3" />
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleDecline(inv.id, inv.teamName)}
+                  disabled={processingId === inv.id}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-danger-light hover:bg-danger/10 border border-danger/15 text-danger text-xs font-semibold rounded-md transition-all apple-press-effect cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  <X className="w-3 h-3" />
+                  Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <CustomModal
+        isOpen={modalOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalOpen(false)}
+      />
+
+      <ToastContainer
+        toasts={toasts}
+        onClose={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+      />
+    </div>
+  );
+}

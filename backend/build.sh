@@ -7,6 +7,13 @@ echo "▶ Installing Python dependencies…"
 pip install --upgrade pip
 pip install -r requirements.txt
 
+echo "▶ Building compiled Tailwind CSS…"
+# Run from the project root (where package.json lives)
+cd ..
+npm install --prefer-offline
+npm run build:css
+cd backend
+
 echo "▶ Collecting static files…"
 python manage.py collectstatic --no-input
 

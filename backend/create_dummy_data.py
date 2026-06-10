@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 # Set up django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'syntra.settings')
 django.setup()
 
 from accounts.models import User
@@ -69,7 +69,7 @@ def create_data():
             
         profile, _ = ParticipantProfile.objects.get_or_create(
             user=user, 
-            defaults={'looking_for_team': True}
+            defaults={'college': 'Syntra College', 'semester': 4, 'degree': 'B.Tech', 'visibility': True}
         )
         
         # Add skills

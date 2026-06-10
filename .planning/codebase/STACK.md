@@ -1,20 +1,18 @@
-# Stack
+# Technology Stack: Django to Next.js
 
-## Backend
-- **Framework:** Django 6.0.3 (Python 3.12.3)
-- **API:** Django REST Framework (DRF) 3.16.1
-- **Database:** PostgreSQL (production via Supabase), SQLite (local dev)
-- **Authentication:** `django-allauth` for OAuth, `djangorestframework-simplejwt` for API tokens.
-- **Background Tasks:** `django-celery-beat` (installed, but Celery config currently commented/removed in settings).
+## Legacy Django/DRF Stack
+*   **Backend Framework:** Django 6.0.3 (Python 3.12.3)
+*   **REST APIs:** Django REST Framework 3.16.1
+*   **Database:** PostgreSQL (Supabase production), SQLite (local development)
+*   **Authentication:** `django-allauth` (Google/GitHub OAuth) & `djangorestframework-simplejwt` (JWT for APIs)
+*   **Templating & Serving:** Django Templates with WhiteNoise 6.12.0 for static asset compression.
 
-## Frontend
-- **Templating:** Django Templates (`frontend/templates/`)
-- **Static Assets:** Vanilla CSS/JS (`frontend/static/`)
-- **Static File Serving:** WhiteNoise 6.12.0
+---
 
-## Infrastructure
-- **Hosting:** Render.com (`render.yaml`)
-- **Environment Management:** `python-dotenv` for local `.env`
+## Target Next.js Stack
+*   **Full-Stack Framework:** Next.js 15+ (App Router, TypeScript)
+*   **Database Client / ORM:** Prisma ORM (for schema introspection and type-safe query execution)
+*   **Authentication:** Auth.js (NextAuth) supporting Google, GitHub, and legacy Credential authentication (PBKDF2/MD5 hashed passwords).
+*   **Styling & UI:** TailwindCSS & Vanilla CSS.
+*   **Deployment & Infrastructure:** Render.com (via `render.yaml`) / Vercel.
 
-## Rationale
-The stack uses robust, proven Python technologies to quickly bootstrap the hackathon management platform, leveraging Render for zero-downtime deployment and Supabase for a managed PostgreSQL instance.

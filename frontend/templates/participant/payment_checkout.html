@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntra | Checkout</title>    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-tech { font-family: 'Orbitron', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+
+    <!-- Nav -->
+    <nav class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-teal-300/40 bg-teal-400/15 text-xs font-bold text-teal-200">S</span>
+                <span class="font-tech text-sm tracking-[0.18em] text-white">Syntra</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:block text-sm text-slate-400">{{ user.email }}</span>
+                <a href="{% url 'dashboard' %}" class="rounded-lg border border-slate-600/60 bg-slate-900/40 px-4 py-2 text-sm font-medium text-slate-300 hover:border-teal-400/50 hover:text-teal-300 transition-all">
+                    ← Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-xl mx-auto px-4 sm:px-6 py-12">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-extrabold text-white">Payment Checkout</h1>
+            <p class="mt-2 text-sm text-slate-400">Complete your registration for <span class="font-bold text-teal-300">{{ payment.team.hackathon.name }}</span></p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-700/50 bg-slate-900/50 backdrop-blur-sm p-6 sm:p-8">
+            <div class="mb-6 bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
+                <div class="flex justify-between mb-3 text-slate-300 text-sm">
+                    <span class="text-slate-400">Team Name</span>
+                    <span class="font-medium text-white">{{ payment.team.name }}</span>
+                </div>
+                <div class="flex justify-between mb-3 text-slate-300 text-sm">
+                    <span class="text-slate-400">Team Size</span>
+                    <span class="font-medium text-white">{{ payment.team.members.count|add:"1" }}</span>
+                </div>
+                <div class="flex justify-between font-bold text-xl border-t border-slate-700 mt-5 pt-5 text-white">
+                    <span>Total Amount</span>
+                    <span class="text-teal-400">₹{{ payment.amount }}</span>
+                </div>
+            </div>
+
+            <!-- The form that handles the post-payment submission -->
+            <form action="{% url 'payment-verify' payment.id %}" method="POST" id="razorpay-form" class="hidden">
+                {% csrf_token %}
+                <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+                <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+            </form>
+
+            <button id="rzp-button1" class="w-full rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:from-teal-400 hover:to-teal-500 transition-all text-center">
+                Pay Now (Demo)
+            </button>
+        </div>
+    </main>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "{{ razorpay_key_id }}",
+    "name": "Syntra Hackathons",
+    "description": "Registration Fee for {{ payment.team.hackathon.name }}",
+    "order_id": "{{ payment.razorpay_order_id }}",
+    "handler": function (response){
+        document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+        document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+        document.getElementById('razorpay_signature').value = response.razorpay_signature;
+        document.getElementById('razorpay-form').submit();
+    },
+    "prefill": {
+        "name": "{{ request.user.full_name|default:request.user.email }}",
+        "email": "{{ request.user.email }}"
+    },
+    "theme": {
+        "color": "#14b8a6" // teal-500
+    }
+};
+var rzp1 = new Razorpay(options);
+rzp1.on('payment.failed', function (response){
+        alert("Payment Failed: " + response.error.description);
+});
+document.getElementById('rzp-button1').onclick = function(e){
+    rzp1.open();
+    e.preventDefault();
+}
+</script>
+</body>
+</html>

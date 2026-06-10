@@ -7,6 +7,7 @@ from .views import (
     EditProblemStatementView,
     DeleteProblemStatementView,
     RunSeatingAllocationView,
+    QRScannerView,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('hackathon/<int:hackathon_id>/edit-problem-statement/<int:pk>/', EditProblemStatementView.as_view(), name='organizer-edit-problem-statement'),
     path('hackathon/<int:hackathon_id>/delete-problem-statement/<int:pk>/', DeleteProblemStatementView.as_view(), name='organizer-delete-problem-statement'),
     path('hackathon/<int:hackathon_id>/run-seating/', RunSeatingAllocationView.as_view(), name='organizer-run-seating'),
+    path('hackathon/<int:hackathon_id>/scanner/', QRScannerView.as_view(), name='organizer-qr-scanner'),
 ]

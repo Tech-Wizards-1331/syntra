@@ -24,6 +24,19 @@ _env_path = BASE_DIR.parent / '.env'
 if _env_path.exists():
     load_dotenv(_env_path)
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+sentry_dsn = os.getenv('SENTRY_DSN')
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        environment=os.getenv('ENV', 'development'),
+    )
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -76,13 +89,13 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    'django_celery_beat',
     'accounts',
     'organizer',
     'participant',
@@ -93,6 +106,7 @@ AUTH_USER_MODEL = 'accounts.User'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',          # ← static files in production
+    'syntra.middleware.RequestTimingMiddleware',           # ← slow-request logger
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -112,8 +126,9 @@ SITE_ID = 1
 LOGIN_REDIRECT_URL = '/accounts/social-redirect/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
@@ -146,7 +161,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'accounts.authentication.CookieJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -163,12 +178,17 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [FRONTEND_DIR / 'templates'],
-        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+            ],
+            'loaders': [
+                ('django.template.loaders.cached.Loader', [
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                ]),
             ],
         },
     },
@@ -183,8 +203,11 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'                   # ← collectstatic output
 STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage' if not DEBUG else 'django.contrib.staticfiles.storage.StaticFilesStorage',
     },
 }
 
@@ -196,7 +219,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Uses DATABASE_URL env var in production (Supabase PostgreSQL).
 # Falls back to SQLite for local development.
 _database_url = os.getenv('DATABASE_URL', '')
-if _database_url:
+if _database_url and not _database_url.startswith('prisma+postgres'):
     DATABASES = {
         'default': dj_database_url.config(
             default=_database_url,
@@ -256,6 +279,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Define password hashers for production (Weak CPU fix)
+PASSWORD_HASHERS = [
+    'accounts.hashers.FastPBKDF2PasswordHasher', # Fast hasher for weak CPUs
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher', # Fallback for existing passwords
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
+if DEBUG:
+    # Override with MD5 locally for completely instant logins
+    PASSWORD_HASHERS.insert(0, 'django.contrib.auth.hashers.MD5PasswordHasher')
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -273,6 +309,67 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Caching ───────────────────────────────────────────────────────────────────
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+# Keep session auth for template pages without writing every login to
+# django_session. Set SESSION_ENGINE in the environment to override this.
+SESSION_ENGINE = os.getenv(
+    'SESSION_ENGINE',
+    'django.contrib.sessions.backends.signed_cookies',
+)
+
+# Updating last_login adds an extra user-table write to every successful login.
+AUTH_UPDATE_LAST_LOGIN = os.getenv('AUTH_UPDATE_LAST_LOGIN', 'False').lower() in ('true', '1', 'yes')
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # Slow-request performance logger
+        'syntra.perf': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Django request errors (500s etc.)
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
 
 # ── Social Auth (Google + GitHub OAuth) ──────────────────────────────────────
 # 1. pip install social-auth-app-django
@@ -325,3 +422,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31_536_000          # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# ── Razorpay Payment Integration ─────────────────────────────────────────────
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '').strip()
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '').strip()

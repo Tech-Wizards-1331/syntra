@@ -7,9 +7,9 @@ from django.views import View
 from django.views.generic import TemplateView, CreateView, DetailView, DeleteView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
-from .models import Hackathon, OrganizerProfile, ProblemStatement
+from .models import Hackathon, OrganizerProfile, ProblemStatement, ScanCategory
 from .forms import HackathonForm, ProblemStatementForm
 from .services.seating import get_teams_for_allocation, allocate
 
@@ -78,14 +78,27 @@ class HackathonDetailView(OrganizerMixin, DetailView):
         hackathon = self.get_object()
         return hackathon.organizer.user == self.request.user
 
+    def get_queryset(self):
+        """Only fetch hackathons for this organizer, with related organizer profile in one query."""
+        return (
+            Hackathon.objects
+            .select_related('organizer', 'organizer__user')
+            .filter(organizer__user=self.request.user)
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        hackathon = self.get_object()
-        # Annotate team counts in a single query (fetched once, cached by Django ORM)
+        # Use self.object — already fetched by DetailView, avoids a duplicate DB hit
+        hackathon = self.object
         context['problem_statements'] = (
             hackathon.problem_statements
             .annotate(teams_count=Count('selected_by_teams'))
             .order_by('-created_at')
+        )
+        context['scan_categories'] = (
+            hackathon.scan_categories
+            .annotate(scan_count=Count('scan_records'))
+            .order_by('display_order', 'created_at')
         )
         context['room_configuration_json'] = json.dumps(
             hackathon.room_configuration
@@ -217,3 +230,46 @@ class RunSeatingAllocationView(OrganizerMixin, View):
 
         messages.success(request, 'Seating allocation completed successfully!')
         return redirect('organizer-hackathon-detail', pk=hackathon_id)
+
+
+class QRScannerView(OrganizerMixin, View):
+    """QR Scanner interface for organizers to scan team QR codes."""
+
+    def test_func(self):
+        """Allow organizers and coordinators to access the scanner."""
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        # Allow organizer role
+        if getattr(user, 'role', None) == 'organizer':
+            return True
+        # Allow coordinators assigned to any hackathon
+        if user.is_staff or getattr(user, 'role', None) == 'super_admin':
+            return True
+        from .models import HackathonCoordinator
+        return HackathonCoordinator.objects.filter(user=user, is_active=True).exists()
+
+    def get(self, request, hackathon_id):
+        hackathon = get_object_or_404(Hackathon, pk=hackathon_id)
+
+        # Ownership or coordinator check
+        is_owner = hackathon.organizer.user == request.user
+        from .models import HackathonCoordinator
+        is_coordinator = HackathonCoordinator.objects.filter(
+            hackathon=hackathon, user=request.user, is_active=True
+        ).exists()
+        is_admin = request.user.is_staff or getattr(request.user, 'role', None) == 'super_admin'
+
+        if not (is_owner or is_coordinator or is_admin):
+            messages.error(request, 'You are not authorized to scan for this hackathon.')
+            return redirect('dashboard')
+
+        from .models import ScanCategory
+        scan_categories = ScanCategory.objects.filter(
+            hackathon=hackathon, is_active=True
+        ).order_by('display_order', 'created_at')
+
+        return render(request, 'organizer/qr_scanner.html', {
+            'hackathon': hackathon,
+            'scan_categories': scan_categories,
+        })

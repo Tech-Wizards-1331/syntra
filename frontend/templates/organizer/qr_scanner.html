@@ -1,0 +1,1083 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Syntra | QR Scanner — {{ hackathon.name }}</title>
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="{% static 'js/api_client.js' %}"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-tech { font-family: 'Orbitron', sans-serif; }
+
+        /* ── Animations ── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-ring {
+            0%   { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes scan-line {
+            0%   { top: 0; }
+            50%  { top: calc(100% - 2px); }
+            100% { top: 0; }
+        }
+        @keyframes checkmark-pop {
+            0%   { transform: scale(0); opacity: 0; }
+            50%  { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shimmer {
+            0%   { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .animate-fade-in   { animation: fadeInUp 0.45s ease-out both; }
+        .animate-fade-in-1 { animation-delay: 0.06s; }
+        .animate-fade-in-2 { animation-delay: 0.12s; }
+        .animate-fade-in-3 { animation-delay: 0.18s; }
+        .animate-fade-in-4 { animation-delay: 0.24s; }
+
+        /* ── Glass / Premium tokens ── */
+        .glass {
+            background: linear-gradient(160deg, rgba(17,27,46,0.72), rgba(11,18,32,0.9));
+            border: 1px solid rgba(148,163,184,0.18);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 20px 50px rgba(2,6,23,0.45);
+        }
+        .glow-ring {
+            border-color: rgba(45,212,191,0.34);
+            box-shadow: 0 0 0 1px rgba(45,212,191,0.24), 0 0 28px rgba(45,212,191,0.12), 0 0 60px rgba(234,179,8,0.1);
+        }
+        .hover-lift {
+            transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            border-color: rgba(45,212,191,0.35);
+            box-shadow: 0 20px 35px rgba(2,6,23,0.52), 0 0 20px rgba(45,212,191,0.12);
+        }
+        .btn-primary {
+            border: 1px solid rgba(45,212,191,0.55);
+            background: linear-gradient(120deg, rgba(45,212,191,0.22), rgba(234,179,8,0.26));
+            color: #ccfbf1;
+            transition: transform 220ms ease, box-shadow 220ms ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            border-color: rgba(94,234,212,0.78);
+            box-shadow: 0 0 0 1px rgba(45,212,191,0.28), 0 0 28px rgba(45,212,191,0.2), 0 0 48px rgba(251,113,133,0.18);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Scanner viewport ── */
+        #scanner-viewport {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(45, 212, 191, 0.3);
+        }
+        #scanner-viewport video {
+            border-radius: 1.25rem;
+        }
+        #scanner-viewport #qr-reader {
+            border: none !important;
+        }
+        #scanner-viewport #qr-reader__scan_region {
+            min-height: 280px;
+        }
+        /* Hide the built-in file scan UI */
+        #qr-reader__dashboard_section_csr,
+        #qr-reader__dashboard_section_fsr,
+        #qr-reader__dashboard,
+        #qr-reader__header_message,
+        #qr-reader__status_span {
+            display: none !important;
+        }
+
+        /* ── Processing overlay ── */
+        .scanner-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 20;
+            border-radius: 1.25rem;
+        }
+        .scanner-overlay .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(45, 212, 191, 0.2);
+            border-top-color: #2dd4bf;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Toolbar buttons ── */
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            min-height: 44px;
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(100, 116, 139, 0.35);
+            background: rgba(15, 23, 42, 0.6);
+            color: #cbd5e1;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 200ms ease;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .toolbar-btn:hover {
+            border-color: rgba(45, 212, 191, 0.5);
+            color: #2dd4bf;
+            background: rgba(45, 212, 191, 0.08);
+        }
+        .toolbar-btn:active {
+            transform: scale(0.96);
+        }
+        .toolbar-btn.active {
+            border-color: rgba(250, 204, 21, 0.5);
+            color: #facc15;
+            background: rgba(250, 204, 21, 0.1);
+        }
+        .toolbar-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ── Input styling ── */
+        .syntra-input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            background: rgba(15, 23, 42, 0.6);
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            min-height: 44px;
+        }
+        .syntra-input:focus {
+            border-color: rgba(45, 212, 191, 0.5);
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        }
+        .syntra-input::placeholder { color: #64748b; }
+
+        .syntra-select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            background: rgba(15, 23, 42, 0.6);
+            color: #e2e8f0;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            min-height: 44px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+        .syntra-select:focus {
+            border-color: rgba(45, 212, 191, 0.5);
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        }
+
+        /* ── Modal ── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 1rem;
+            animation: fadeIn 0.2s ease-out;
+        }
+        @media (min-width: 640px) {
+            .modal-backdrop {
+                align-items: center;
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        .modal-panel {
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 1.5rem 1.5rem 1rem 1rem;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @media (min-width: 640px) {
+            .modal-panel {
+                border-radius: 1.5rem;
+            }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Team member row ── */
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(100, 116, 139, 0.15);
+            background: rgba(15, 23, 42, 0.4);
+            transition: all 200ms;
+        }
+        .member-row:hover {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .member-row.already-scanned {
+            opacity: 0.55;
+            background: rgba(16, 185, 129, 0.05);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+        .member-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #2dd4bf;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .member-checkbox:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* ── Success flash overlay ── */
+        .success-flash {
+            position: fixed;
+            inset: 0;
+            background: rgba(16, 185, 129, 0.25);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: flashFade 0.5s ease-out forwards;
+        }
+        @keyframes flashFade {
+            0%   { opacity: 1; }
+            60%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .success-flash .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.3);
+            border: 3px solid #10b981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: checkmark-pop 0.35s ease-out both;
+        }
+        .success-flash .checkmark svg {
+            width: 40px;
+            height: 40px;
+            color: #10b981;
+        }
+
+        /* ── Toast container ── */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: calc(100% - 2rem);
+            max-width: 400px;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 0.875rem 1.125rem;
+            border-radius: 0.875rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            backdrop-filter: blur(12px);
+            pointer-events: auto;
+            animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 3s forwards;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toast-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #6ee7b7;
+        }
+        .toast-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to   { opacity: 0; transform: translateY(-8px); }
+        }
+
+        /* ── Misc ── */
+        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+        @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.15)} }
+
+        .shimmer-text {
+            background: linear-gradient(90deg, #94a3b8, #e2e8f0, #94a3b8);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 2s linear infinite;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.3); border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+
+    <!-- ═══ Toast Container ═══ -->
+    <div id="toast-container"></div>
+
+    <!-- ═══ Nav ═══ -->
+    <nav class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 shrink-0">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-teal-300/40 bg-teal-400/15 text-xs font-bold text-teal-200">S</span>
+                <span class="font-tech text-sm tracking-[0.18em] text-white">Syntra</span>
+            </a>
+            <div class="flex items-center gap-2 sm:gap-4 min-w-0">
+                <a href="{% url 'organizer-hackathon-detail' hackathon.pk %}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-600/60 bg-slate-900/40 px-3 py-2 text-sm font-medium text-slate-300 hover:border-teal-400/50 hover:text-teal-300 transition-all shrink-0 min-h-[40px]">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    <span class="hidden sm:inline">Back</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-lg mx-auto px-4 py-5 sm:py-8 pb-24">
+
+        <!-- ═══ Header ═══ -->
+        <div class="text-center mb-5 animate-fade-in">
+            <p class="text-xs uppercase tracking-[0.2em] text-teal-200 font-tech mb-1">Scanner</p>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-white leading-tight">QR Scanner</h1>
+            <p class="text-sm text-slate-400 mt-1 truncate">{{ hackathon.name }}</p>
+        </div>
+
+        <!-- ═══ Category Selector ═══ -->
+        <div class="mb-5 animate-fade-in animate-fade-in-1">
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Scan Category</label>
+            {% if scan_categories %}
+                {% with has_active=False %}
+                {% for cat in scan_categories %}
+                    {% if cat.is_active %}
+                        {% with has_active=True %}{% endwith %}
+                    {% endif %}
+                {% endfor %}
+                {% endwith %}
+                <select id="category-select" class="syntra-select" onchange="onCategoryChange()">
+                    <option value="" disabled selected>Select a category…</option>
+                    {% for cat in scan_categories %}
+                        {% if cat.is_active %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <div id="no-active-categories" class="hidden rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm font-medium text-yellow-300 mt-3">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        No active scan categories available
+                    </div>
+                </div>
+            {% else %}
+                <div class="rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm font-medium text-yellow-300">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        No active scan categories available
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ═══ Scanner Card ═══ -->
+        <div id="scanner-card" class="glass glow-ring rounded-3xl p-4 sm:p-6 mb-5 animate-fade-in animate-fade-in-2 relative overflow-hidden">
+            <!-- Gradient accent bar -->
+            <div class="absolute top-0 left-0 right-0 h-[2px] rounded-t-3xl bg-gradient-to-r from-teal-400 via-yellow-400 to-rose-400"></div>
+
+            <!-- Camera permission error -->
+            <div id="camera-error" class="hidden rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-4 text-center mb-4">
+                <svg class="h-10 w-10 text-red-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                <p class="text-sm font-semibold text-red-300 mb-1">Camera permission denied</p>
+                <p class="text-xs text-red-400/80">Use manual entry instead.</p>
+            </div>
+
+            <!-- Scanner viewport -->
+            <div id="scanner-viewport">
+                <div id="qr-reader" style="width:100%;"></div>
+                <!-- Processing overlay -->
+                <div id="processing-overlay" class="scanner-overlay" style="display:none;">
+                    <div class="spinner mb-3"></div>
+                    <span class="text-sm font-semibold text-teal-200 shimmer-text">Processing scan…</span>
+                </div>
+                <!-- Cooldown overlay -->
+                <div id="cooldown-overlay" class="scanner-overlay" style="display:none;">
+                    <svg class="h-8 w-8 text-slate-400 mb-2 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" opacity="0.2"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+                    <span class="text-sm font-medium text-slate-400">Resetting scanner…</span>
+                </div>
+            </div>
+
+            <!-- ─── Camera Toolbar ─── -->
+            <div id="camera-toolbar" class="flex items-center justify-center gap-2 mt-4 flex-wrap">
+                <button id="btn-switch-camera" class="toolbar-btn" onclick="switchCamera()" title="Switch Camera">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span class="hidden sm:inline">Switch</span>
+                </button>
+                <button id="btn-torch" class="toolbar-btn" onclick="toggleTorch()" title="Toggle Flashlight" style="display:none;">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span class="hidden sm:inline">Torch</span>
+                </button>
+                <button id="btn-fullscreen" class="toolbar-btn" onclick="enterFullscreen()" title="Fullscreen">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/></svg>
+                    <span class="hidden sm:inline">Fullscreen</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ Manual UUID Input ═══ -->
+        <div class="glass rounded-2xl p-4 sm:p-5 mb-5 animate-fade-in animate-fade-in-3">
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Manual Entry</label>
+            <div class="flex gap-2">
+                <input type="text" id="manual-uuid-input" class="syntra-input flex-1" placeholder="Enter QR token UUID…" autocomplete="off" spellcheck="false">
+                <button id="btn-manual-submit" class="btn-primary rounded-xl px-4 sm:px-5 py-2.5 text-sm font-semibold shrink-0 min-h-[44px] flex items-center gap-2" onclick="handleManualSubmit()">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Scan
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ Back Link ═══ -->
+        <div class="text-center animate-fade-in animate-fade-in-4">
+            <a href="{% url 'organizer-hackathon-detail' hackathon.pk %}" class="text-sm text-slate-500 hover:text-teal-300 transition-colors">← Back to Hackathon</a>
+        </div>
+
+    </main>
+
+    <!-- ═══ Team Summary Modal ═══ -->
+    <div id="team-modal" class="modal-backdrop" style="display:none;" onclick="onModalBackdropClick(event)">
+        <div class="modal-panel glass" onclick="event.stopPropagation()">
+            <!-- Accent bar -->
+            <div class="h-[2px] bg-gradient-to-r from-teal-400 via-yellow-400 to-rose-400 rounded-t-xl"></div>
+
+            <div class="p-5 sm:p-6">
+                <!-- Team header -->
+                <div class="text-center mb-5">
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/15 border border-teal-400/25 mb-3">
+                        <svg class="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <h2 id="modal-team-name" class="text-xl font-extrabold text-white"></h2>
+                    <p class="text-sm text-slate-400 mt-1">{{ hackathon.name }}</p>
+                </div>
+
+                <!-- Scan stats -->
+                <div class="flex items-center justify-center gap-3 mb-5">
+                    <span id="modal-scan-stats" class="inline-flex items-center gap-1.5 rounded-full border border-slate-600/40 bg-slate-800/40 px-3 py-1 text-xs font-medium text-slate-300"></span>
+                </div>
+
+                <!-- Members list -->
+                <div class="space-y-2 mb-6 max-h-[40vh] overflow-y-auto" id="modal-members-list"></div>
+
+                <!-- Actions -->
+                <div class="flex gap-3">
+                    <button id="btn-modal-cancel" class="flex-1 rounded-xl border border-slate-600/50 bg-slate-800/50 px-4 py-3 text-sm font-semibold text-slate-300 hover:border-slate-500 hover:text-white transition-all min-h-[44px]" onclick="closeModal()">
+                        Cancel
+                    </button>
+                    <button id="btn-modal-submit" class="flex-1 btn-primary rounded-xl px-4 py-3 text-sm font-semibold min-h-[44px] flex items-center justify-center gap-2" onclick="submitScan()">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span id="btn-submit-text">Submit</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        /* ══════════════════════════════════════════
+           State
+        ══════════════════════════════════════════ */
+        let html5Qrcode = null;
+        let isProcessing = false;
+        let isTorchOn = false;
+        let torchSupported = false;
+        let cameras = [];
+        let currentCameraIndex = 0;
+        let currentQrToken = null;
+        let currentScanData = null;
+        let scannerReady = false;
+
+        const SCAN_COOLDOWN_MS = 1500;
+        const CSRF_TOKEN = '{{ csrf_token }}';
+
+        /* ══════════════════════════════════════════
+           DOM refs
+        ══════════════════════════════════════════ */
+        const categorySelect = document.getElementById('category-select');
+        const scannerCard = document.getElementById('scanner-card');
+        const cameraError = document.getElementById('camera-error');
+        const processingOverlay = document.getElementById('processing-overlay');
+        const cooldownOverlay = document.getElementById('cooldown-overlay');
+        const cameraToolbar = document.getElementById('camera-toolbar');
+        const btnSwitchCamera = document.getElementById('btn-switch-camera');
+        const btnTorch = document.getElementById('btn-torch');
+        const manualInput = document.getElementById('manual-uuid-input');
+        const modalEl = document.getElementById('team-modal');
+        const noActiveCats = document.getElementById('no-active-categories');
+
+        /* ══════════════════════════════════════════
+           Init
+        ══════════════════════════════════════════ */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there are any active categories
+            if (categorySelect) {
+                const options = categorySelect.querySelectorAll('option[value]');
+                if (options.length === 0) {
+                    // No active categories
+                    categorySelect.style.display = 'none';
+                    if (noActiveCats) noActiveCats.classList.remove('hidden');
+                    disableScanner();
+                    return;
+                }
+            } else {
+                // No scan_categories at all
+                disableScanner();
+                return;
+            }
+
+            // Enter key on manual input
+            manualInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleManualSubmit();
+                }
+            });
+        });
+
+        function disableScanner() {
+            scannerCard.style.opacity = '0.45';
+            scannerCard.style.pointerEvents = 'none';
+        }
+
+        function enableScanner() {
+            scannerCard.style.opacity = '1';
+            scannerCard.style.pointerEvents = 'auto';
+        }
+
+        /* ══════════════════════════════════════════
+           Category change
+        ══════════════════════════════════════════ */
+        window.onCategoryChange = function() {
+            if (!categorySelect.value) return;
+            enableScanner();
+            if (!scannerReady) {
+                initScanner();
+            }
+        };
+
+        /* ══════════════════════════════════════════
+           Scanner init
+        ══════════════════════════════════════════ */
+        async function initScanner() {
+            try {
+                cameras = await Html5Qrcode.getCameras();
+                if (!cameras || cameras.length === 0) {
+                    showCameraError();
+                    return;
+                }
+
+                // Prefer rear camera
+                const rearIndex = cameras.findIndex(c =>
+                    /back|rear|environment/i.test(c.label)
+                );
+                currentCameraIndex = rearIndex >= 0 ? rearIndex : cameras.length - 1;
+
+                html5Qrcode = new Html5Qrcode('qr-reader');
+                await startCamera();
+                scannerReady = true;
+
+                // Show switch button only if multiple cameras
+                if (cameras.length <= 1) {
+                    btnSwitchCamera.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Camera init error:', err);
+                showCameraError();
+            }
+        }
+
+        async function startCamera() {
+            try {
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                };
+
+                await html5Qrcode.start(
+                    cameras[currentCameraIndex].id,
+                    config,
+                    onScanSuccess,
+                    onScanFailure
+                );
+
+                // Check torch support
+                checkTorchSupport();
+            } catch (err) {
+                console.error('Camera start error:', err);
+                showCameraError();
+            }
+        }
+
+        function showCameraError() {
+            cameraError.classList.remove('hidden');
+            document.getElementById('scanner-viewport').style.display = 'none';
+            cameraToolbar.style.display = 'none';
+            // Auto focus manual input
+            setTimeout(() => manualInput.focus(), 300);
+        }
+
+        /* ══════════════════════════════════════════
+           Torch support
+        ══════════════════════════════════════════ */
+        function checkTorchSupport() {
+            try {
+                const videoElem = document.querySelector('#qr-reader video');
+                if (!videoElem || !videoElem.srcObject) return;
+
+                const track = videoElem.srcObject.getVideoTracks()[0];
+                if (!track) return;
+
+                const caps = track.getCapabilities ? track.getCapabilities() : {};
+                if (caps.torch) {
+                    torchSupported = true;
+                    btnTorch.style.display = '';
+                } else {
+                    torchSupported = false;
+                    btnTorch.style.display = 'none';
+                }
+            } catch (e) {
+                torchSupported = false;
+                btnTorch.style.display = 'none';
+            }
+        }
+
+        /* ══════════════════════════════════════════
+           Camera controls
+        ══════════════════════════════════════════ */
+        window.switchCamera = async function() {
+            if (!html5Qrcode || cameras.length <= 1) return;
+
+            try {
+                await html5Qrcode.stop();
+                currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+                isTorchOn = false;
+                btnTorch.classList.remove('active');
+                await startCamera();
+            } catch (err) {
+                console.error('Switch camera error:', err);
+                showToast('Failed to switch camera', 'error');
+            }
+        };
+
+        window.toggleTorch = async function() {
+            if (!torchSupported) return;
+
+            try {
+                const videoElem = document.querySelector('#qr-reader video');
+                if (!videoElem || !videoElem.srcObject) return;
+
+                const track = videoElem.srcObject.getVideoTracks()[0];
+                if (!track) return;
+
+                isTorchOn = !isTorchOn;
+                await track.applyConstraints({
+                    advanced: [{ torch: isTorchOn }]
+                });
+
+                btnTorch.classList.toggle('active', isTorchOn);
+            } catch (err) {
+                console.error('Torch error:', err);
+                showToast('Torch not available on this device', 'error');
+            }
+        };
+
+        window.enterFullscreen = function() {
+            try {
+                const el = document.documentElement;
+                if (el.requestFullscreen) el.requestFullscreen();
+                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                else if (el.msRequestFullscreen) el.msRequestFullscreen();
+            } catch (e) {
+                console.error('Fullscreen error:', e);
+            }
+        };
+
+        /* ══════════════════════════════════════════
+           QR scan callbacks
+        ══════════════════════════════════════════ */
+        function onScanSuccess(decodedText) {
+            if (isProcessing) return;
+            processScan(decodedText.trim());
+        }
+
+        function onScanFailure() {
+            // Ignore — continuous scanning
+        }
+
+        /* ══════════════════════════════════════════
+           Manual submit
+        ══════════════════════════════════════════ */
+        window.handleManualSubmit = function() {
+            const uuid = manualInput.value.trim();
+            if (!uuid) {
+                showToast('Please enter a QR token UUID', 'error');
+                manualInput.focus();
+                return;
+            }
+            if (isProcessing) return;
+            processScan(uuid);
+        };
+
+        /* ══════════════════════════════════════════
+           Process scan (core flow)
+        ══════════════════════════════════════════ */
+        async function processScan(qrToken) {
+            const categoryId = categorySelect ? categorySelect.value : null;
+            if (!categoryId) {
+                showToast('Please select a scan category first', 'error');
+                return;
+            }
+
+            isProcessing = true;
+            currentQrToken = qrToken;
+            showProcessingOverlay(true);
+
+            try {
+                const resp = await fetchWithAuth('/api/organizer/scanner/scan/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF_TOKEN,
+                    },
+                    body: JSON.stringify({
+                        qr_token: qrToken,
+                        scan_category_id: parseInt(categoryId),
+                    }),
+                });
+
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.detail || errData.message || errData.error || `Scan failed (${resp.status})`);
+                }
+
+                const data = await resp.json();
+                currentScanData = data;
+                showProcessingOverlay(false);
+                showTeamModal(data);
+            } catch (err) {
+                showProcessingOverlay(false);
+                isProcessing = false;
+                showToast(err.message || 'Scan failed', 'error');
+            }
+        }
+
+        /* ══════════════════════════════════════════
+           Processing overlay
+        ══════════════════════════════════════════ */
+        function showProcessingOverlay(show) {
+            processingOverlay.style.display = show ? 'flex' : 'none';
+        }
+
+        /* ══════════════════════════════════════════
+           Team Modal
+        ══════════════════════════════════════════ */
+        function showTeamModal(data) {
+            const teamNameEl = document.getElementById('modal-team-name');
+            const statsEl = document.getElementById('modal-scan-stats');
+            const membersEl = document.getElementById('modal-members-list');
+            const submitBtn = document.getElementById('btn-modal-submit');
+            const submitText = document.getElementById('btn-submit-text');
+
+            // Team name
+            teamNameEl.textContent = data.team_name || 'Unknown Team';
+
+            // Stats
+            const total = data.members ? data.members.length : 0;
+            const alreadyScanned = data.members ? data.members.filter(m => m.already_scanned).length : 0;
+            statsEl.innerHTML = `
+                <svg class="h-3.5 w-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                ${alreadyScanned}/${total} already scanned
+            `;
+
+            // Members
+            membersEl.innerHTML = '';
+            if (data.members && data.members.length > 0) {
+                data.members.forEach(member => {
+                    const row = document.createElement('div');
+                    row.className = 'member-row' + (member.already_scanned ? ' already-scanned' : '');
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'member-checkbox';
+                    checkbox.dataset.memberId = member.id;
+                    checkbox.checked = true;
+                    if (member.already_scanned) {
+                        checkbox.disabled = true;
+                    }
+
+                    const info = document.createElement('div');
+                    info.className = 'flex-1 min-w-0';
+                    info.innerHTML = `
+                        <span class="text-sm font-medium ${member.already_scanned ? 'text-slate-500' : 'text-white'}">${escapeHtml(member.name)}</span>
+                        ${member.already_scanned ? '<span class="block text-[11px] text-emerald-400/70 font-medium mt-0.5">✓ Scanned</span>' : ''}
+                    `;
+
+                    row.appendChild(checkbox);
+                    row.appendChild(info);
+                    membersEl.appendChild(row);
+                });
+            }
+
+            // Reset submit button
+            submitBtn.disabled = false;
+            submitText.textContent = 'Submit';
+
+            // Show modal
+            modalEl.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.onModalBackdropClick = function(e) {
+            if (e.target === modalEl) {
+                closeModal();
+            }
+        };
+
+        window.closeModal = function() {
+            modalEl.style.display = 'none';
+            document.body.style.overflow = '';
+            currentScanData = null;
+            startCooldown();
+        };
+
+        /* ══════════════════════════════════════════
+           Submit scan
+        ══════════════════════════════════════════ */
+        window.submitScan = async function() {
+            const submitBtn = document.getElementById('btn-modal-submit');
+            const submitText = document.getElementById('btn-submit-text');
+            const categoryId = categorySelect ? categorySelect.value : null;
+
+            if (!categoryId || !currentQrToken) return;
+
+            // Gather selected member IDs (only non-already-scanned)
+            const checkboxes = document.querySelectorAll('#modal-members-list .member-checkbox:not(:disabled):checked');
+            const memberIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.memberId));
+
+            if (memberIds.length === 0) {
+                showToast('No new members selected to scan', 'error');
+                return;
+            }
+
+            // Loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Submitting…';
+
+            try {
+                const resp = await fetchWithAuth('/api/organizer/scanner/submit/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF_TOKEN,
+                    },
+                    body: JSON.stringify({
+                        qr_token: currentQrToken,
+                        scan_category_id: parseInt(categoryId),
+                        member_ids: memberIds,
+                    }),
+                });
+
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.detail || errData.message || errData.error || `Submit failed (${resp.status})`);
+                }
+
+                // Close modal
+                modalEl.style.display = 'none';
+                document.body.style.overflow = '';
+                currentScanData = null;
+
+                // Rich success feedback
+                showSuccessFlash();
+                playBeep();
+                triggerVibration();
+                showToast(`✅ Scanned ${memberIds.length} member${memberIds.length !== 1 ? 's' : ''} successfully`, 'success');
+
+                // Cooldown
+                startCooldown();
+            } catch (err) {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Submit';
+                showToast(err.message || 'Submit failed', 'error');
+            }
+        };
+
+        /* ══════════════════════════════════════════
+           Cooldown
+        ══════════════════════════════════════════ */
+        function startCooldown() {
+            cooldownOverlay.style.display = 'flex';
+            manualInput.value = '';
+
+            setTimeout(() => {
+                cooldownOverlay.style.display = 'none';
+                isProcessing = false;
+            }, SCAN_COOLDOWN_MS);
+        }
+
+        /* ══════════════════════════════════════════
+           Success flash
+        ══════════════════════════════════════════ */
+        function showSuccessFlash() {
+            const flash = document.createElement('div');
+            flash.className = 'success-flash';
+            flash.innerHTML = `
+                <div class="checkmark">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+            `;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 550);
+        }
+
+        /* ══════════════════════════════════════════
+           Beep sound
+        ══════════════════════════════════════════ */
+        function playBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.15);
+
+                setTimeout(() => ctx.close(), 200);
+            } catch (e) {
+                // Audio not available
+            }
+        }
+
+        /* ══════════════════════════════════════════
+           Vibration
+        ══════════════════════════════════════════ */
+        function triggerVibration() {
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(200);
+                }
+            } catch (e) {
+                // Vibration not available
+            }
+        }
+
+        /* ══════════════════════════════════════════
+           Toast notifications
+        ══════════════════════════════════════════ */
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type === 'error' ? 'error' : 'success'}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 3500);
+        }
+
+        /* ══════════════════════════════════════════
+           Utilities
+        ══════════════════════════════════════════ */
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str));
+            return d.innerHTML;
+        }
+
+        // Expose for inline onclick handlers
+        window.handleManualSubmit = window.handleManualSubmit;
+    })();
+    </script>
+</body>
+</html>

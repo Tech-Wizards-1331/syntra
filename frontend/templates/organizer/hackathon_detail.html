@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syntra | {{ hackathon.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Syntra | {{ hackathon.name }}</title>    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
@@ -100,10 +99,16 @@
                         <p class="mt-2 text-sm text-slate-400 max-w-xl">{{ hackathon.description }}</p>
                     {% endif %}
                 </div>
-                <a href="{% url 'organizer-edit-hackathon' hackathon.pk %}" class="btn-primary hover-lift self-start inline-flex items-center gap-2 shrink-0 rounded-xl px-4 sm:px-5 py-2.5 text-sm font-semibold">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    Edit Details
-                </a>
+                <div class="flex items-center gap-2 self-start shrink-0">
+                    <a href="{% url 'organizer-qr-scanner' hackathon.pk %}" class="inline-flex items-center gap-2 rounded-xl border border-indigo-400/40 bg-indigo-500/15 px-4 sm:px-5 py-2.5 text-sm font-semibold text-indigo-200 hover:bg-indigo-500/25 hover:border-indigo-300/60 transition-all hover-lift">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                        QR Scanner
+                    </a>
+                    <a href="{% url 'organizer-edit-hackathon' hackathon.pk %}" class="btn-primary hover-lift inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-sm font-semibold">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        Edit Details
+                    </a>
+                </div>
             </div>
 
             <!-- Meta badges -->
@@ -257,6 +262,124 @@
             {% endif %}
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCAN CATEGORIES                                             -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-slate-700/50 bg-slate-900/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 mb-6 animate-fade-in animate-fade-in-1">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-bold text-white">Scan Categories</h2>
+                    <p id="categories-count-text" class="text-xs text-slate-500 mt-0.5">
+                        {% if scan_categories %}
+                            {{ scan_categories|length }} category{{ scan_categories|length|pluralize:"y,ies" }} defined
+                        {% else %}
+                            No scan categories defined
+                        {% endif %}
+                    </p>
+                </div>
+                <button onclick="openAddCategoryModal()"
+                        class="self-start inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:from-teal-400 hover:to-teal-500 transition-all hover-lift">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Category
+                </button>
+            </div>
+
+            <!-- Categories Grid/Stack -->
+            <div id="categories-container" class="space-y-4">
+                {% if scan_categories %}
+                    {% for cat in scan_categories %}
+                        <div id="category-card-{{ cat.id }}" class="group rounded-2xl border border-slate-700/40 bg-slate-800/30 overflow-hidden hover:border-teal-400/30 transition-all hover:shadow-lg hover:shadow-teal-500/5 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center gap-2.5 mb-1.5">
+                                    <h3 class="text-base font-bold text-white category-name">{{ cat.name }}</h3>
+                                    <!-- Status Pill -->
+                                    <span id="category-status-{{ cat.id }}" class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium {% if cat.is_active %}border-emerald-300/35 bg-emerald-400/10 text-emerald-300{% else %}border-slate-600/40 bg-slate-700/30 text-slate-500{% endif %}">
+                                        <span class="h-1.5 w-1.5 rounded-full {% if cat.is_active %}bg-emerald-400 pulse-dot{% else %}bg-slate-500{% endif %}"></span>
+                                        <span class="status-label">{% if cat.is_active %}Active{% else %}Inactive{% endif %}</span>
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        Created: {{ cat.created_at|date:"M d, Y" }}
+                                    </span>
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16"/></svg>
+                                        Order: <span class="category-display-order">{{ cat.display_order }}</span>
+                                    </span>
+                                    <span class="flex items-center gap-1.5">
+                                        <svg class="h-3.5 w-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        Total Scans: <span class="category-scan-count">{{ cat.scan_count|default:0 }}</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center gap-3 shrink-0">
+                                <!-- Active Toggle Switch -->
+                                <label class="relative inline-flex items-center cursor-pointer select-none">
+                                    <input type="checkbox" {% if cat.is_active %}checked{% endif %} 
+                                           onchange="toggleCategoryStatus({{ cat.id }}, this)" 
+                                           class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                                    <span class="ml-2 text-xs text-slate-400 select-none">Active</span>
+                                </label>
+
+                                <!-- Delete button -->
+                                <button onclick="deleteCategory({{ cat.id }}, '{{ cat.name|escapejs }}', {{ cat.scan_count|default:0 }})"
+                                        class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all"
+                                        title="Delete Category">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div id="no-categories-placeholder" class="rounded-xl border border-dashed border-slate-700/50 py-8 text-center">
+                        <p class="text-sm text-slate-500">No active scan categories available</p>
+                        <p class="text-xs text-slate-600 mt-1">Create a scan category to enable volunteers to scan QR codes.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Add Category Modal -->
+        <div id="add-category-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden" style="transition: opacity 0.25s ease-out;">
+            <div class="glass w-full max-w-md rounded-2xl border border-slate-700/60 p-6 relative" onclick="event.stopPropagation()">
+                <!-- Close Button -->
+                <button onclick="closeAddCategoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+                
+                <h3 class="text-lg font-bold text-white mb-4">Add Scan Category</h3>
+                
+                <form id="add-category-form" onsubmit="submitAddCategory(event)" class="space-y-4">
+                    <div>
+                        <label for="category-name-input" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Category Name</label>
+                        <input type="text" id="category-name-input" placeholder="e.g. Lunch Day 1" required
+                               class="syntra-input">
+                    </div>
+                    <div>
+                        <label for="category-order-input" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Display Order</label>
+                        <input type="number" id="category-order-input" value="0" min="0" required
+                               class="syntra-input">
+                        <p class="text-[10px] text-slate-500 mt-1">Lower values will be shown first in lists.</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button type="button" onclick="closeAddCategoryModal()"
+                                class="rounded-xl border border-slate-700 bg-slate-800/40 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submit-category-btn"
+                                class="rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-teal-500/20 hover:from-teal-400 hover:to-teal-500 hover:shadow-teal-500/40 transition-all flex items-center gap-2">
+                            <span class="btn-spinner hidden border-2 border-white/30 border-t-white h-4 w-4 rounded-full animate-spin"></span>
+                            Create Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
 
         <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
         <!-- SEATING ALLOCATION                                          -->
@@ -392,6 +515,7 @@
         </a>
     </div>
 
+    <script src="{% static 'js/api_client.js' %}"></script>
     <script>
         let rooms = [];
 
@@ -603,6 +727,274 @@
             a.download = 'seating_allocation.csv';
             a.click();
         }
+
+        // --- Scan Categories Management ---
+        const addCategoryModal = document.getElementById('add-category-modal');
+        
+        function openAddCategoryModal() {
+            addCategoryModal.classList.remove('hidden');
+            document.getElementById('category-name-input').focus();
+        }
+        
+        function closeAddCategoryModal() {
+            addCategoryModal.classList.add('hidden');
+            document.getElementById('add-category-form').reset();
+        }
+        
+        addCategoryModal.addEventListener('click', (e) => {
+            if (e.target === addCategoryModal) {
+                closeAddCategoryModal();
+            }
+        });
+        
+        async function submitAddCategory(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('category-name-input');
+            const orderInput = document.getElementById('category-order-input');
+            const btn = document.getElementById('submit-category-btn');
+            const spinner = btn.querySelector('.btn-spinner');
+            
+            const name = nameInput.value.trim();
+            const displayOrder = parseInt(orderInput.value) || 0;
+            const hackathonId = {{ hackathon.id }};
+            
+            if (!name) return;
+            
+            nameInput.disabled = true;
+            orderInput.disabled = true;
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            
+            try {
+                const response = await fetchWithAuth('/api/organizer/scan-categories/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hackathon: hackathonId,
+                        name: name,
+                        display_order: displayOrder,
+                        is_active: true
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showToast(`Category "${name}" created successfully!`, 'success');
+                    closeAddCategoryModal();
+                    loadCategories();
+                } else {
+                    let errorMsg = 'Failed to create category.';
+                    if (data.detail) {
+                        errorMsg = data.detail;
+                    } else if (data.non_field_errors) {
+                        errorMsg = data.non_field_errors.join(', ');
+                    } else if (data.name) {
+                        errorMsg = `Name: ${data.name.join(', ')}`;
+                    }
+                    showToast(errorMsg, 'error');
+                }
+            } catch (err) {
+                showToast('An unexpected error occurred.', 'error');
+                console.error(err);
+            } finally {
+                nameInput.disabled = false;
+                orderInput.disabled = false;
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+            }
+        }
+        
+        async function toggleCategoryStatus(catId, checkbox) {
+            const originalState = checkbox.checked;
+            checkbox.disabled = true;
+            
+            try {
+                const response = await fetchWithAuth(`/api/organizer/scan-categories/${catId}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: originalState })
+                });
+                
+                if (response.ok) {
+                    showToast(`Category status updated to ${originalState ? 'Active' : 'Inactive'}`, 'success');
+                    const pill = document.getElementById(`category-status-${catId}`);
+                    if (pill) {
+                        if (originalState) {
+                            pill.className = "inline-flex items-center gap-1 rounded-full border border-emerald-300/35 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300";
+                            pill.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot"></span><span class="status-label">Active</span>`;
+                        } else {
+                            pill.className = "inline-flex items-center gap-1 rounded-full border border-slate-600/40 bg-slate-700/30 px-2.5 py-0.5 text-[11px] font-medium text-slate-500";
+                            pill.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-slate-500"></span><span class="status-label">Inactive</span>`;
+                        }
+                    }
+                } else {
+                    checkbox.checked = !originalState;
+                    const data = await response.json();
+                    const errorMsg = data.detail || 'Failed to update category status.';
+                    showToast(errorMsg, 'error');
+                }
+            } catch (err) {
+                checkbox.checked = !originalState;
+                console.error(err);
+                showToast('An unexpected error occurred.', 'error');
+            } finally {
+                checkbox.disabled = false;
+            }
+        }
+        
+        function deleteCategory(catId, catName, scanCount) {
+            if (scanCount > 0) {
+                showToast(`Cannot delete category "${catName}" because it already has ${scanCount} scan records.`, 'error');
+                return;
+            }
+            if (confirm(`Delete category "${catName}"? This cannot be undone.`)) {
+                performDeleteCategory(catId);
+            }
+        }
+        
+        async function performDeleteCategory(catId) {
+            try {
+                const response = await fetchWithAuth(`/api/organizer/scan-categories/${catId}/`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.status === 204) {
+                    showToast('Category deleted successfully!', 'success');
+                    loadCategories();
+                } else {
+                    const data = await response.json();
+                    const errorMsg = data.detail || 'Failed to delete category.';
+                    showToast(errorMsg, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('An unexpected error occurred.', 'error');
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                const response = await fetchWithAuth(`/api/organizer/scan-categories/?hackathon={{ hackathon.id }}`);
+                if (response.ok) {
+                    const categories = await response.json();
+                    renderCategories(categories);
+                } else {
+                    showToast('Failed to load scan categories.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to load scan categories.', 'error');
+            }
+        }
+        
+        function renderCategories(categories) {
+            const container = document.getElementById('categories-container');
+            const countText = document.getElementById('categories-count-text');
+            
+            if (categories.length === 0) {
+                countText.textContent = 'No scan categories defined';
+                container.innerHTML = `
+                    <div id="no-categories-placeholder" class="rounded-xl border border-dashed border-slate-700/50 py-8 text-center">
+                        <p class="text-sm text-slate-500">No active scan categories available</p>
+                        <p class="text-xs text-slate-600 mt-1">Create a scan category to enable volunteers to scan QR codes.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            countText.textContent = `${categories.length} category${categories.length !== 1 ? 'ies' : 'y'} defined`;
+            
+            container.innerHTML = categories.map(cat => {
+                const createdDate = new Date(cat.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                const isActive = cat.is_active;
+                const scanCount = cat.scan_count || 0;
+                
+                return `
+                    <div id="category-card-${cat.id}" class="group rounded-2xl border border-slate-700/40 bg-slate-800/30 overflow-hidden hover:border-teal-400/30 transition-all hover:shadow-lg hover:shadow-teal-500/5 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2.5 mb-1.5">
+                                <h3 class="text-base font-bold text-white category-name">${escapeHtml(cat.name)}</h3>
+                                <!-- Status Pill -->
+                                <span id="category-status-${cat.id}" class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${isActive ? 'border-emerald-300/35 bg-emerald-400/10 text-emerald-300' : 'border-slate-600/40 bg-slate-700/30 text-slate-500'}">
+                                    <span class="h-1.5 w-1.5 rounded-full ${isActive ? 'bg-emerald-400 pulse-dot' : 'bg-slate-500'}"></span>
+                                    <span class="status-label">${isActive ? 'Active' : 'Inactive'}</span>
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    Created: ${createdDate}
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16"/></svg>
+                                    Order: <span class="category-display-order">${cat.display_order}</span>
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="h-3.5 w-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                    Total Scans: <span class="category-scan-count">${scanCount}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <label class="relative inline-flex items-center cursor-pointer select-none">
+                                <input type="checkbox" ${isActive ? 'checked' : ''} 
+                                       onchange="toggleCategoryStatus(${cat.id}, this)" 
+                                       class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500 peer-checked:after:bg-white peer-checked:after:border-white"></div>
+                                <span class="ml-2 text-xs text-slate-400 select-none">Active</span>
+                            </label>
+                            <button onclick="deleteCategory(${cat.id}, '${escapeHtml(cat.name).replace(/'/g, "\\'")}', ${scanCount})"
+                                    class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Delete Category">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl border backdrop-blur-md shadow-lg flex items-center gap-3 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto min-w-[280px] max-w-sm ` +
+                (type === 'success' 
+                    ? 'border-emerald-500/40 bg-slate-900/90 text-emerald-300' 
+                    : type === 'error' 
+                        ? 'border-red-500/40 bg-slate-900/90 text-red-400' 
+                        : 'border-indigo-500/40 bg-slate-900/90 text-indigo-300');
+                        
+            const icon = type === 'success' 
+                ? `<svg class="h-5 w-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+                : type === 'error'
+                    ? `<svg class="h-5 w-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`
+                    : `<svg class="h-5 w-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+                    
+            toast.innerHTML = `
+                ${icon}
+                <div class="text-xs font-semibold flex-1">${escapeHtml(message)}</div>
+                <button class="text-slate-400 hover:text-white transition-colors shrink-0" onclick="this.parentElement.remove()">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
     </script>
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 </body>
 </html>

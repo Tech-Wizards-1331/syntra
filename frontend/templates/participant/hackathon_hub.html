@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syntra | {{ hackathon.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Syntra | {{ hackathon.name }}</title>    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -39,7 +38,7 @@
         .touch-min { min-height:44px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen">
+<body class="bg-slate-950 text-slate-200 min-h-screen" data-team-id="{{ team.pk }}" data-hackathon-id="{{ hackathon.pk }}">
 
 <!-- Nav -->
 <nav class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-lg sticky top-0 z-50">
@@ -115,6 +114,47 @@
         </div>
     </div>
 
+    <!-- ── RECRUITING ── -->
+    {% if is_leader and not team.is_registered %}
+    <div class="glass rounded-2xl p-4 sm:p-6 lg:p-8 anim anim1">
+        <div class="mb-5">
+            <p class="text-xs uppercase tracking-[.18em] text-indigo-300 font-tech mb-0.5">Recruiting</p>
+            <h2 class="text-xl font-bold text-white">Find Solo Participants</h2>
+            <p class="text-xs text-slate-400 mt-1">Search for participants looking for a team based on skills.</p>
+        </div>
+        
+        <div class="flex gap-3 mb-4">
+            <input type="text" id="skill-search-input" placeholder="Enter skill (e.g., React, Python)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all">
+            <button onclick="searchParticipants()" class="shrink-0 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors">Search</button>
+        </div>
+        
+        <div id="search-results" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+            <!-- Results will be injected here via JS -->
+        </div>
+
+        <div class="mt-5 border-t border-slate-700/50 pt-4">
+            <h3 class="text-sm font-semibold text-white mb-2">Pending Invites</h3>
+            {% if pending_sent_invites %}
+            <div id="pending-invites" class="space-y-2">
+                {% for invite in pending_sent_invites %}
+                <div id="invite-row-{{ invite.id }}" class="flex items-center justify-between p-3 rounded-xl border border-slate-700/50 bg-slate-800/30">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-white truncate">{{ invite.receiver.get_full_name|default:invite.receiver.email }}</p>
+                        <p class="text-xs text-slate-400 truncate">{{ invite.receiver.email }}</p>
+                    </div>
+                    <button data-invite-id="{{ invite.id }}" onclick="cancelInvite(this)" class="shrink-0 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p id="pending-invites-empty" class="text-xs text-slate-500 italic">No pending invites.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ── MY TEAM ── -->
     <div class="glass rounded-2xl p-4 sm:p-6 lg:p-8 anim anim1">
         <div class="flex items-start sm:items-center justify-between mb-4 sm:mb-5 gap-3">
@@ -157,6 +197,17 @@
         {% else %}
         <p class="text-sm text-slate-500 italic">No additional members added.</p>
         {% endif %}
+
+        <!-- Team Pass QR Link -->
+        {% if team.is_registered %}
+        <div class="mt-5 pt-4 border-t border-slate-700/30">
+            <a href="{% url 'participant-team-pass' hackathon.pk %}"
+               class="touch-min w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 hover:from-indigo-400 hover:to-indigo-500 transition-all">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                View Team Pass &amp; QR Code
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     <!-- ── PROBLEM STATEMENT SELECTION ── -->
@@ -178,19 +229,20 @@
             {% endif %}
         </div>
 
-        {% if team.selected_problem_statement %}\n        <!-- Already selected — locked in, click for full details -->\n        <div class="group hover-lift rounded-2xl border border-emerald-500/35 bg-emerald-500/5 overflow-hidden cursor-pointer"
-             onclick='openModal({
-                id: {{ team.selected_problem_statement.pk }},
-                title: "{{ team.selected_problem_statement.title|escapejs }}",
-                description: "{{ team.selected_problem_statement.description|default:""|escapejs }}",
-                pdfUrl: "{% if team.selected_problem_statement.pdf_file %}{{ team.selected_problem_statement.pdf_file.url }}{% endif %}",
-                count: 0,
-                max: {{ team.selected_problem_statement.max_teams_allowed }},
-                isFull: false,
-                teamId: {{ team.pk }},
-                isLeader: false,
-                isLocked: true
-             })'>
+        {% if team.selected_problem_statement %}
+        <!-- Already selected — locked in, click for full details -->
+           <div class="group hover-lift rounded-2xl border border-emerald-500/35 bg-emerald-500/5 overflow-hidden cursor-pointer"
+               data-ps-id="{{ team.selected_problem_statement.pk }}"
+               data-ps-title="{{ team.selected_problem_statement.title|escapejs }}"
+               data-ps-description="{{ team.selected_problem_statement.description|default:''|escapejs }}"
+               data-ps-pdf-url="{% if team.selected_problem_statement.pdf_file %}{{ team.selected_problem_statement.pdf_file.url }}{% endif %}"
+               data-ps-count="0"
+               data-ps-max="{{ team.selected_problem_statement.max_teams_allowed }}"
+               data-ps-is-full="0"
+               data-ps-team-id="{{ team.pk }}"
+               data-ps-is-leader="0"
+               data-ps-is-locked="1"
+               onclick="openModalFromCard(this)">
             <!-- Green top accent -->
             <div class="h-[2px] bg-gradient-to-r from-emerald-400 to-teal-400"></div>
             <div class="p-5">
@@ -234,17 +286,17 @@
             {% for ps in problem_statements %}
             <div class="group hover-lift rounded-2xl border border-slate-700/40 bg-slate-800/30 overflow-hidden cursor-pointer
                 {% if ps.is_full %}opacity-60{% endif %}" id="ps-card-{{ ps.pk }}"
-                onclick='openModal({
-                    id: {{ ps.pk }},
-                    title: "{{ ps.title|escapejs }}",
-                    description: "{{ ps.description|default:""|escapejs }}",
-                    pdfUrl: "{% if ps.pdf_file %}{{ ps.pdf_file.url }}{% endif %}",
-                    count: {{ ps.current_teams_count }},
-                    max: {{ ps.max_teams_allowed }},
-                    isFull: {% if ps.is_full %}true{% else %}false{% endif %},
-                    teamId: {{ team.pk }},
-                    isLeader: {% if is_leader %}true{% else %}false{% endif %}
-                })'>
+                data-ps-id="{{ ps.pk }}"
+                data-ps-title="{{ ps.title|escapejs }}"
+                data-ps-description="{{ ps.description|default:''|escapejs }}"
+                data-ps-pdf-url="{% if ps.pdf_file %}{{ ps.pdf_file.url }}{% endif %}"
+                data-ps-count="{{ ps.current_teams_count }}"
+                data-ps-max="{{ ps.max_teams_allowed }}"
+                data-ps-is-full="{% if ps.is_full %}1{% else %}0{% endif %}"
+                data-ps-team-id="{{ team.pk }}"
+                data-ps-is-leader="{% if is_leader %}1{% else %}0{% endif %}"
+                data-ps-is-locked="0"
+                onclick="openModalFromCard(this)">
                 <div class="p-5">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1 min-w-0">
@@ -273,8 +325,9 @@
                         </div>
                         <div class="cap-bar">
                             {% if ps.max_teams_allowed > 0 %}
-                            <div class="cap-fill {% if ps.is_full %}bg-gradient-to-r from-red-500 to-rose-500{% elif ps.current_teams_count > 0 %}bg-gradient-to-r from-yellow-400 to-amber-400{% else %}bg-gradient-to-r from-teal-400 to-teal-500{% endif %}"
-                                 style="width:{% widthratio ps.current_teams_count ps.max_teams_allowed 100 %}%"></div>
+                               <div class="cap-fill {% if ps.is_full %}bg-gradient-to-r from-red-500 to-rose-500{% elif ps.current_teams_count > 0 %}bg-gradient-to-r from-yellow-400 to-amber-400{% else %}bg-gradient-to-r from-teal-400 to-teal-500{% endif %}"
+                                   style="width:0%"
+                                   data-cap-width="{% widthratio ps.current_teams_count ps.max_teams_allowed 100 %}"></div>
                             {% endif %}
                         </div>
                     </div>
@@ -402,8 +455,11 @@
     </div>
 </div>
 
+<script src="{% static 'js/api_client.js' %}"></script>
 <script>
     const CSRF = '{{ csrf_token }}';
+    const currentTeamId = Number(document.body.dataset.teamId || 0);
+    const currentHackathonId = Number(document.body.dataset.hackathonId || 0);
 
     // ── Toast ──
     function showToast(msg, ok) {
@@ -495,6 +551,31 @@
         _currentPS = null;
     }
 
+    function getProblemStatementFromCard(card) {
+        return {
+            id: Number(card.dataset.psId || 0),
+            title: card.dataset.psTitle || '',
+            description: card.dataset.psDescription || '',
+            pdfUrl: card.dataset.psPdfUrl || '',
+            count: Number(card.dataset.psCount || 0),
+            max: Number(card.dataset.psMax || 0),
+            isFull: card.dataset.psIsFull === '1',
+            teamId: Number(card.dataset.psTeamId || 0),
+            isLeader: card.dataset.psIsLeader === '1',
+            isLocked: card.dataset.psIsLocked === '1',
+        };
+    }
+
+    function openModalFromCard(card) {
+        openModal(getProblemStatementFromCard(card));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-cap-width]').forEach(fill => {
+            fill.style.width = `${fill.dataset.capWidth}%`;
+        });
+    });
+
     // Close on Escape key
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
@@ -506,7 +587,7 @@
         btn.textContent = 'Selecting…';
 
         try {
-            const res = await fetch(`/api/participant/teams/${teamId}/select_problem_statement/`, {
+            const res = await fetchWithAuth(`/api/participant/teams/${teamId}/select_problem_statement/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
                 body: JSON.stringify({ problem_statement_id: psId }),
@@ -525,6 +606,113 @@
             showToast('Network error. Please try again.', false);
             btn.disabled = false;
             btn.textContent = 'Select This Problem Statement';
+        }
+    }
+    // ── Recruiting Search ──
+    async function searchParticipants() {
+        const query = document.getElementById('skill-search-input').value.trim();
+        const resultsDiv = document.getElementById('search-results');
+        
+        if (!query) {
+            resultsDiv.innerHTML = '<p class="text-sm text-slate-500 italic text-center py-4">Please enter a skill to search.</p>';
+            return;
+        }
+
+        resultsDiv.innerHTML = '<p class="text-sm text-indigo-400/70 text-center py-4">Searching...</p>';
+
+        try {
+            const res = await fetchWithAuth(`/api/participant/discovery/?skill=${encodeURIComponent(query)}&hackathon_id=${currentHackathonId}`);
+            const data = await res.json();
+            
+            if (!Array.isArray(data) || data.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-sm text-slate-500 italic text-center py-4">No participants found with that skill.</p>';
+                return;
+            }
+
+            resultsDiv.innerHTML = data.map(p => `
+                <div class="flex items-center justify-between p-3 rounded-xl border border-slate-700/50 bg-slate-800/30 hover:border-slate-600/50 transition-colors">
+                    <div>
+                        <p class="font-medium text-white">${p.full_name || p.user_email}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">${p.college || 'College not specified'} &middot; Semester ${p.semester || 'N/A'}</p>
+                        <div class="flex gap-1.5 mt-1.5 flex-wrap">
+                            ${p.skills.map(s => `<span class="px-2 py-0.5 bg-slate-700/50 rounded-full text-[10px] text-slate-300">${s.name}</span>`).join('')}
+                        </div>
+                    </div>
+                    <button onclick="inviteParticipant(${p.user_id}, this)" class="shrink-0 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                        Invite
+                    </button>
+                </div>
+            `).join('');
+        } catch (e) {
+            resultsDiv.innerHTML = '<p class="text-sm text-red-400 text-center py-4">Error fetching results.</p>';
+        }
+    }
+
+    // ── Send Request ──
+    async function inviteParticipant(userId, btn) {
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        
+        try {
+            const res = await fetchWithAuth('/api/participant/requests/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+                body: JSON.stringify({ team: currentTeamId, receiver: userId }),
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                btn.textContent = 'Sent';
+                btn.className = 'shrink-0 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-lg';
+                showToast('Invite sent successfully.', true);
+                setTimeout(() => location.reload(), 600);
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Invite';
+                showToast(data.non_field_errors?.[0] || 'Failed to send invite.', false);
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = 'Invite';
+            showToast('Network error.', false);
+        }
+    }
+
+    async function cancelInvite(btn) {
+        const requestId = btn.dataset.inviteId;
+        btn.disabled = true;
+        const prevText = btn.textContent;
+        btn.textContent = 'Canceling...';
+
+        try {
+            const res = await fetchWithAuth(`/api/participant/requests/${requestId}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': CSRF },
+            });
+
+            if (res.status === 204) {
+                const row = document.getElementById(`invite-row-${requestId}`);
+                if (row) {
+                    row.remove();
+                }
+                if (!document.querySelector('#pending-invites [id^="invite-row-"]')) {
+                    const list = document.getElementById('pending-invites');
+                    if (list) {
+                        list.innerHTML = '<p id="pending-invites-empty" class="text-xs text-slate-500 italic">No pending invites.</p>';
+                    }
+                }
+                showToast('Invite canceled.', true);
+                return;
+            }
+
+            const data = await res.json().catch(() => ({}));
+            btn.disabled = false;
+            btn.textContent = prevText;
+            showToast(data.detail || 'Failed to cancel invite.', false);
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = prevText;
+            showToast('Network error.', false);
         }
     }
 </script>

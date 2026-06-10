@@ -1,17 +1,20 @@
-# Architecture
+# Architecture: Django to Next.js Migration
 
-## Pattern
-The codebase follows a hybrid Django Architecture:
-- **Traditional MVT:** Used for server-rendered pages via `frontend/templates`.
-- **RESTful API:** Developed via Django REST Framework (`rest_framework`) for decoupled frontends or dynamic client-side interactions.
+## Legacy Django Architecture
+The original codebase follows a hybrid Django pattern that is being phased out:
+- **Traditional MVT:** Legacy server-rendered templates via `frontend/templates/`.
+- **RESTful API:** Django REST Framework APIs used for decoupled features.
+- **Key Django Apps:**
+  - `accounts`: User authentication, profiles, and roles.
+  - `organizer`: Hackathon CRUD, problem statements, seating service, and scanning configuration.
+  - `participant`: Team registration, team dashboards, guest records, and QR code generation.
 
-## Key Layers & Apps
-- **`syntra`**: Core project application handling settings and root URL routing.
-- **`accounts`**: Manages the custom user model, social authentication workflows, and profile interactions.
-- **`organizer`**: Contains domain logic for hackathon organizers (creating hackathons, managing problem statements, tracking statuses).
-- **`participant`**: Contains domain logic for hackathon participants (registrations, team management, profile dashboards).
+---
 
-## Data Flow
-- User interactions originate either from the rendered templates or via REST API endpoints.
-- Authentication relies on a mix of session auth (for server-rendered views) and JWT (for REST endpoints).
-- The `accounts.User` model is the central entity, linked across all domains via ForeignKeys to manage roles and access control.
+## Target Next.js Architecture
+The migration moves the platform to a single unified full-stack **Next.js (App Router)** application:
+- **Routing & Rendering:** Next.js App Router with React Server Components (RSC) for performance and Server Actions for data mutations.
+- **Authentication & Security:** Auth.js (NextAuth) replacing the hybrid Django session/JWT system, with a custom Credentials Provider to handle legacy Django password hashing (PBKDF2/MD5).
+- **Database Access:** Prisma ORM directly mapping and querying the existing database tables, preserving all live user/hackathon data without structural schema changes.
+- **Services Port:** Complete TypeScript port of backend services (e.g. greedy seating allocation algorithm and Razorpay payment integration).
+

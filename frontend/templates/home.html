@@ -5,39 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Syntra | Run Hackathons Without Chaos</title>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            shell: "#020617",
-            panel: "#0b1220",
-            panelHi: "#111b2e",
-            line: "#1f2b45",
-            textSoft: "#91a3c2",
-            focus: "#2dd4bf",
-            glow: "#eab308"
-          },
-          boxShadow: {
-            glass: "0 20px 50px rgba(2, 6, 23, 0.55)",
-            neon: "0 0 0 1px rgba(45,212,191,0.35), 0 0 30px rgba(45,212,191,0.15), 0 0 70px rgba(234,179,8,0.12)"
-          },
-          fontFamily: {
-            sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-            tech: ["Orbitron", "ui-sans-serif", "system-ui", "sans-serif"]
-          }
-        }
-      }
-    };
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="{% static 'js/home.js' %}"></script>
+  <!-- Fonts: preconnect for faster DNS + TLS handshake -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <!-- Compiled Tailwind — served by Whitenoise with long-lived cache headers -->
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
+  <script src="{% static 'js/home.js' %}" defer></script>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-200 selection:bg-teal-500/30">
   <div id="cursor-glow"></div>
   <canvas id="particle-canvas"></canvas>
   <div class="grid-bg"></div>

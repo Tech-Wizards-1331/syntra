@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syntra | Edit {{ object.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Syntra | Edit {{ object.name }}</title>    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
@@ -164,6 +163,37 @@
                     </div>
                 </div>
 
+                <!-- Pricing Configuration -->
+                <div class="mb-5 p-4 rounded-xl border border-teal-500/30 bg-teal-500/5">
+                    <div class="flex items-center gap-3 mb-4">
+                        {{ form.is_paid }}
+                        <label for="{{ form.is_paid.id_for_label }}" class="text-sm font-semibold text-slate-300 cursor-pointer">
+                            This is a Paid Hackathon
+                        </label>
+                    </div>
+                    
+                    <div id="pricing-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden">
+                        <div class="{% if form.fee_type.errors %}field-error{% endif %}">
+                            <label for="{{ form.fee_type.id_for_label }}" class="block text-sm font-semibold text-slate-300 mb-2">
+                                Fee Type <span class="text-red-400">*</span>
+                            </label>
+                            {{ form.fee_type }}
+                            {% if form.fee_type.errors %}
+                                <p class="mt-1.5 text-xs text-red-400">{{ form.fee_type.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="{% if form.fee_amount.errors %}field-error{% endif %}">
+                            <label for="{{ form.fee_amount.id_for_label }}" class="block text-sm font-semibold text-slate-300 mb-2">
+                                Fee Amount (₹) <span class="text-red-400">*</span>
+                            </label>
+                            {{ form.fee_amount }}
+                            {% if form.fee_amount.errors %}
+                                <p class="mt-1.5 text-xs text-red-400">{{ form.fee_amount.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Actions -->
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-slate-700/50">
                     <button type="submit" class="flex-1 sm:flex-none rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/40 hover:from-yellow-400 hover:to-amber-500 transition-all text-center">
@@ -177,5 +207,24 @@
         </div>
 
     </main>
+
+    <script>
+        // Toggle Pricing Fields
+        const isPaidCheckbox = document.getElementById('id_is_paid');
+        const pricingFields = document.getElementById('pricing-fields');
+        
+        function togglePricingFields() {
+            if (isPaidCheckbox.checked) {
+                pricingFields.classList.remove('hidden');
+            } else {
+                pricingFields.classList.add('hidden');
+            }
+        }
+        
+        if (isPaidCheckbox) {
+            isPaidCheckbox.addEventListener('change', togglePricingFields);
+            togglePricingFields(); // Initial state
+        }
+    </script>
 </body>
 </html>
