@@ -7,7 +7,7 @@ import {
   declineTeamInvite,
   toggleRecruitingVisibility,
 } from "@/app/actions/teamRequests";
-import { Mail, Check, X, Loader2, EyeOff, Eye, Users, Sparkles } from "lucide-react";
+import { Mail, Check, X, Loader2, EyeOff, Eye, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CustomModal from "./CustomModal";
 import ToastContainer, { ToastMessage } from "./ToastContainer";
@@ -150,17 +150,17 @@ export default function InboxSection({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6">
+    <div>
       {/* Header with toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <Mail className="w-4 h-4 text-teal-400" />
+        <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
+          <Mail className="w-4 h-4 text-primary" />
           Inbox & Recruiting
         </h2>
-        <div className="flex items-center gap-3 bg-slate-950/40 border border-slate-800/40 rounded-xl px-4 py-2.5">
+        <div className="flex items-center gap-3 bg-canvas-parchment border border-black/[0.06] rounded-md px-4 py-2.5">
           <div>
-            <p className="text-[11px] font-bold text-white">Recruiting Profile</p>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[11px] font-semibold text-ink">Recruiting Profile</p>
+            <p className="text-[10px] text-ink-muted">
               {hasTeam ? "Disabled (Already in a team)" : "Let teams find you"}
             </p>
           </div>
@@ -168,12 +168,12 @@ export default function InboxSection({
             onClick={handleToggleVisibility}
             disabled={hasTeam || togglingVisibility}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
-              visible ? "bg-teal-500 shadow-[0_0_10px_rgba(20,184,166,0.3)]" : "bg-slate-700"
+              visible ? "bg-primary" : "bg-black/[0.12]"
             }`}
             aria-pressed={visible}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
                 visible ? "translate-x-6" : "translate-x-1"
               }`}
             />
@@ -183,48 +183,48 @@ export default function InboxSection({
 
       {/* Content */}
       {!visible ? (
-        <div className="rounded-xl border border-dashed border-slate-800/60 bg-slate-950/30 py-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-slate-800/40 flex items-center justify-center mx-auto mb-3">
-            <EyeOff className="w-6 h-6 text-slate-500" />
+        <div className="rounded-md border border-dashed border-black/[0.12] bg-canvas-parchment/50 py-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-canvas-parchment flex items-center justify-center mx-auto mb-3 border border-black/[0.04]">
+            <EyeOff className="w-5 h-5 text-ink-muted" />
           </div>
-          <p className="text-sm font-medium text-slate-300">Your profile is hidden</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-sm font-medium text-ink">Your profile is hidden</p>
+          <p className="text-xs text-ink-muted mt-1">
             Turn on visibility to allow Team Leaders to find you and send invitations.
           </p>
         </div>
       ) : loading ? (
         <div className="py-8 text-center">
-          <Loader2 className="w-5 h-5 text-slate-400 animate-spin mx-auto" />
+          <Loader2 className="w-5 h-5 text-ink-muted animate-spin mx-auto" />
         </div>
       ) : invites.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-800/60 bg-slate-950/30 py-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center mx-auto mb-3">
-            <Sparkles className="w-6 h-6 text-teal-500/50" />
+        <div className="rounded-md border border-dashed border-black/[0.12] bg-canvas-parchment/50 py-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 border border-primary/10">
+            <Eye className="w-5 h-5 text-primary/50" />
           </div>
-          <p className="text-sm text-slate-400 font-medium">No pending team invitations.</p>
-          <p className="text-xs text-slate-500 mt-1">Your profile is visible — teams can find and invite you.</p>
+          <p className="text-sm text-ink-muted font-medium">No pending team invitations.</p>
+          <p className="text-xs text-ink-muted mt-1">Your profile is visible — teams can find and invite you.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {invites.map((inv, idx) => (
             <div
               key={inv.id}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-800/40 bg-slate-950/30 hover:bg-slate-950/50 gap-3 transition-all animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-md border border-black/[0.06] bg-canvas-parchment/30 hover:bg-canvas-parchment/60 gap-3 transition-all animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center shrink-0">
-                  <Users className="w-5 h-5 text-violet-400" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white">{inv.teamName}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Hackathon: {inv.hackathonName}</p>
+                  <p className="text-sm font-semibold text-ink">{inv.teamName}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">Hackathon: {inv.hackathonName}</p>
                 </div>
               </div>
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() => handleAccept(inv.id, inv.teamName)}
                   disabled={processingId === inv.id}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-300 text-xs font-bold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-1.5"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-success-light hover:bg-success/10 border border-success/15 text-success text-xs font-semibold rounded-md transition-all apple-press-effect cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   <Check className="w-3 h-3" />
                   Accept
@@ -232,7 +232,7 @@ export default function InboxSection({
                 <button
                   onClick={() => handleDecline(inv.id, inv.teamName)}
                   disabled={processingId === inv.id}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 text-xs font-bold rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-1.5"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-danger-light hover:bg-danger/10 border border-danger/15 text-danger text-xs font-semibold rounded-md transition-all apple-press-effect cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   <X className="w-3 h-3" />
                   Decline

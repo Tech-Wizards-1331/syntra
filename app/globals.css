@@ -1,28 +1,43 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design Tokens ──────────────────────────────────────────────── */
+/* ─── Apple Design Tokens ────────────────────────────────────────── */
 :root {
-  --background: #020617;
-  --foreground: #91a3c2;
-  --accent: #14b8a6;
-  --accent-secondary: #34d399;
-  --glass-bg: rgba(15, 23, 42, 0.55);
-  --glass-border: rgba(51, 65, 85, 0.45);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --glow-teal: 0 0 20px rgba(20, 184, 166, 0.15);
-  --glow-teal-strong: 0 0 30px rgba(20, 184, 166, 0.25);
-  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --primary: #0066cc;
+  --primary-focus: #0071e3;
+  --primary-dark: #2997ff;
+  --ink: #1d1d1f;
+  --ink-muted: #7a7a7a;
+  --ink-dark: #333333;
+  --canvas: #ffffff;
+  --canvas-parchment: #f5f5f7;
+  --canvas-pearl: #fafafc;
+  
+  --tile-1: #272729;
+  --tile-2: #2a2a2c;
+  --tile-3: #252527;
+  --tile-black: #000000;
+
+  --success: #24a148;
+  --warning: #ff9f0a;
+  --danger: #ff453a;
+  --info: #0a84ff;
+
+  --font-sf-display: "SF Pro Display", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-sf-text: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+
+  --transition-smooth: cubic-bezier(0.25, 1, 0.5, 1);
   --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--canvas-parchment);
+  font-family: var(--font-sf-text), 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ─── Keyframe Animations ────────────────────────────────────────── */
@@ -68,48 +83,12 @@ body {
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(20, 184, 166, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(20, 184, 166, 0.3);
-  }
-}
-
 @keyframes progress-countdown {
   from {
     width: 100%;
   }
   to {
     width: 0%;
-  }
-}
-
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes border-glow {
-  0%, 100% {
-    border-color: rgba(20, 184, 166, 0.2);
-  }
-  50% {
-    border-color: rgba(20, 184, 166, 0.5);
   }
 }
 
@@ -158,14 +137,6 @@ body {
   animation: shimmer 2.5s linear infinite;
 }
 
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
 .animate-progress-countdown {
   animation: progress-countdown 4s linear forwards;
 }
@@ -190,46 +161,7 @@ body {
 .stagger-5 { animation-delay: 0.25s; }
 .stagger-6 { animation-delay: 0.3s; }
 
-/* ─── Glass Morphism ─────────────────────────────────────────────── */
-.glass-card {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.glass-card-hover {
-  transition: all 0.3s var(--transition-smooth);
-}
-
-.glass-card-hover:hover {
-  background: rgba(15, 23, 42, 0.7);
-  border-color: rgba(20, 184, 166, 0.25);
-  box-shadow: var(--glass-shadow), var(--glow-teal);
-  transform: translateY(-2px);
-}
-
-/* ─── Animated Gradient Border ───────────────────────────────────── */
-.gradient-border {
-  position: relative;
-}
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.4), transparent 40%, transparent 60%, rgba(52, 211, 153, 0.3));
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* ─── Custom Scrollbar ───────────────────────────────────────────── */
+/* ─── Custom Scrollbar (Apple Light) ─────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -240,64 +172,21 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.6);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 0.8);
+  background: rgba(0, 0, 0, 0.25);
 }
 
-/* ─── Focus Ring ─────────────────────────────────────────────────── */
+/* ─── Focus Ring (Apple Primary) ─────────────────────────────────── */
 .focus-ring:focus-visible {
-  outline: 2px solid rgba(20, 184, 166, 0.5);
+  outline: 2px solid var(--primary-focus);
   outline-offset: 2px;
 }
 
-/* ─── Animated Background Mesh ───────────────────────────────────── */
-.bg-mesh-gradient {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 0;
-}
-
-.bg-mesh-gradient .orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-}
-
-.bg-mesh-gradient .orb-1 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(20, 184, 166, 0.12), transparent 70%);
-  top: -10%;
-  left: -5%;
-  animation: float 20s ease-in-out infinite;
-}
-
-.bg-mesh-gradient .orb-2 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(234, 179, 8, 0.06), transparent 70%);
-  bottom: -10%;
-  right: -5%;
-  animation: float 25s ease-in-out infinite reverse;
-}
-
-.bg-mesh-gradient .orb-3 {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.06), transparent 70%);
-  top: 40%;
-  right: 20%;
-  animation: float 18s ease-in-out infinite 3s;
-}
-
-/* ─── Skeleton Loaders ───────────────────────────────────────────── */
+/* ─── Skeleton Loaders (Apple Light Theme) ────────────────────────── */
 @keyframes skeleton-shimmer {
   0% {
     background-position: -400px 0;
@@ -310,11 +199,11 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(30, 41, 59, 0.5) 0%,
-    rgba(51, 65, 85, 0.4) 40%,
-    rgba(71, 85, 105, 0.3) 50%,
-    rgba(51, 65, 85, 0.4) 60%,
-    rgba(30, 41, 59, 0.5) 100%
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.08) 40%,
+    rgba(0, 0, 0, 0.06) 50%,
+    rgba(0, 0, 0, 0.08) 60%,
+    rgba(0, 0, 0, 0.04) 100%
   );
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.8s ease-in-out infinite;
@@ -369,8 +258,8 @@ body {
 .skeleton-card {
   border-radius: 16px;
   padding: 20px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--canvas);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .skeleton-progress {
@@ -378,48 +267,89 @@ body {
   border-radius: 9999px;
 }
 
-/* ─── CTA Button Shimmer ─────────────────────────────────────────── */
-@keyframes cta-shimmer {
-  0% {
-    transform: translateX(-100%) skewX(-15deg);
-  }
-  100% {
-    transform: translateX(200%) skewX(-15deg);
-  }
+/* ─── Apple UX Utilities ─────────────────────────────────────────── */
+.font-apple-hero {
+  font-family: var(--font-sf-display), Inter, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.07;
 }
 
-.btn-cta-shimmer {
-  position: relative;
-  overflow: hidden;
+.font-apple-display {
+  font-family: var(--font-sf-display), Inter, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
 }
 
-.btn-cta-shimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.15),
-    transparent
-  );
-  animation: cta-shimmer 3s ease-in-out infinite;
-  pointer-events: none;
+.font-apple-tagline {
+  font-family: var(--font-sf-display), Inter, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.011em;
+  line-height: 1.19;
 }
 
-.btn-cta-shimmer:hover::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.25),
-    transparent
-  );
+.apple-press-effect {
+  transition: transform 0.12s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.btn-cta-shimmer:disabled::after {
-  animation: none;
-  display: none;
+.apple-press-effect:active {
+  transform: scale(0.96);
+}
+
+.apple-hairline {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.apple-hairline-dark {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.apple-shadow-product {
+  box-shadow: 3px 5px 30px rgba(0, 0, 0, 0.22);
+}
+
+.apple-shadow-overlay {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Apple Glassmorphism Utilities (VisionOS Style) ────────────── */
+.apple-glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.apple-glass-panel {
+  background: rgba(245, 245, 247, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.apple-glass-modal {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.apple-glass-nav {
+  background: rgba(245, 245, 247, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.apple-mesh-bg {
+  background-color: var(--canvas-parchment);
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(200, 220, 255, 0.2) 0px, transparent 60%),
+    radial-gradient(at 80% 20%, rgba(240, 210, 255, 0.2) 0px, transparent 50%),
+    radial-gradient(at 30% 60%, rgba(255, 220, 230, 0.2) 0px, transparent 60%),
+    radial-gradient(at 90% 80%, rgba(210, 240, 255, 0.2) 0px, transparent 50%);
+  background-attachment: fixed;
+  background-size: 100vw 100vh;
 }

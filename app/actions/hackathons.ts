@@ -140,6 +140,7 @@ function validateHackathonInput(data: {
   registration_deadline: Date | string;
   min_team_size: number;
   max_team_size: number;
+  max_teams?: number | null;
   is_paid: boolean;
   fee_type?: string | null;
   fee_amount?: number | null;
@@ -172,6 +173,10 @@ function validateHackathonInput(data: {
     throw new Error("Maximum team size must be greater than or equal to minimum team size");
   }
 
+  if (data.max_teams !== undefined && data.max_teams !== null && data.max_teams < 1) {
+    throw new Error("Maximum teams allowed must be at least 1");
+  }
+
   if (data.is_paid) {
     if (!data.fee_type || !["team", "participant"].includes(data.fee_type)) {
       throw new Error("Paid hackathons require a valid fee type (team or participant)");
@@ -193,6 +198,7 @@ export async function createHackathon(data: {
   registration_deadline: Date | string;
   min_team_size: number;
   max_team_size: number;
+  max_teams?: number | null;
   is_paid: boolean;
   fee_type?: string | null;
   fee_amount?: number | null;
@@ -212,6 +218,13 @@ export async function createHackathon(data: {
     throw new Error("Invalid hackathon status value");
   }
 
+  let roomConfigJson: string | null = null;
+  if (data.max_teams !== undefined && data.max_teams !== null) {
+    roomConfigJson = JSON.stringify([
+      { room_no: "METADATA", type: "metadata", max_teams: Number(data.max_teams) }
+    ]);
+  }
+
   const hackathon = await prisma.organizer_hackathon.create({
     data: {
       name: data.name,
@@ -226,6 +239,7 @@ export async function createHackathon(data: {
       fee_type: data.is_paid ? data.fee_type : null,
       fee_amount: data.is_paid ? (data.fee_amount as any) : null,
       organizer_id: profile.id,
+      room_configuration: roomConfigJson,
       created_at: new Date(),
       updated_at: new Date(),
     },
@@ -252,6 +266,7 @@ export async function updateHackathon(
     registration_deadline: Date | string;
     min_team_size: number;
     max_team_size: number;
+    max_teams?: number | null;
     is_paid: boolean;
     fee_type?: string | null;
     fee_amount?: number | null;
@@ -305,6 +320,46 @@ export async function updateHackathon(
 
   validateHackathonInput(data);
 
+  // Retrieve the existing hackathon's room_configuration
+  const existingConfig = hackathon.room_configuration;
+  let updatedConfigJson: string | null = null;
+  
+  const newMaxTeams = data.max_teams !== undefined && data.max_teams !== null ? Number(data.max_teams) : null;
+  
+  if (existingConfig) {
+    try {
+      let parsed = JSON.parse(existingConfig);
+      if (Array.isArray(parsed)) {
+        const metaIdx = parsed.findIndex((el: any) => el.room_no === "METADATA" && el.type === "metadata");
+        if (newMaxTeams !== null) {
+          if (metaIdx >= 0) {
+            parsed[metaIdx].max_teams = newMaxTeams;
+          } else {
+            parsed.unshift({ room_no: "METADATA", type: "metadata", max_teams: newMaxTeams });
+          }
+        } else {
+          if (metaIdx >= 0) {
+            parsed.splice(metaIdx, 1);
+          }
+        }
+        updatedConfigJson = JSON.stringify(parsed);
+      } else {
+        updatedConfigJson = newMaxTeams !== null
+          ? JSON.stringify([{ room_no: "METADATA", type: "metadata", max_teams: newMaxTeams }])
+          : null;
+      }
+    } catch (e) {
+      console.error("Failed to update existing room_configuration for max_teams, fallback to new serialization", e);
+      updatedConfigJson = newMaxTeams !== null
+        ? JSON.stringify([{ room_no: "METADATA", type: "metadata", max_teams: newMaxTeams }])
+        : null;
+    }
+  } else {
+    updatedConfigJson = newMaxTeams !== null
+      ? JSON.stringify([{ room_no: "METADATA", type: "metadata", max_teams: newMaxTeams }])
+      : null;
+  }
+
   await prisma.organizer_hackathon.update({
     where: { id },
     data: {
@@ -319,6 +374,7 @@ export async function updateHackathon(
       is_paid: data.is_paid,
       fee_type: data.is_paid ? data.fee_type : null,
       fee_amount: data.is_paid ? (data.fee_amount as any) : null,
+      room_configuration: updatedConfigJson,
       updated_at: new Date(),
     },
   });

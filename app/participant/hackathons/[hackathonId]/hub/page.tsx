@@ -270,29 +270,29 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
   };
 
   return (
-    <main className="relative flex-1 max-w-7xl mx-auto w-full px-6 py-10 z-10 animate-fade-in-up">
+    <main className="relative flex-1 max-w-7xl mx-auto w-full px-6 py-10 z-10">
       {/* Dynamic Header */}
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-900">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-black/[0.06]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20">
-            <Trophy className="w-5 h-5 text-slate-950" />
+          <div className="w-10 h-10 rounded-md bg-tile-black flex items-center justify-center">
+            <Trophy className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">
+            <h1 className="text-xl font-semibold tracking-tight text-ink">
               Hackathon Hub
             </h1>
-            <p className="text-[10px] text-teal-400 font-medium tracking-widest uppercase">
+            <p className="text-[10px] text-primary font-medium tracking-wider uppercase">
               {hackathon.name}
             </p>
           </div>
         </div>
 
         <Link
-          href="/participant/dashboard"
-          className="p-2 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white"
+          href="/participant/registrations"
+          className="px-3.5 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition apple-press-effect flex items-center gap-1.5 cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Dashboard
+          <ArrowLeft className="w-3.5 h-3.5 text-ink-muted" />
+          My Registrations
         </Link>
       </div>
 

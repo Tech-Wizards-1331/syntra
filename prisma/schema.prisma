@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:../backend/db.sqlite3"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model account_emailaddress {
@@ -81,7 +82,7 @@ model accounts_user_user_permissions {
   auth_permission auth_permission @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   accounts_user   accounts_user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([user_id, permission_id], map: "accounts_user_user_permissions_user_id_permission_id_2ab516c2_uniq")
+  @@unique([user_id, permission_id], map: "accounts_user_user_perms_uid_pid_uniq")
   @@index([permission_id], map: "accounts_user_user_permissions_permission_id_113bb443")
   @@index([user_id], map: "accounts_user_user_permissions_user_id_e4f0a161")
 }
@@ -208,7 +209,7 @@ model django_celery_beat_solarschedule {
   longitude                       Decimal
   django_celery_beat_periodictask django_celery_beat_periodictask[]
 
-  @@unique([event, latitude, longitude], map: "django_celery_beat_solarschedule_event_latitude_longitude_ba64999a_uniq")
+  @@unique([event, latitude, longitude], map: "celery_solarschedule_evt_lat_long_uniq")
 }
 
 model django_content_type {
@@ -280,7 +281,7 @@ model organizer_hackathoncoordinator {
   accounts_user       accounts_user       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizer_hackathon organizer_hackathon @relation(fields: [hackathon_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([hackathon_id, user_id], map: "organizer_hackathoncoordinator_hackathon_id_user_id_66787a03_uniq")
+  @@unique([hackathon_id, user_id], map: "organizer_hackathoncoord_hid_uid_uniq")
   @@index([hackathon_id, user_id, is_active], map: "coord_h_u_active_idx")
   @@index([user_id], map: "organizer_hackathoncoordinator_user_id_14c94e16")
   @@index([hackathon_id], map: "organizer_hackathoncoordinator_hackathon_id_91aab097")
@@ -341,7 +342,7 @@ model organizer_scanrecord {
   accounts_user          accounts_user          @relation(fields: [scanned_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizer_scancategory organizer_scancategory @relation(fields: [scan_category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([team_member_id, scan_category_id], map: "organizer_scanrecord_team_member_id_scan_category_id_9a485cca_uniq")
+  @@unique([team_member_id, scan_category_id], map: "organizer_scanrecord_tmid_scid_uniq")
   @@index([team_member_id], map: "organizer_scanrecord_team_member_id_a8e60a9f")
   @@index([scanned_by_id], map: "organizer_scanrecord_scanned_by_id_0695c1b3")
   @@index([scan_category_id], map: "organizer_scanrecord_scan_category_id_c0b6a1f7")
@@ -368,9 +369,9 @@ model participant_participantprofile_skills {
   participant_skill              participant_skill              @relation(fields: [skill_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   participant_participantprofile participant_participantprofile @relation(fields: [participantprofile_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([participantprofile_id, skill_id], map: "participant_participantprofile_skills_participantprofile_id_skill_id_f6490703_uniq")
+  @@unique([participantprofile_id, skill_id], map: "participant_profile_skills_pid_sid_uniq")
   @@index([skill_id], map: "participant_participantprofile_skills_skill_id_23112aa7")
-  @@index([participantprofile_id], map: "participant_participantprofile_skills_participantprofile_id_1330ebfc")
+  @@index([participantprofile_id], map: "participant_profile_skills_profile_id_idx")
 }
 
 model participant_payment {
@@ -450,7 +451,7 @@ model participant_teammember_skills {
   participant_skill      participant_skill      @relation(fields: [skill_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   participant_teammember participant_teammember @relation(fields: [teammember_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([teammember_id, skill_id], map: "participant_teammember_skills_teammember_id_skill_id_a75ea537_uniq")
+  @@unique([teammember_id, skill_id], map: "participant_teammember_skills_tmid_sid_uniq")
   @@index([skill_id], map: "participant_teammember_skills_skill_id_75e29140")
   @@index([teammember_id], map: "participant_teammember_skills_teammember_id_99d26633")
 }
@@ -504,7 +505,7 @@ model socialaccount_socialapp_sites {
   django_site             django_site             @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   socialaccount_socialapp socialaccount_socialapp @relation(fields: [socialapp_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([socialapp_id, site_id], map: "socialaccount_socialapp_sites_socialapp_id_site_id_71a9a768_uniq")
+  @@unique([socialapp_id, site_id], map: "socialaccount_socialapp_sites_appid_siteid_uniq")
   @@index([site_id], map: "socialaccount_socialapp_sites_site_id_2579dee5")
   @@index([socialapp_id], map: "socialaccount_socialapp_sites_socialapp_id_97fb6e7d")
 }

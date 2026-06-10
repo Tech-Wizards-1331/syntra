@@ -29,7 +29,6 @@ import {
   Loader2,
   Mail,
   GraduationCap,
-  Sparkles,
   Pencil,
   Calendar,
   Layers,
@@ -128,7 +127,7 @@ function getMissingFields(member: TeamMember) {
 function getRoleBadgeStyles(role: string) {
   const normalized = role.toLowerCase();
   if (normalized.includes("lead") || normalized.includes("leader") || normalized.includes("manager")) {
-    return "bg-violet-500/10 border-violet-500/20 text-violet-400";
+    return "bg-purple-50 border-purple-200 text-purple-700";
   }
   if (
     normalized.includes("developer") ||
@@ -139,7 +138,7 @@ function getRoleBadgeStyles(role: string) {
     normalized.includes("fullstack") ||
     normalized.includes("dev")
   ) {
-    return "bg-teal-500/10 border-teal-500/20 text-teal-400";
+    return "bg-blue-50 border-blue-200 text-blue-700";
   }
   if (
     normalized.includes("designer") ||
@@ -147,9 +146,9 @@ function getRoleBadgeStyles(role: string) {
     normalized.includes("ui") ||
     normalized.includes("product")
   ) {
-    return "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
+    return "bg-pink-50 border-pink-200 text-pink-700";
   }
-  return "bg-slate-800 border-slate-750 text-slate-300";
+  return "bg-canvas-parchment border-black/[0.08] text-ink-muted";
 }
 
 function getInitials(name: string) {
@@ -158,14 +157,37 @@ function getInitials(name: string) {
   return (parts[0]?.[0] || "?").toUpperCase();
 }
 
-const avatarGradients = [
-  "from-teal-500 to-emerald-400",
-  "from-violet-500 to-purple-400",
-  "from-amber-500 to-yellow-400",
-  "from-rose-500 to-pink-400",
-  "from-sky-500 to-blue-400",
-  "from-indigo-500 to-violet-400",
+const avatarColors = [
+  "bg-blue-100 text-blue-700",
+  "bg-purple-100 text-purple-700",
+  "bg-amber-100 text-amber-700",
+  "bg-rose-100 text-rose-700",
+  "bg-sky-100 text-sky-700",
+  "bg-indigo-100 text-indigo-700",
 ];
+
+// ─── Form Input Component (module-level to prevent remount on parent re-render) ─
+
+function FormInput({
+  label,
+  required,
+  ...inputProps
+}: {
+  label: string;
+  required?: boolean;
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <label className="block text-[11px] text-ink-muted mb-1.5 font-semibold uppercase tracking-wider">
+        {label} {required && <span className="text-primary">*</span>}
+      </label>
+      <input
+        {...inputProps}
+        className="w-full px-4 py-2.5 rounded-md bg-canvas-pearl border border-black/[0.08] text-ink text-sm placeholder-ink-muted/50 focus:outline-none focus:border-primary transition"
+      />
+    </div>
+  );
+}
 
 // ─── Component ──────────────────────────────────────────────────────
 
@@ -588,25 +610,6 @@ export default function TeamDashboardClient({
     );
   };
 
-  // ─── Form Input Component ─────────────────────────────────────────
-  const FormInput = ({
-    label,
-    required,
-    ...inputProps
-  }: {
-    label: string;
-    required?: boolean;
-  } & React.InputHTMLAttributes<HTMLInputElement>) => (
-    <div>
-      <label className="block text-xs text-slate-400 mb-1.5 font-semibold">
-        {label} {required && <span className="text-teal-500">*</span>}
-      </label>
-      <input
-        {...inputProps}
-        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800/60 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition-all duration-200"
-      />
-    </div>
-  );
 
   // ─── Render ────────────────────────────────────────────────────────
 
@@ -617,52 +620,52 @@ export default function TeamDashboardClient({
         <div className="grid grid-cols-1 gap-6">
           {selectedHackathon ? (
             /* Hackathon Selection & Details when explicitly registering */
-            <div className="glass-card rounded-2xl p-6">
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
-                <Calendar className="w-5 h-5 text-teal-400" />
+            <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
+              <h3 className="font-semibold text-ink mb-4 flex items-center gap-2 text-lg">
+                <Calendar className="w-5 h-5 text-primary" />
                 Team Registration
               </h3>
 
-              <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800/40 space-y-4">
+              <div className="p-5 rounded-md bg-canvas-parchment border border-black/[0.06] space-y-4">
                 <div>
-                  <h4 className="font-bold text-white text-base mb-1">{selectedHackathon.name}</h4>
-                  <p className="text-sm text-slate-400 leading-relaxed">
+                  <h4 className="font-semibold text-ink text-base mb-1">{selectedHackathon.name}</h4>
+                  <p className="text-sm text-ink-muted leading-relaxed">
                     {selectedHackathon.description || "No description provided."}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-800/40">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800/30">
-                    <div className="w-9 h-9 rounded-lg bg-teal-500/10 flex items-center justify-center shrink-0">
-                      <Calendar className="w-4 h-4 text-teal-400" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-black/[0.06]">
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-canvas border border-black/[0.04]">
+                    <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 uppercase font-semibold">Starts On</p>
-                      <p className="text-xs text-slate-300 font-bold">
+                      <p className="text-[10px] text-ink-muted uppercase font-semibold">Starts On</p>
+                      <p className="text-xs text-ink font-semibold">
                         {new Date(selectedHackathon.start_date).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800/30">
-                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-canvas border border-black/[0.04]">
+                    <div className="w-9 h-9 rounded-md bg-warning-light flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-4 h-4 text-warning" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 uppercase font-semibold">Deadline</p>
-                      <p className="text-xs text-amber-400 font-bold">
+                      <p className="text-[10px] text-ink-muted uppercase font-semibold">Deadline</p>
+                      <p className="text-xs text-warning font-semibold">
                         {new Date(selectedHackathon.registration_deadline).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800/30">
-                    <div className="w-9 h-9 rounded-lg bg-teal-500/10 flex items-center justify-center shrink-0">
-                      <Layers className="w-4 h-4 text-teal-400" />
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-canvas border border-black/[0.04]">
+                    <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <Layers className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 uppercase font-semibold">Team Size</p>
-                      <p className="text-xs text-slate-300 font-bold">
+                      <p className="text-[10px] text-ink-muted uppercase font-semibold">Team Size</p>
+                      <p className="text-xs text-ink font-semibold">
                         {selectedHackathon.min_team_size} - {selectedHackathon.max_team_size} members
                       </p>
                     </div>
@@ -670,20 +673,20 @@ export default function TeamDashboardClient({
                 </div>
 
                 {/* Create Team Form directly inside expanded details */}
-                <div className="pt-4 border-t border-slate-800/40 space-y-3">
-                  <h5 className="text-sm font-bold text-white">Create a Team for this Hackathon</h5>
+                <div className="pt-4 border-t border-black/[0.06] space-y-3">
+                  <h5 className="text-sm font-semibold text-ink">Create a Team for this Hackathon</h5>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="text"
                       value={createTeamName}
                       onChange={(e) => setCreateTeamName(e.target.value)}
                       placeholder="Enter team name..."
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800/60 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition-all"
+                      className="flex-1 px-4 py-2.5 rounded-md bg-canvas border border-black/[0.08] text-ink text-sm placeholder-ink-muted/50 focus:outline-none focus:border-primary transition"
                     />
                     <button
                       onClick={handleCreateTeam}
                       disabled={isPending || !createTeamName.trim()}
-                      className="btn-cta-shimmer px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-[0_4px_15px_rgba(20,184,166,0.2)]"
+                      className="px-5 py-2.5 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 apple-press-effect"
                     >
                       {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                       Create Team
@@ -694,17 +697,17 @@ export default function TeamDashboardClient({
             </div>
           ) : (
             /* Welcome / Empty State when visiting dashboard home without active hackathon query */
-            <div className="glass-card rounded-2xl p-10 text-center animate-scale-in">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 border border-teal-500/20 flex items-center justify-center mx-auto mb-5 animate-float">
-                <Trophy className="w-10 h-10 text-teal-400" />
+            <div className="p-10 rounded-lg bg-canvas border border-black/[0.06] text-center animate-scale-in apple-shadow-overlay">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5">
+                <Trophy className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">No Active Registrations</h3>
-              <p className="text-sm text-slate-400 max-w-md mx-auto mb-6">
+              <h3 className="text-xl font-semibold text-ink mb-2">No Active Registrations</h3>
+              <p className="text-sm text-ink-muted max-w-md mx-auto mb-6">
                 You are not currently registered in a team for any active hackathon. Explore upcoming events and create a new team to get started.
               </p>
               <button
                 onClick={() => router.push("/participant/hackathons")}
-                className="btn-cta-shimmer inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer shadow-[0_4px_20px_rgba(20,184,166,0.25)]"
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus transition cursor-pointer apple-press-effect"
               >
                 Browse Open Hackathons
                 <ArrowRight className="w-4 h-4" />
@@ -717,13 +720,13 @@ export default function TeamDashboardClient({
         <div className="flex flex-col gap-6">
           {/* Draft Mode Warning Banner */}
           {!team.is_registered && (
-            <div className="p-4 rounded-xl bg-amber-500/8 border border-amber-500/20 text-amber-400 flex items-start gap-3 animate-fade-in-up">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="p-4 rounded-md bg-warning-light border border-warning/15 text-warning flex items-start gap-3 animate-fade-in-up">
+              <div className="w-9 h-9 rounded-md bg-warning/10 flex items-center justify-center shrink-0 mt-0.5">
                 <Info className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm text-white mb-0.5">Registration Draft State</h4>
-                <p className="text-xs text-amber-400/80 leading-relaxed">
+                <h4 className="font-semibold text-sm text-ink mb-0.5">Registration Draft State</h4>
+                <p className="text-xs text-warning leading-relaxed">
                   Your team registration details are currently saved as a draft. Click the <strong>Complete Registration</strong> button below to lock details, complete registration, and generate your check-in QR code.
                 </p>
               </div>
@@ -731,7 +734,7 @@ export default function TeamDashboardClient({
           )}
 
           {/* Team Info Card */}
-          <div className="glass-card rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in-up stagger-1">
+          <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in-up stagger-1">
             <div>
               {isRenaming && isLeader && !team.is_registered ? (
                 <div className="flex items-center gap-2">
@@ -741,31 +744,31 @@ export default function TeamDashboardClient({
                     onChange={(e) => setNewTeamName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleRenameTeam()}
                     placeholder="New team name..."
-                    className="px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-800/60 text-white text-sm focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition-all"
+                    className="px-3.5 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] text-ink text-sm focus:outline-none focus:border-primary transition"
                     autoFocus
                   />
                   <button
                     onClick={handleRenameTeam}
                     disabled={isPending || !newTeamName.trim()}
-                    className="px-3.5 py-2 rounded-xl bg-teal-500 text-slate-950 text-xs font-bold hover:bg-teal-400 transition cursor-pointer disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-md bg-primary text-white text-xs font-medium hover:bg-primary-focus transition cursor-pointer disabled:opacity-50"
                   >
                     Save
                   </button>
                   <button
                     onClick={() => { setIsRenaming(false); setNewTeamName(""); }}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800/60 text-slate-400 text-xs font-medium hover:text-white transition cursor-pointer"
+                    className="px-3.5 py-2 rounded-md bg-canvas-parchment border border-black/[0.06] text-ink-muted text-xs font-medium hover:text-ink transition cursor-pointer"
                   >
                     Cancel
                   </button>
                 </div>
               ) : (
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-teal-400" />
+                <h3 className="text-xl font-semibold text-ink flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
                   {team.name}
                   {isLeader && !team.is_registered && (
                     <button
                       onClick={() => { setIsRenaming(true); setNewTeamName(team.name); }}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition cursor-pointer"
+                      className="p-1.5 rounded-md text-ink-muted hover:text-primary hover:bg-primary/5 transition cursor-pointer"
                       title="Rename team"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -773,7 +776,7 @@ export default function TeamDashboardClient({
                   )}
                 </h3>
               )}
-              <p className="text-sm text-slate-400 mt-1">
+              <p className="text-sm text-ink-muted mt-1">
                 {team.organizer_hackathon.name} · {memberCount}/{team.organizer_hackathon.max_team_size} members
               </p>
             </div>
@@ -781,21 +784,21 @@ export default function TeamDashboardClient({
               {team.is_registered && (
                 <a
                   href={`/participant/hackathons/${team.organizer_hackathon.id}/hub`}
-                  className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-teal-500/10 border border-teal-500/20 text-teal-400 hover:bg-teal-500/20 transition flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-pill text-xs font-medium bg-primary/10 border border-primary/15 text-primary hover:bg-primary/15 transition flex items-center gap-1.5"
                 >
                   <Trophy className="w-3 h-3" />
                   Open Hub
                 </a>
               )}
               <span
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-pill text-xs font-semibold border ${
                   team.is_registered
-                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                    : "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                    ? "bg-success-light border-success/15 text-success"
+                    : "bg-warning-light border-warning/15 text-warning"
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${
-                  team.is_registered ? "bg-emerald-400" : "bg-amber-400 animate-pulse-dot"
+                  team.is_registered ? "bg-success" : "bg-warning animate-pulse-dot"
                 }`} />
                 {team.is_registered ? "Registered" : "Draft Status"}
               </span>
@@ -803,17 +806,17 @@ export default function TeamDashboardClient({
           </div>
 
           {/* Member List */}
-          <div className="glass-card rounded-2xl p-6 space-y-4 animate-fade-in-up stagger-2">
+          <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay space-y-4 animate-fade-in-up stagger-2">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-white flex items-center gap-2 text-base">
-                <Users className="w-5 h-5 text-teal-400" />
+              <h3 className="font-semibold text-ink flex items-center gap-2 text-base">
+                <Users className="w-5 h-5 text-primary" />
                 Teammates
-                <span className="text-[10px] font-semibold text-slate-500 ml-1">({memberCount})</span>
+                <span className="text-[10px] font-semibold text-ink-muted ml-1">({memberCount})</span>
               </h3>
               {isLeader && !team.is_registered && memberCount < team.organizer_hackathon.max_team_size && (
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold text-xs hover:bg-teal-400 transition-all duration-200 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-95 shadow-[0_2px_10px_rgba(20,184,166,0.2)]"
+                  className="px-4 py-2 rounded-pill bg-primary text-white font-normal text-xs hover:bg-primary-focus transition flex items-center gap-1.5 cursor-pointer apple-press-effect"
                 >
                   <Plus className="w-3.5 h-3.5" /> Recruit Member
                 </button>
@@ -827,44 +830,44 @@ export default function TeamDashboardClient({
                 return (
                   <div
                     key={member.id}
-                    className={`p-4 rounded-xl bg-slate-950/40 border border-slate-800/40 flex items-center justify-between gap-4 group hover:border-slate-700/60 transition-all duration-300 animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
-                    style={{ borderLeft: `3px solid ${isMemberLeader ? '#14b8a6' : parsed.role ? '#a78bfa' : '#334155'}` }}
+                    className={`p-4 rounded-md bg-canvas-parchment/50 border border-black/[0.06] flex items-center justify-between gap-4 group hover:border-black/[0.12] transition-all duration-300 animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
+                    style={{ borderLeft: `3px solid ${isMemberLeader ? '#0066cc' : parsed.role ? '#8b5cf6' : 'rgba(0,0,0,0.06)'}` }}
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       {/* Avatar */}
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} flex items-center justify-center text-sm font-black text-white shrink-0 shadow-lg`}>
+                      <div className={`w-10 h-10 rounded-lg ${avatarColors[idx % avatarColors.length]} flex items-center justify-center text-sm font-semibold shrink-0`}>
                         {getInitials(member.name)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-white truncate">{member.name}</p>
+                          <p className="text-sm font-semibold text-ink truncate">{member.name}</p>
                           {isMemberLeader && (
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-teal-500/15 border border-teal-500/25 text-teal-400">
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-semibold bg-primary/10 border border-primary/15 text-primary">
                               LEADER
                             </span>
                           )}
                           {parsed.role && (
-                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border ${getRoleBadgeStyles(parsed.role)}`}>
+                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-semibold border ${getRoleBadgeStyles(parsed.role)}`}>
                               {parsed.role}
                             </span>
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-400">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-ink-muted">
                           <span className="flex items-center gap-1">
-                            <Mail className="w-3 h-3 text-slate-500" /> {member.email}
+                            <Mail className="w-3 h-3 text-ink-muted/50" /> {member.email}
                           </span>
                           <span className="flex items-center gap-1">
-                            <GraduationCap className="w-3 h-3 text-slate-500" /> {member.college || "No College"} (Sem {member.semester || "?"})
+                            <GraduationCap className="w-3 h-3 text-ink-muted/50" /> {member.college || "No College"} (Sem {member.semester || "?"})
                           </span>
                           <span>{parsed.degree || "No Degree"}</span>
                         </div>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           {getMissingFields(member) ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-pill text-[10px] font-semibold bg-danger-light text-danger border border-danger/15">
                               Incomplete — Missing: {getMissingFields(member)}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-[10px] font-semibold bg-success-light text-success border border-success/15">
                               <Check className="w-3 h-3" /> Profile Complete
                             </span>
                           )}
@@ -874,7 +877,7 @@ export default function TeamDashboardClient({
                             {member.participant_teammember_skills.map((s, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800/60 border border-slate-700/40 text-slate-300 hover:border-teal-500/30 hover:text-teal-300 transition-colors"
+                                className="px-2 py-0.5 rounded-pill text-[10px] font-medium bg-primary/5 border border-primary/10 text-primary/70 hover:border-primary/25 hover:text-primary transition-colors"
                               >
                                 {s.participant_skill.name}
                               </span>
@@ -889,7 +892,7 @@ export default function TeamDashboardClient({
                       <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <button
                           onClick={() => handleEditClick(member)}
-                          className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
+                          className="p-2 rounded-md text-ink-muted hover:text-ink hover:bg-canvas-parchment transition cursor-pointer"
                           title="Edit member details"
                         >
                           <Pencil className="w-4 h-4" />
@@ -897,7 +900,7 @@ export default function TeamDashboardClient({
                         {!isMemberLeader && (
                           <button
                             onClick={() => handleRemoveMember(member.id, member.name)}
-                            className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition cursor-pointer"
+                            className="p-2 rounded-md text-ink-muted hover:text-danger hover:bg-danger-light transition cursor-pointer"
                             title="Remove member"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -912,30 +915,30 @@ export default function TeamDashboardClient({
 
             {/* ─── Pending Invites Sent (Django parity: pending_sent_invites) ─── */}
             {isLeader && !team.is_registered && pendingInvites.length > 0 && (
-              <div className="pt-4 border-t border-slate-800/40">
-                <h4 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-400" />
+              <div className="pt-4 border-t border-black/[0.06]">
+                <h4 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-warning" />
                   Pending Invites Sent
                 </h4>
                 <div className="space-y-2">
                   {pendingInvites.map((inv) => (
                     <div
                       key={inv.id}
-                      className="p-3.5 rounded-xl border border-slate-800/40 bg-slate-950/30 flex justify-between items-center gap-3 animate-fade-in-up"
+                      className="p-3.5 rounded-md border border-black/[0.06] bg-canvas-parchment/30 flex justify-between items-center gap-3 animate-fade-in-up"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-white truncate">{inv.receiverName}</p>
-                        <p className="text-xs text-slate-400 truncate">{inv.receiverEmail}</p>
+                        <p className="text-sm font-medium text-ink truncate">{inv.receiverName}</p>
+                        <p className="text-xs text-ink-muted truncate">{inv.receiverEmail}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse-dot" />
+                        <span className="px-2.5 py-1 text-[10px] font-semibold rounded-pill bg-warning-light border border-warning/15 text-warning flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-warning animate-pulse-dot" />
                           Pending
                         </span>
                         <button
                           onClick={() => handleCancelInvite(inv.id)}
                           disabled={inviteCanceling === inv.id}
-                          className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-300 text-xs font-bold rounded-lg transition cursor-pointer disabled:opacity-50"
+                          className="px-3 py-1.5 bg-danger-light hover:bg-danger/10 border border-danger/15 text-danger text-xs font-semibold rounded-md transition cursor-pointer disabled:opacity-50"
                         >
                           {inviteCanceling === inv.id ? "..." : "Cancel"}
                         </button>
@@ -948,12 +951,12 @@ export default function TeamDashboardClient({
 
             {/* ─── Search & Invite Members (Django parity: ParticipantDiscoveryAPIView) ─── */}
             {isLeader && !team.is_registered && (
-              <div className="pt-4 border-t border-slate-800/40">
-                <h4 className="text-sm font-semibold text-slate-200 mb-1 flex items-center gap-2">
-                  <Search className="w-4 h-4 text-teal-400" />
+              <div className="pt-4 border-t border-black/[0.06]">
+                <h4 className="text-sm font-semibold text-ink mb-1 flex items-center gap-2">
+                  <Search className="w-4 h-4 text-primary" />
                   Search & Invite Members
                 </h4>
-                <p className="text-[11px] text-slate-400 mb-3">Find registered participants who are open for recruiting and invite them to your team.</p>
+                <p className="text-[11px] text-ink-muted mb-3">Find registered participants who are open for recruiting and invite them to your team.</p>
                 <div className="flex gap-2 mb-3">
                   <input
                     type="text"
@@ -961,12 +964,12 @@ export default function TeamDashboardClient({
                     onChange={(e) => setInviteSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleInviteSearch()}
                     placeholder="Search by skills (e.g. Python, React, UI)..."
-                    className="flex-1 bg-slate-950/60 border border-slate-800/60 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition-all"
+                    className="flex-1 bg-canvas-pearl border border-black/[0.08] rounded-md px-4 py-2.5 text-sm text-ink placeholder-ink-muted/50 focus:outline-none focus:border-primary transition"
                   />
                   <button
                     onClick={handleInviteSearch}
                     disabled={inviteSearching}
-                    className="px-4 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-sm transition-all duration-200 shrink-0 cursor-pointer disabled:opacity-60 flex items-center gap-1.5 hover:scale-[1.02] active:scale-95"
+                    className="px-4 py-2.5 bg-primary hover:bg-primary-focus text-white font-normal rounded-md text-sm transition shrink-0 cursor-pointer disabled:opacity-60 flex items-center gap-1.5 apple-press-effect"
                   >
                     {inviteSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                     Search
@@ -977,21 +980,21 @@ export default function TeamDashboardClient({
                     inviteSearchResults.map((p, idx) => (
                       <div
                         key={p.userId}
-                        className={`p-3.5 rounded-xl border border-slate-800/40 bg-slate-950/30 hover:bg-slate-950/50 flex justify-between items-center gap-3 transition-all animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
+                        className={`p-3.5 rounded-md border border-black/[0.06] bg-canvas-parchment/30 hover:bg-canvas-parchment/60 flex justify-between items-center gap-3 transition-all animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} flex items-center justify-center text-xs font-black text-white shrink-0`}>
+                          <div className={`w-9 h-9 rounded-md ${avatarColors[idx % avatarColors.length]} flex items-center justify-center text-xs font-semibold shrink-0`}>
                             {getInitials(p.name)}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{p.name}</p>
-                            <p className="text-xs text-slate-400 truncate mt-0.5">
+                            <p className="text-sm font-medium text-ink truncate">{p.name}</p>
+                            <p className="text-xs text-ink-muted truncate mt-0.5">
                               {p.college || "No college"} · {p.degree || ""} · Sem {p.semester || "N/A"}
                             </p>
                             {p.skills.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 {p.skills.map((s, i) => (
-                                  <span key={i} className="px-1.5 py-0.5 rounded-md text-[10px] bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                                  <span key={i} className="px-1.5 py-0.5 rounded-pill text-[10px] bg-primary/5 text-primary/70 border border-primary/10">
                                     {s}
                                   </span>
                                 ))}
@@ -1002,7 +1005,7 @@ export default function TeamDashboardClient({
                         <button
                           onClick={() => handleSendInvite(p.userId)}
                           disabled={inviteSending === p.userId}
-                          className="px-3.5 py-2 bg-teal-500/10 hover:bg-teal-500 hover:text-slate-950 border border-teal-500/30 text-teal-300 text-xs font-bold rounded-xl transition-all duration-200 shrink-0 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 hover:scale-[1.02] active:scale-95"
+                          className="px-3.5 py-2 bg-primary/10 hover:bg-primary hover:text-white border border-primary/15 text-primary text-xs font-semibold rounded-md transition shrink-0 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 apple-press-effect"
                         >
                           {inviteSending === p.userId ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -1014,7 +1017,7 @@ export default function TeamDashboardClient({
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-slate-500 italic text-center py-6">
+                    <p className="text-xs text-ink-muted italic text-center py-6">
                       Enter a skill or click Search to find available participants.
                     </p>
                   )}
@@ -1024,18 +1027,18 @@ export default function TeamDashboardClient({
 
             {/* ─── Submission Section (Django parity: save_draft + complete_registration) ─── */}
             {isLeader && !team.is_registered && (
-              <div className="pt-4 border-t border-slate-800/40 flex flex-col gap-4">
+              <div className="pt-4 border-t border-black/[0.06] flex flex-col gap-4">
                 {isHackathonFull && (
-                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-3 text-sm animate-fade-in">
-                    <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 animate-bounce" />
+                  <div className="p-4 rounded-md bg-danger-light border border-danger/15 text-danger flex items-start gap-3 text-sm animate-fade-in-up">
+                    <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <h5 className="font-semibold mb-0.5">Registration Limit Reached</h5>
                       <p>This hackathon has reached its maximum allowed team registrations. You cannot complete registration for your team.</p>
                     </div>
                   </div>
                 )}
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Requires <strong>{team.organizer_hackathon.min_team_size} to {team.organizer_hackathon.max_team_size}</strong> members. Currently: <strong className="text-white">{memberCount}</strong>.
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  Requires <strong>{team.organizer_hackathon.min_team_size} to {team.organizer_hackathon.max_team_size}</strong> members. Currently: <strong className="text-ink">{memberCount}</strong>.
                 </p>
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   {/* Save Draft & Exit */}
@@ -1044,7 +1047,7 @@ export default function TeamDashboardClient({
                       setSuccess("Draft saved. You can continue later.");
                       router.push("/participant/dashboard");
                     }}
-                    className="px-5 py-2.5 rounded-xl border border-slate-700/60 hover:border-slate-500 hover:bg-slate-800/40 text-slate-300 font-bold text-sm transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none"
+                    className="px-5 py-2.5 rounded-pill border border-black/[0.12] hover:border-black/[0.2] hover:bg-canvas-parchment text-ink-muted font-normal text-sm transition flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none apple-press-effect"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     Save Draft & Exit
@@ -1052,7 +1055,7 @@ export default function TeamDashboardClient({
                   <button
                     onClick={handleDisbandTeam}
                     disabled={isPending}
-                    className="px-5 py-2.5 rounded-xl border border-red-500/25 bg-red-500/5 text-red-400 font-bold text-sm hover:bg-red-500/10 hover:border-red-500/40 disabled:opacity-30 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none"
+                    className="px-5 py-2.5 rounded-pill border border-danger/15 bg-danger-light text-danger font-normal text-sm hover:bg-danger/10 hover:border-danger/25 disabled:opacity-30 transition flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none apple-press-effect"
                   >
                     Disband Team
                   </button>
@@ -1064,7 +1067,7 @@ export default function TeamDashboardClient({
                       memberCount > team.organizer_hackathon.max_team_size ||
                       isHackathonFull
                     }
-                    className="btn-cta-shimmer px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex items-center gap-1.5 cursor-pointer justify-center flex-1 sm:flex-none shadow-[0_4px_15px_rgba(20,184,166,0.25)]"
+                    className="px-6 py-2.5 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1.5 cursor-pointer justify-center flex-1 sm:flex-none apple-press-effect"
                   >
                     {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                     {isHackathonFull ? "Hackathon Registration Full" : "Complete Registration"}
@@ -1076,31 +1079,31 @@ export default function TeamDashboardClient({
         </div>
       )}
 
-      {/* ─── Search & Add Teammate Modal Overlay ─── */}
+      {/* ─── Add Teammate Modal Overlay ─── */}
       {showAddModal && team && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-backdrop-in" onClick={() => { setShowAddModal(false); resetForm(); }} />
-          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800/60 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-modal-in">
+          <div className="absolute inset-0 bg-tile-black/20 backdrop-blur-sm animate-backdrop-in" onClick={() => { setShowAddModal(false); resetForm(); }} />
+          <div className="relative w-full max-w-lg bg-canvas border border-black/[0.08] rounded-lg p-6 apple-shadow-overlay max-h-[90vh] overflow-y-auto animate-modal-in">
             <button
               onClick={() => {
                 setShowAddModal(false);
                 resetForm();
               }}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              className="absolute top-4 right-4 p-1.5 rounded-md text-ink-muted hover:text-ink hover:bg-canvas-parchment transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold text-white mb-1.5 flex items-center gap-2">
-              <Users className="w-5 h-5 text-teal-400" />
+            <h3 className="text-lg font-semibold text-ink mb-1.5 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
               Add Team Member
             </h3>
-            <p className="text-xs text-slate-400 mb-5">
+            <p className="text-xs text-ink-muted mb-5">
               Enter the academic and profile details of your team member below.
             </p>
 
             <div className="space-y-4">
               {/* Teammate Form Fields */}
-              <div className="grid grid-cols-1 gap-3.5 pt-2">
+              <div className="grid grid-cols-1 gap-3.5">
                 <FormInput label="Name" required type="text" value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="e.g. John Doe" />
                 <FormInput label="Email Address" required type="email" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} placeholder="e.g. teammate@gmail.com" />
                 <div className="grid grid-cols-2 gap-3">
@@ -1115,11 +1118,11 @@ export default function TeamDashboardClient({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2.5 pt-3 border-t border-slate-800/40">
+              <div className="flex gap-2.5 pt-3 border-t border-black/[0.06]">
                 <button
                   onClick={handleAddMember}
                   disabled={isPending || !memberName.trim() || !memberEmail.trim() || !memberCollege.trim() || !memberDegree.trim() || !memberSemester.trim()}
-                  className="btn-cta-shimmer flex-1 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer flex items-center justify-center gap-1.5 apple-press-effect"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Add Teammate
@@ -1129,7 +1132,7 @@ export default function TeamDashboardClient({
                     setShowAddModal(false);
                     resetForm();
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/40 text-slate-400 font-semibold text-sm hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-pill bg-canvas-parchment border border-black/[0.06] text-ink-muted font-normal text-sm hover:text-ink hover:bg-canvas-pearl transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1142,22 +1145,22 @@ export default function TeamDashboardClient({
       {/* ─── Edit Teammate Modal Overlay ─── */}
       {showEditModal && team && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-backdrop-in" onClick={() => { setShowEditModal(false); resetForm(); }} />
-          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800/60 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-modal-in">
+          <div className="absolute inset-0 bg-tile-black/20 backdrop-blur-sm animate-backdrop-in" onClick={() => { setShowEditModal(false); resetForm(); }} />
+          <div className="relative w-full max-w-lg bg-canvas border border-black/[0.08] rounded-lg p-6 apple-shadow-overlay max-h-[90vh] overflow-y-auto animate-modal-in">
             <button
               onClick={() => {
                 setShowEditModal(false);
                 resetForm();
               }}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              className="absolute top-4 right-4 p-1.5 rounded-md text-ink-muted hover:text-ink hover:bg-canvas-parchment transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-bold text-white mb-1.5 flex items-center gap-2">
-              <Pencil className="w-5 h-5 text-teal-400" />
+            <h3 className="text-lg font-semibold text-ink mb-1.5 flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-primary" />
               Edit Team Member Details
             </h3>
-            <p className="text-xs text-slate-400 mb-5">
+            <p className="text-xs text-ink-muted mb-5">
               Update participant academic details, team role, and associated skills tags.
             </p>
 
@@ -1165,12 +1168,12 @@ export default function TeamDashboardClient({
               <div className="grid grid-cols-1 gap-3.5">
                 <FormInput label="Name" required type="text" value={memberName} onChange={(e) => setMemberName(e.target.value)} />
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1.5 font-semibold">Email Address <span className="text-slate-600">(Locked)</span></label>
+                  <label className="block text-[11px] text-ink-muted mb-1.5 font-semibold uppercase tracking-wider">Email Address <span className="text-ink-muted/50">(Locked)</span></label>
                   <input
                     type="email"
                     value={memberEmail}
                     disabled
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800/60 text-slate-500 text-sm cursor-not-allowed"
+                    className="w-full px-4 py-2.5 rounded-md bg-canvas-parchment border border-black/[0.06] text-ink-muted text-sm cursor-not-allowed"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -1185,11 +1188,11 @@ export default function TeamDashboardClient({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2.5 pt-3 border-t border-slate-800/40">
+              <div className="flex gap-2.5 pt-3 border-t border-black/[0.06]">
                 <button
                   onClick={handleUpdateMember}
                   disabled={isPending || !memberName.trim() || !memberCollege.trim() || !memberDegree.trim() || !memberSemester.trim()}
-                  className="btn-cta-shimmer flex-1 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer flex items-center justify-center gap-1.5 apple-press-effect"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Save Changes
@@ -1199,7 +1202,7 @@ export default function TeamDashboardClient({
                     setShowEditModal(false);
                     resetForm();
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/40 text-slate-400 font-semibold text-sm hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-pill bg-canvas-parchment border border-black/[0.06] text-ink-muted font-normal text-sm hover:text-ink hover:bg-canvas-pearl transition cursor-pointer"
                 >
                   Cancel
                 </button>

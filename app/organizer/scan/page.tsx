@@ -173,22 +173,16 @@ export default async function ScanPage({ searchParams }: ScanPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative selection:bg-teal-500 selection:text-slate-900">
-      {/* Background gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 -left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/3 right-0 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
-      </div>
-
+    <div className="min-h-screen bg-canvas-parchment text-ink flex flex-col font-sans relative selection:bg-primary selection:text-white">
       {/* Header */}
-      <header className="relative w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between border-b border-slate-900 z-10">
+      <header className="relative w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between border-b border-black/[0.06] z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20">
-            <ScanLine className="w-5 h-5 text-slate-950" />
+          <div className="w-10 h-10 rounded-md bg-tile-black flex items-center justify-center">
+            <ScanLine className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">QR Scanner</h1>
-            <p className="text-[10px] text-teal-400 font-medium tracking-widest uppercase">
+            <h1 className="text-xl font-semibold tracking-tight text-ink">QR Scanner</h1>
+            <p className="text-[10px] text-primary font-medium tracking-widest uppercase">
               Attendance Console
             </p>
           </div>
@@ -197,7 +191,7 @@ export default async function ScanPage({ searchParams }: ScanPageProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/organizer/dashboard"
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 transition duration-300 flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white"
+            className="p-2.5 rounded-md bg-canvas border border-black/[0.08] hover:bg-canvas-pearl transition duration-300 flex items-center gap-2 text-sm font-normal text-ink-muted hover:text-ink"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -210,7 +204,7 @@ export default async function ScanPage({ searchParams }: ScanPageProps) {
           >
             <button
               type="submit"
-              className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 hover:text-red-400 transition duration-300 flex items-center gap-2 text-sm font-medium cursor-pointer"
+              className="p-2.5 rounded-md bg-canvas border border-black/[0.08] hover:bg-canvas-pearl hover:text-danger transition duration-300 flex items-center gap-2 text-sm font-normal cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

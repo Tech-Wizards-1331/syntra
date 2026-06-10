@@ -67,6 +67,7 @@ interface HackathonDetailPageClientProps {
     fee_type: string | null;
     fee_amount: number | null;
     status: string;
+    room_configuration: string | null;
     organizer_problemstatement: ProblemStatement[];
     organizer_scancategory: ScanCategory[];
   };
@@ -76,6 +77,22 @@ export default function HackathonDetailPageClient({
   hackathon,
 }: HackathonDetailPageClientProps) {
   const router = useRouter();
+  
+  // Extract max_teams limit from room_configuration metadata
+  let maxTeamsLimit: number | null = null;
+  if (hackathon.room_configuration) {
+    try {
+      const parsed = JSON.parse(hackathon.room_configuration);
+      if (Array.isArray(parsed)) {
+        const meta = parsed.find((el: any) => el.room_no === "METADATA" && el.type === "metadata");
+        if (meta && typeof meta.max_teams === "number") {
+          maxTeamsLimit = meta.max_teams;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse room_configuration for max_teams in details view", e);
+    }
+  }
 
   // General Loading & Error states
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -104,31 +121,31 @@ export default function HackathonDetailPageClient({
     switch (status) {
       case "draft":
         return (
-          <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
+          <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-pill bg-canvas-parchment border border-black/[0.08] text-ink-muted">
             Draft
           </span>
         );
       case "registration":
         return (
-          <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-pill bg-info-light border border-info/10 text-info">
             Registration
           </span>
         );
       case "active":
         return (
-          <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+          <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-pill bg-success-light border border-success/10 text-success">
             Active
           </span>
         );
       case "completed":
         return (
-          <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+          <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-pill bg-canvas-pearl border border-black/[0.08] text-ink-muted">
             Completed
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-xl bg-slate-800 border border-slate-700 text-slate-400">
+          <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-pill bg-canvas-parchment border border-black/[0.08] text-ink-muted">
             {status}
           </span>
         );
@@ -253,18 +270,14 @@ export default function HackathonDetailPageClient({
 
       if (selectedFile) {
         setUploadStatus("Requesting upload signature...");
-        // 1. Fetch Cloudinary signature from server action
         const sig = await getCloudinarySignature();
-
         setUploadStatus("Uploading PDF directly to Cloudinary...");
-        // 2. Upload file directly to Cloudinary
         pdfUrl = await uploadToCloudinary(selectedFile, sig, (progress) => {
           setUploadProgress(progress);
         });
         setUploadStatus("PDF uploaded successfully! Saving statement...");
       }
 
-      // 3. Create problem statement via server action
       await createProblemStatement(hackathon.id, {
         title: psForm.title,
         description: psForm.description,
@@ -273,13 +286,7 @@ export default function HackathonDetailPageClient({
         is_active: psForm.is_active,
       });
 
-      // Reset form states
-      setPsForm({
-        title: "",
-        description: "",
-        max_teams_allowed: 5,
-        is_active: true,
-      });
+      setPsForm({ title: "", description: "", max_teams_allowed: 5, is_active: true });
       setSelectedFile(null);
       setIsModalOpen(false);
       router.refresh();
@@ -331,7 +338,6 @@ export default function HackathonDetailPageClient({
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
-
     setActionLoading("create-category");
     setErrorMsg(null);
     try {
@@ -374,6 +380,8 @@ export default function HackathonDetailPageClient({
     }
   };
 
+  const inputClass = "w-full p-2.5 rounded-md bg-canvas-pearl border border-black/[0.08] focus:border-primary focus:outline-none text-xs text-ink";
+
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Left Column (Metadata + Problem Statements) */}
@@ -381,36 +389,34 @@ export default function HackathonDetailPageClient({
         
         {/* Error banner */}
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-3 text-sm animate-fade-in">
+          <div className="p-4 rounded-md bg-danger-light border border-danger/15 text-danger flex items-start gap-3 text-sm animate-fade-in">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="flex-1">
               <h5 className="font-semibold mb-0.5">Operation Failed</h5>
               <p>{errorMsg}</p>
             </div>
-            <button onClick={() => setErrorMsg(null)} className="text-slate-400 hover:text-white">
+            <button onClick={() => setErrorMsg(null)} className="text-ink-muted hover:text-ink">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* Hackathon Info Card */}
-        <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-900 shadow-glass flex flex-col gap-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl pointer-events-none" />
-          
+        <div className="p-8 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-6 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-bold text-white tracking-tight">{hackathon.name}</h2>
+                <h2 className="text-2xl font-semibold text-ink tracking-tight">{hackathon.name}</h2>
                 {getStatusBadge(hackathon.status)}
               </div>
-              <p className="text-xs text-slate-450 mt-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-teal-400" />
+              <p className="text-xs text-ink-muted mt-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-primary" />
                 Created on {new Date(hackathon.start_date).toLocaleDateString()}
               </p>
             </div>
             <Link
               href={`/organizer/dashboard/hackathons/${hackathon.id}/edit`}
-              className="p-2.5 px-4 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 text-slate-350 hover:text-white transition flex items-center gap-2 text-xs font-semibold self-start"
+              className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink-muted hover:text-ink transition flex items-center gap-2 text-xs font-normal self-start"
             >
               <Edit className="w-4 h-4" />
               Edit details
@@ -418,70 +424,75 @@ export default function HackathonDetailPageClient({
           </div>
 
           {hackathon.description && (
-            <p className="text-sm text-slate-300 leading-relaxed bg-slate-950/40 p-4 rounded-xl border border-slate-900/50">
+            <p className="text-sm text-ink leading-relaxed bg-canvas-parchment p-4 rounded-md border border-black/[0.04]">
               {hackathon.description}
             </p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-900">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-black/[0.06]">
             {/* Timelines */}
             <div className="flex flex-col gap-3">
-              <h4 className="text-xs font-semibold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-[11px] font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" /> Timeline
               </h4>
               <div className="flex flex-col gap-1 text-xs">
                 <div>
-                  <span className="text-slate-500 block mb-0.5">Start Date</span>
-                  <span className="text-slate-200 font-medium">{new Date(hackathon.start_date).toLocaleString()}</span>
+                  <span className="text-ink-muted block mb-0.5">Start Date</span>
+                  <span className="text-ink font-medium">{new Date(hackathon.start_date).toLocaleString()}</span>
                 </div>
                 <div className="mt-2">
-                  <span className="text-slate-500 block mb-0.5">End Date</span>
-                  <span className="text-slate-200 font-medium">{new Date(hackathon.end_date).toLocaleString()}</span>
+                  <span className="text-ink-muted block mb-0.5">End Date</span>
+                  <span className="text-ink font-medium">{new Date(hackathon.end_date).toLocaleString()}</span>
                 </div>
                 <div className="mt-2">
-                  <span className="text-slate-500 block mb-0.5">Reg. Deadline</span>
-                  <span className="text-slate-200 font-medium">{new Date(hackathon.registration_deadline).toLocaleString()}</span>
+                  <span className="text-ink-muted block mb-0.5">Reg. Deadline</span>
+                  <span className="text-ink font-medium">{new Date(hackathon.registration_deadline).toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
-            {/* Team Size */}
             <div className="flex flex-col gap-3">
-              <h4 className="text-xs font-semibold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-[11px] font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" /> Team Limits
               </h4>
-              <div className="flex flex-col gap-2 text-xs text-slate-200 font-medium">
+              <div className="flex flex-col gap-2 text-xs text-ink font-medium">
                 <div>
-                  <span className="text-slate-500 block mb-0.5">Min Team Size</span>
+                  <span className="text-ink-muted block mb-0.5">Min Team Size</span>
                   <span>{hackathon.min_team_size} {hackathon.min_team_size === 1 ? "member" : "members"}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block mb-0.5">Max Team Size</span>
+                  <span className="text-ink-muted block mb-0.5">Max Team Size</span>
                   <span>{hackathon.max_team_size} {hackathon.max_team_size === 1 ? "member" : "members"}</span>
                 </div>
+                {maxTeamsLimit !== null && (
+                  <div>
+                    <span className="text-ink-muted block mb-0.5">Max Teams Limit</span>
+                    <span>{maxTeamsLimit} teams</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Pricing Model */}
             <div className="flex flex-col gap-3">
-              <h4 className="text-xs font-semibold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="text-[11px] font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
                 <CreditCard className="w-3.5 h-3.5" /> Pricing
               </h4>
-              <div className="flex flex-col gap-2 text-xs text-slate-200 font-medium">
+              <div className="flex flex-col gap-2 text-xs text-ink font-medium">
                 <div>
-                  <span className="text-slate-500 block mb-0.5">Type</span>
-                  <span className={hackathon.is_paid ? "text-yellow-400" : "text-emerald-400"}>
+                  <span className="text-ink-muted block mb-0.5">Type</span>
+                  <span className={hackathon.is_paid ? "text-warning" : "text-success"}>
                     {hackathon.is_paid ? "Paid Entry" : "Free Entry"}
                   </span>
                 </div>
                 {hackathon.is_paid && (
                   <>
                     <div>
-                      <span className="text-slate-500 block mb-0.5">Fee Model</span>
+                      <span className="text-ink-muted block mb-0.5">Fee Model</span>
                       <span className="capitalize">{hackathon.fee_type} Wise</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block mb-0.5">Amount</span>
+                      <span className="text-ink-muted block mb-0.5">Amount</span>
                       <span>INR {hackathon.fee_amount?.toFixed(2)}</span>
                     </div>
                   </>
@@ -492,15 +503,15 @@ export default function HackathonDetailPageClient({
         </div>
 
         {/* Problem Statements Panel */}
-        <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-900 shadow-glass flex flex-col gap-6">
+        <div className="p-8 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <FileText className="w-5 h-5 text-teal-400" />
+            <h3 className="text-lg font-semibold text-ink tracking-tight flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
               Problem Statements
             </h3>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="p-2 px-3.5 rounded-xl bg-teal-500 text-slate-950 font-semibold hover:bg-teal-400 active:scale-95 transition flex items-center gap-1.5 text-xs shadow-md shadow-teal-500/10 cursor-pointer"
+              className="px-3.5 py-2 rounded-pill bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center gap-1.5 text-xs cursor-pointer apple-press-effect"
             >
               <Plus className="w-4 h-4" />
               Add Problem
@@ -508,13 +519,13 @@ export default function HackathonDetailPageClient({
           </div>
 
           {hackathon.organizer_problemstatement.length === 0 ? (
-            <div className="p-10 rounded-xl border border-slate-900 border-dashed text-center flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-950 border border-slate-900 flex items-center justify-center text-slate-600">
+            <div className="p-10 rounded-md border border-dashed border-black/[0.12] text-center flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-canvas-parchment border border-black/[0.04] flex items-center justify-center text-ink-muted">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-slate-300 font-semibold text-sm">No problem statements created</p>
-                <p className="text-xs text-slate-550 max-w-xs mt-1 leading-relaxed">
+                <p className="text-ink font-semibold text-sm">No problem statements created</p>
+                <p className="text-xs text-ink-muted max-w-xs mt-1 leading-relaxed">
                   Provide problem statements for participants to choose when signing up for the hackathon.
                 </p>
               </div>
@@ -524,25 +535,25 @@ export default function HackathonDetailPageClient({
               {hackathon.organizer_problemstatement.map((ps) => (
                 <div
                   key={ps.id}
-                  className={`p-5 rounded-xl border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                  className={`p-5 rounded-md border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                     ps.is_active
-                      ? "bg-slate-950/40 border-slate-900 hover:border-slate-800"
-                      : "bg-slate-950/20 border-slate-900/50 opacity-60"
+                      ? "bg-canvas-parchment/50 border-black/[0.06] hover:border-black/[0.12]"
+                      : "bg-canvas-parchment/30 border-black/[0.04] opacity-60"
                   }`}
                 >
                   <div className="flex-1 flex flex-col gap-1.5">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <h4 className="font-bold text-white text-base">{ps.title}</h4>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-semibold">
+                      <h4 className="font-semibold text-ink text-base">{ps.title}</h4>
+                      <span className="text-[10px] px-2 py-0.5 rounded-pill bg-canvas border border-black/[0.06] text-ink-muted font-semibold">
                         Limit: {ps.max_teams_allowed} teams
                       </span>
                       {!ps.is_active && (
-                        <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-bold uppercase tracking-wider">
+                        <span className="text-[9px] px-2 py-0.5 rounded-pill bg-danger-light border border-danger/15 text-danger font-semibold uppercase tracking-wider">
                           Inactive
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">
+                    <p className="text-xs text-ink-muted leading-relaxed line-clamp-3">
                       {ps.description}
                     </p>
                     {ps.pdf_file && (
@@ -550,7 +561,7 @@ export default function HackathonDetailPageClient({
                         href={ps.pdf_file}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-teal-400 hover:text-teal-350 hover:underline mt-2 self-start font-medium"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline mt-2 self-start font-medium"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         View PDF Attachment
@@ -564,10 +575,10 @@ export default function HackathonDetailPageClient({
                       onClick={() => handleToggleProblemStatement(ps)}
                       disabled={actionLoading !== null}
                       title={ps.is_active ? "Mark as Inactive" : "Mark as Active"}
-                      className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-850 text-slate-450 hover:text-teal-400 hover:bg-slate-900 transition disabled:opacity-40 cursor-pointer"
+                      className="p-2.5 rounded-md bg-canvas border border-black/[0.08] text-ink-muted hover:text-primary hover:bg-canvas-pearl transition disabled:opacity-40 cursor-pointer"
                     >
                       {actionLoading === `toggle-ps-${ps.id}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-teal-400" />
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
                       ) : ps.is_active ? (
                         <EyeOff className="w-4 h-4" />
                       ) : (
@@ -578,10 +589,10 @@ export default function HackathonDetailPageClient({
                       onClick={() => handleDeleteProblemStatement(ps.id)}
                       disabled={actionLoading !== null}
                       title="Delete problem statement"
-                      className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-850 text-slate-450 hover:text-red-400 hover:bg-slate-900 transition disabled:opacity-40 cursor-pointer"
+                      className="p-2.5 rounded-md bg-canvas border border-black/[0.08] text-ink-muted hover:text-danger hover:bg-canvas-pearl transition disabled:opacity-40 cursor-pointer"
                     >
                       {actionLoading === `delete-ps-${ps.id}` ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-red-400" />
+                        <Loader2 className="w-4 h-4 animate-spin text-danger" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}
@@ -598,19 +609,19 @@ export default function HackathonDetailPageClient({
       <div className="w-full lg:w-80 shrink-0 flex flex-col gap-8">
         
         {/* Seating Management Card */}
-        <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-900 shadow-glass flex flex-col gap-4">
-          <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-4">
+          <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center text-primary">
             <Armchair className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Physical Seating</h3>
-            <p className="text-xs text-slate-450 mt-1 leading-relaxed">
+            <h3 className="text-base font-semibold text-ink">Physical Seating</h3>
+            <p className="text-xs text-ink-muted mt-1 leading-relaxed">
               Allocate table coordinates to participating teams using a seating algorithm.
             </p>
           </div>
           <Link
             href={`/organizer/dashboard/seating?hackathonId=${hackathon.id}`}
-            className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 text-teal-400 hover:text-teal-350 transition text-xs font-semibold text-center flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full p-3 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-primary transition text-xs font-normal text-center flex items-center justify-center gap-2 cursor-pointer apple-press-effect"
           >
             Seating Console
             <ExternalLink className="w-3.5 h-3.5" />
@@ -618,8 +629,8 @@ export default function HackathonDetailPageClient({
         </div>
 
         {/* Scan Categories Panel */}
-        <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-900 shadow-glass flex flex-col gap-5">
-          <h3 className="text-sm font-semibold text-teal-400 uppercase tracking-wider">
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-5">
+          <h3 className="text-[11px] font-semibold text-primary uppercase tracking-wider">
             Scan Categories
           </h3>
 
@@ -630,15 +641,15 @@ export default function HackathonDetailPageClient({
               placeholder="e.g. Lunch Day 1"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
-              className="flex-1 p-2.5 rounded-lg bg-slate-950 border border-slate-850 focus:border-teal-500 focus:outline-none text-xs text-white"
+              className={inputClass}
             />
             <button
               type="submit"
               disabled={actionLoading !== null}
-              className="p-2.5 rounded-lg bg-teal-500 text-slate-950 font-bold hover:bg-teal-400 transition flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40"
+              className="p-2.5 rounded-md bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40"
             >
               {actionLoading === "create-category" ? (
-                <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Plus className="w-4 h-4" />
               )}
@@ -646,7 +657,7 @@ export default function HackathonDetailPageClient({
           </form>
 
           {hackathon.organizer_scancategory.length === 0 ? (
-            <p className="text-xs text-slate-500 italic text-center py-4">
+            <p className="text-xs text-ink-muted italic text-center py-4">
               No scan categories defined.
             </p>
           ) : (
@@ -654,15 +665,15 @@ export default function HackathonDetailPageClient({
               {hackathon.organizer_scancategory.map((cat) => (
                 <div
                   key={cat.id}
-                  className={`p-3 rounded-lg bg-slate-950 border border-slate-900 flex items-center justify-between gap-3 text-xs ${
+                  className={`p-3 rounded-md bg-canvas-parchment border border-black/[0.04] flex items-center justify-between gap-3 text-xs ${
                     cat.is_active ? "" : "opacity-50"
                   }`}
                 >
                   <div className="flex-1 flex flex-col gap-0.5">
-                    <span className="font-semibold text-white leading-normal break-all">
+                    <span className="font-semibold text-ink leading-normal break-all">
                       {cat.name}
                     </span>
-                    <span className="text-[9px] text-slate-500">
+                    <span className="text-[9px] text-ink-muted">
                       Order: {cat.display_order}
                     </span>
                   </div>
@@ -674,8 +685,8 @@ export default function HackathonDetailPageClient({
                       title={cat.is_active ? "Disable QR scan" : "Enable QR scan"}
                       className={`p-1.5 rounded border transition cursor-pointer ${
                         cat.is_active
-                          ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
-                          : "border-slate-800 bg-slate-900 text-slate-500"
+                          ? "border-success/25 bg-success-light text-success"
+                          : "border-black/[0.08] bg-canvas text-ink-muted"
                       }`}
                     >
                       {actionLoading === `toggle-cat-${cat.id}` ? (
@@ -688,7 +699,7 @@ export default function HackathonDetailPageClient({
                       onClick={() => handleDeleteCategory(cat.id)}
                       disabled={actionLoading !== null}
                       title="Delete category"
-                      className="p-1.5 rounded border border-slate-800 bg-slate-900 text-slate-450 hover:text-red-400 transition cursor-pointer"
+                      className="p-1.5 rounded border border-black/[0.08] bg-canvas text-ink-muted hover:text-danger transition cursor-pointer"
                     >
                       {actionLoading === `delete-cat-${cat.id}` ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -706,12 +717,12 @@ export default function HackathonDetailPageClient({
 
       {/* Modal: Add Problem Statement */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 shadow-glass overflow-hidden flex flex-col relative animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg rounded-lg bg-canvas border border-black/[0.08] apple-shadow-overlay overflow-hidden flex flex-col relative animate-scale-up">
             
-            <div className="p-6 border-b border-slate-850 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-teal-400" />
+            <div className="p-6 border-b border-black/[0.06] flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-ink tracking-tight flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
                 Add Problem Statement
               </h3>
               <button
@@ -723,17 +734,17 @@ export default function HackathonDetailPageClient({
                   }
                 }}
                 disabled={modalLoading}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition disabled:opacity-40 cursor-pointer"
+                className="p-1 text-ink-muted hover:text-ink rounded-md hover:bg-canvas-pearl transition disabled:opacity-40 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {modalError && (
-              <div className="mx-6 mt-4 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-2.5 text-xs">
+              <div className="mx-6 mt-4 p-3.5 rounded-md bg-danger-light border border-danger/15 text-danger flex items-start gap-2.5 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
-                  <h6 className="font-bold">Error</h6>
+                  <h6 className="font-semibold">Error</h6>
                   <p className="mt-0.5">{modalError}</p>
                 </div>
               </div>
@@ -742,8 +753,8 @@ export default function HackathonDetailPageClient({
             <form onSubmit={handleAddProblemStatement} className="p-6 flex flex-col gap-4">
               
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="title" className="text-xs font-semibold text-slate-400">
-                  Statement Title <span className="text-red-400">*</span>
+                <label htmlFor="title" className="text-xs font-medium text-ink-muted">
+                  Statement Title <span className="text-danger">*</span>
                 </label>
                 <input
                   id="title"
@@ -752,13 +763,13 @@ export default function HackathonDetailPageClient({
                   placeholder="e.g. Realtime IoT Dashboard"
                   value={psForm.title}
                   onChange={(e) => setPsForm({ ...psForm, title: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-teal-500 focus:outline-none text-xs text-white"
+                  className={inputClass}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="description" className="text-xs font-semibold text-slate-400">
-                  Detailed Description <span className="text-red-400">*</span>
+                <label htmlFor="description" className="text-xs font-medium text-ink-muted">
+                  Detailed Description <span className="text-danger">*</span>
                 </label>
                 <textarea
                   id="description"
@@ -767,14 +778,14 @@ export default function HackathonDetailPageClient({
                   placeholder="Describe the problem, objectives, and evaluation guidelines..."
                   value={psForm.description}
                   onChange={(e) => setPsForm({ ...psForm, description: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-teal-500 focus:outline-none text-xs text-white resize-none"
+                  className={`${inputClass} resize-none`}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="max_teams" className="text-xs font-semibold text-slate-400">
-                    Max Teams Allowed <span className="text-red-400">*</span>
+                  <label htmlFor="max_teams" className="text-xs font-medium text-ink-muted">
+                    Max Teams Allowed <span className="text-danger">*</span>
                   </label>
                   <input
                     id="max_teams"
@@ -788,7 +799,7 @@ export default function HackathonDetailPageClient({
                         max_teams_allowed: Math.max(1, Number(e.target.value)),
                       })
                     }
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-850 focus:border-teal-500 focus:outline-none text-xs text-white"
+                    className={inputClass}
                   />
                 </div>
 
@@ -801,11 +812,11 @@ export default function HackathonDetailPageClient({
                       onChange={(e) =>
                         setPsForm({ ...psForm, is_active: e.target.checked })
                       }
-                      className="w-4 h-4 rounded border-slate-850 bg-slate-950 text-teal-500 focus:ring-teal-500 accent-teal-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-black/[0.15] bg-canvas-pearl text-primary focus:ring-primary accent-primary cursor-pointer"
                     />
                     <label
                       htmlFor="ps_active"
-                      className="text-xs font-medium text-slate-350 cursor-pointer select-none"
+                      className="text-xs font-normal text-ink cursor-pointer select-none"
                     >
                       Enable statement immediately
                     </label>
@@ -813,18 +824,18 @@ export default function HackathonDetailPageClient({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-850/60">
-                <label className="text-xs font-semibold text-slate-400">
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-black/[0.06]">
+                <label className="text-xs font-medium text-ink-muted">
                   PDF Attachment (Optional, Max 10MB)
                 </label>
                 <input
                   type="file"
                   accept="application/pdf"
                   onChange={handleFileChange}
-                  className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border file:border-slate-800 file:bg-slate-950 file:text-slate-300 file:hover:bg-slate-900 file:cursor-pointer file:font-semibold"
+                  className="w-full text-xs text-ink-muted file:mr-3 file:py-2 file:px-4 file:rounded-md file:border file:border-black/[0.08] file:bg-canvas-pearl file:text-ink file:hover:bg-canvas-parchment file:cursor-pointer file:font-normal"
                 />
                 {selectedFile && (
-                  <p className="text-[10px] text-emerald-400 mt-1">
+                  <p className="text-[10px] text-success mt-1">
                     ✓ Validated: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
@@ -834,12 +845,12 @@ export default function HackathonDetailPageClient({
               {uploadProgress !== null && (
                 <div className="flex flex-col gap-1.5 mt-2">
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-teal-400 font-semibold">{uploadStatus}</span>
-                    <span className="text-slate-400 font-medium">{uploadProgress}%</span>
+                    <span className="text-primary font-semibold">{uploadStatus}</span>
+                    <span className="text-ink-muted font-medium">{uploadProgress}%</span>
                   </div>
-                  <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900">
+                  <div className="w-full bg-canvas-pearl rounded-full h-1.5 border border-black/[0.06]">
                     <div
-                      className="bg-teal-500 h-1.5 rounded-full transition-all duration-300 shadow-sm"
+                      className="bg-primary h-1.5 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -849,11 +860,11 @@ export default function HackathonDetailPageClient({
               <button
                 type="submit"
                 disabled={modalLoading}
-                className="w-full mt-4 p-3 rounded-xl bg-teal-500 text-slate-950 font-bold hover:bg-teal-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                className="w-full mt-4 py-3 rounded-pill bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:pointer-events-none apple-press-effect"
               >
                 {modalLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Saving statement...
                   </>
                 ) : (

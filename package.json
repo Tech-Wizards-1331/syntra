@@ -4,13 +4,14 @@
   "description": "Syntra hackathon management system migration to Next.js",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
     "build:css": "tailwindcss -i ./frontend/static/css/tailwind.src.css -o ./frontend/static/css/tailwind.css --minify",
-    "watch:css": "tailwindcss -i ./frontend/static/css/tailwind.src.css -o ./frontend/static/css/tailwind.css --watch"
+    "watch:css": "tailwindcss -i ./frontend/static/css/tailwind.src.css -o ./frontend/static/css/tailwind.css --watch",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

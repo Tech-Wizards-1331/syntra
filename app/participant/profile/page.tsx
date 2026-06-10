@@ -58,20 +58,20 @@ export default async function ParticipantProfilePage() {
   const preseededSkills = await getPreseededSkills();
 
   return (
-    <main className="relative flex-1 max-w-4xl mx-auto w-full px-6 py-10 z-10 flex flex-col gap-8 animate-fade-in-up">
+    <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 flex flex-col gap-6 animate-fade-in-up">
       {/* Page Header */}
       <div>
-        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-          <Settings className="w-6 h-6 text-teal-400" />
+        <h2 className="text-xl font-semibold text-ink tracking-tight flex items-center gap-2">
+          <Settings className="w-5 h-5 text-primary" />
           Profile Settings
         </h2>
-        <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+        <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
           Keep your academic details and skill sets updated so team leaders and event organizers can discover and recruit you.
         </p>
       </div>
 
       {/* Main Profile Form Wrapper */}
-      <div className="glass-card p-6 md:p-8 rounded-2xl border border-slate-900/65 bg-slate-900/10">
+      <div className="p-6 md:p-8 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
         <ProfileFormWrapper
           existingProfile={existingProfile}
           preseededSkills={preseededSkills}

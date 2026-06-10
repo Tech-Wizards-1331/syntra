@@ -17,8 +17,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="antialiased">
-        {children}
+      <body className="antialiased bg-canvas-parchment">
+        {/* Apple Mesh Background - fixed behind everything */}
+        <div className="fixed inset-0 z-[-1] apple-mesh-bg pointer-events-none" />
+        
+        {/* Main Application Container */}
+        <div className="relative z-0 min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   );

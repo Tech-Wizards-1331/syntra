@@ -63,15 +63,8 @@ export default async function ParticipantLayout({
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative selection:bg-teal-500 selection:text-slate-900 overflow-x-hidden">
-      {/* Animated Background Mesh */}
-      <div className="bg-mesh-gradient fixed inset-0 pointer-events-none z-0">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-
-      <div className="flex flex-1 relative z-10 w-full">
+    <div className="min-h-screen bg-canvas-parchment text-ink flex flex-col font-sans relative selection:bg-primary selection:text-white overflow-x-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 relative z-10 w-full">
         {/* Unified Sidebar Navigation */}
         <ParticipantSidebar
           userName={session.user.name || "Participant"}

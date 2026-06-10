@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CreditCard, CheckCircle2, ShieldCheck, Loader2, AlertCircle, Sparkles } from "lucide-react";
+import { CreditCard, CheckCircle2, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 
 interface CheckoutCardProps {
   teamId: number;
@@ -102,7 +102,7 @@ export default function CheckoutCard({
           email: userEmail,
         },
         theme: {
-          color: "#0d9488", // teal-500
+          color: "#0066cc",
         },
         modal: {
           ondismiss: function () {
@@ -121,20 +121,19 @@ export default function CheckoutCard({
 
   if (isRegistered) {
     return (
-      <div className="glass-card rounded-2xl p-6 border-teal-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up">
+      <div className="p-6 rounded-lg bg-canvas border border-success/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up apple-shadow-overlay">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 flex items-center justify-center text-teal-400 animate-glow-pulse">
-            <ShieldCheck className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-lg bg-success-light flex items-center justify-center text-success">
+            <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-white mb-0.5 flex items-center gap-2">
+            <h3 className="font-semibold text-ink mb-0.5 flex items-center gap-2">
               Registration Confirmed
-              <Sparkles className="w-4 h-4 text-teal-400" />
             </h3>
-            <p className="text-xs text-teal-300/80">Your team has paid the registration fee and is confirmed for the hackathon.</p>
+            <p className="text-xs text-ink-muted">Your team has paid the registration fee and is confirmed for the hackathon.</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-teal-500/15 text-teal-300 border border-teal-500/25">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-semibold bg-success-light text-success border border-success/15">
           <CheckCircle2 className="w-3.5 h-3.5" />
           Paid & Verified
         </div>
@@ -143,25 +142,25 @@ export default function CheckoutCard({
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6 flex flex-col gap-4 animate-fade-in-up">
+    <div className="p-6 rounded-lg apple-glass-card flex flex-col gap-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-slate-800/60 border border-slate-700/40 flex items-center justify-center text-teal-400">
-            <CreditCard className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-lg bg-canvas-parchment border border-black/[0.06] flex items-center justify-center text-primary">
+            <CreditCard className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-white mb-0.5">Complete Registration</h3>
-            <p className="text-xs text-slate-400">Pay the event fee to confirm team participation.</p>
+            <h3 className="font-semibold text-ink mb-0.5">Complete Registration</h3>
+            <p className="text-xs text-ink-muted">Pay the event fee to confirm team participation.</p>
           </div>
         </div>
         <div className="text-right">
-          <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-bold">Total Fee</span>
-          <span className="text-2xl font-black text-white">₹{amount}</span>
+          <span className="text-[10px] text-ink-muted block uppercase tracking-wider font-semibold">Total Fee</span>
+          <span className="text-2xl font-semibold text-ink">₹{amount}</span>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-md bg-danger-light border border-danger/15 text-danger text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span className="font-medium">{errorMsg}</span>
         </div>
@@ -170,7 +169,7 @@ export default function CheckoutCard({
       <button
         onClick={handleCheckout}
         disabled={loading}
-        className="btn-cta-shimmer w-full py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 hover:brightness-110 text-slate-950 font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 disabled:opacity-55 cursor-pointer text-sm hover:scale-[1.01] active:scale-[0.99] hover:shadow-teal-500/30"
+        className="w-full py-3 rounded-pill bg-primary hover:bg-primary-focus text-white font-normal text-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer apple-press-effect"
       >
         {loading ? (
           <>

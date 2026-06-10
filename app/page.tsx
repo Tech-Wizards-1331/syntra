@@ -6,142 +6,214 @@ import {
   Layers, 
   CreditCard, 
   LayoutGrid, 
-  CheckCircle2, 
-  ArrowRight 
+  ArrowRight,
+  ChevronRight,
+  Laptop
 } from "lucide-react";
 
 export default function Home() {
   const features = [
     {
-      icon: <Shield className="w-6 h-6 text-teal-400" />,
-      title: "Auth.js Integration",
-      description: "Secure session-based auth with legacy PBKDF2/MD5 hashing compatibility."
+      icon: <Shield className="w-5 h-5 text-primary" />,
+      title: "Role-Based Access",
+      description: "Secure, tailored portals for admins, organizers, and hackers."
     },
     {
-      icon: <Database className="w-6 h-6 text-teal-400" />,
-      title: "Prisma ORM",
-      description: "Type-safe database client mapped directly from Supabase/PostgreSQL schema."
+      icon: <Database className="w-5 h-5 text-primary" />,
+      title: "Real-Time Sync",
+      description: "Live data updates across all dashboards and leaderboards."
     },
     {
-      icon: <Layers className="w-6 h-6 text-teal-400" />,
-      title: "Seating Allocation",
-      description: "Greedy seating allocation logic ported to Node.js/TypeScript services."
+      icon: <Layers className="w-5 h-5 text-primary" />,
+      title: "Smart Seating",
+      description: "Auto-assign team tables with optimized spatial algorithms."
     },
     {
-      icon: <CreditCard className="w-6 h-6 text-teal-400" />,
-      title: "Payment Webhooks",
-      description: "Secure payments backend with Razorpay integration and signature verification."
+      icon: <CreditCard className="w-5 h-5 text-primary" />,
+      title: "Integrated Payments",
+      description: "Process registrations and ticket sales securely."
     },
     {
-      icon: <QrCode className="w-6 h-6 text-teal-400" />,
-      title: "QR Attendance",
-      description: "Real-time ticket scanner interface and attendance logs."
+      icon: <QrCode className="w-5 h-5 text-primary" />,
+      title: "QR Check-ins",
+      description: "Scan attendees instantly for event entry and food tokens."
     },
     {
-      icon: <LayoutGrid className="w-6 h-6 text-teal-400" />,
-      title: "Admin Dashboard",
-      description: "Unified admin interface replacing default Django administrative controls."
+      icon: <LayoutGrid className="w-5 h-5 text-primary" />,
+      title: "Unified Console",
+      description: "Manage your entire hackathon lifecycle from one interface."
     }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-teal-500 selection:text-slate-900">
-      {/* Background gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 -right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-canvas-parchment text-ink flex flex-col font-sans antialiased selection:bg-primary selection:text-white">
+      
 
-      {/* Navigation Header */}
-      <header className="relative w-full max-w-7xl mx-auto px-6 py-8 flex items-center justify-between border-b border-slate-900">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20">
-            <span className="text-slate-950 font-black text-xl tracking-tighter">S</span>
+
+      {/* ─── Sub Nav Frosted (Apple Product Bar Sticky) ─── */}
+      <header className="sticky top-0 h-[52px] bg-canvas-parchment/80 backdrop-blur-md border-b border-black/[0.08] flex items-center justify-between px-6 z-30 font-apple-tagline text-base text-ink">
+        <div className="max-w-7xl w-full mx-auto flex items-center justify-between">
+          <span className="font-semibold text-lg tracking-tight">Syntra</span>
+          <div className="flex items-center gap-5 text-sm font-normal">
+            <span className="hidden sm:inline text-ink-muted hover:text-primary transition cursor-pointer">Overview</span>
+            <span className="hidden sm:inline text-ink-muted hover:text-primary transition cursor-pointer">Features</span>
+            <a 
+              href="/login" 
+              className="px-3.5 py-1.5 text-xs font-normal bg-primary text-white rounded-pill hover:bg-primary-focus transition apple-press-effect flex items-center gap-1"
+            >
+              Sign In <ChevronRight className="w-3 h-3" />
+            </a>
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">Syntra</h1>
-            <p className="text-[10px] text-teal-400 font-medium tracking-widest uppercase">NextJS Core</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Migration Mode
-          </span>
         </div>
       </header>
 
-      {/* Main Body */}
-      <main className="relative flex-1 max-w-7xl mx-auto px-6 py-12 md:py-20 flex flex-col items-center justify-center text-center">
-        {/* Hero Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 border border-slate-800 text-slate-400 mb-6 hover:border-slate-700 transition duration-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-          Migrating from Django/DRF to Next.js 15
-        </div>
+      {/* ─── MAIN CONTENT BLOCK: Alternating Tiles ─── */}
+      <main className="flex-1 flex flex-col">
+        
+        {/* ─── Hero Product Tile (White) ─── */}
+        <section className="bg-canvas border-b border-black/[0.08] py-20 px-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
+          <div className="max-w-4xl mx-auto flex flex-col items-center">
+            {/* Tagline */}
+            <span className="text-primary font-semibold text-sm tracking-widest uppercase mb-3 block">
+              The Premier Hackathon Platform
+            </span>
 
-        {/* Title */}
-        <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight max-w-3xl leading-tight mb-6">
-          System Migration &amp; <br />
-          <span className="bg-gradient-to-r from-teal-400 via-emerald-400 to-yellow-300 bg-clip-text text-transparent">
-            Database Introspection
-          </span>
-        </h2>
+            {/* Display Headline */}
+            <h1 className="text-4xl sm:text-6xl font-apple-hero text-ink mb-4 max-w-2xl leading-none">
+              Supercharge your <br/>hackathons.
+            </h1>
 
-        {/* Subtitle */}
-        <p className="text-lg text-slate-400 max-w-2xl mb-12 leading-relaxed">
-          Syntra is a hackathon management system that streamlines event organization, participant registration, seating allocations, payments, and real-time QR attendance check-ins.
-        </p>
+            {/* Paragraph Subcopy */}
+            <p className="text-lg sm:text-xl text-ink-muted max-w-2xl mx-auto leading-relaxed mb-8">
+              Everything you need to run your next hackathon.
+            </p>
 
-        {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full text-left mb-16">
-          {features.map((feature, idx) => (
-            <div 
-              key={idx}
-              className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 hover:border-teal-500/30 hover:bg-slate-900 transition duration-300 flex flex-col gap-4 shadow-glass hover:shadow-teal-500/5 group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-slate-850 border border-slate-800 flex items-center justify-center group-hover:scale-110 group-hover:bg-slate-800 transition duration-300">
-                {feature.icon}
+            {/* Two Action Blue Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
+              <a 
+                href="/admin" 
+                className="px-5 py-2.5 bg-primary text-white rounded-pill hover:bg-primary-focus font-normal text-sm transition apple-press-effect flex items-center gap-1"
+              >
+                Go to Dashboard <ArrowRight className="w-4 h-4" />
+              </a>
+              <a 
+                href="/register" 
+                className="text-primary hover:underline text-sm font-normal transition flex items-center gap-0.5"
+              >
+                Register as Participant <ChevronRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Visual product render frame with shadow */}
+            <div className="w-full max-w-3xl rounded-lg border border-black/[0.08] bg-canvas-pearl p-4 md:p-8 apple-shadow-product relative group">
+              <div className="absolute top-3 left-4 flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
               </div>
-              <div>
-                <h3 className="font-bold text-white mb-1 group-hover:text-teal-400 transition duration-300">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  {feature.description}
-                </p>
+              <div className="mt-4 flex flex-col items-center justify-center py-10 md:py-20 text-ink-muted">
+                <Laptop className="w-16 h-16 text-primary mb-4" />
+                <span className="font-apple-display text-2xl text-ink mb-2">Unified Event Dashboard</span>
+                <span className="text-sm text-ink-muted max-w-md">
+                  Monitor registrations, scan QR tokens, and manage team pipelines with real-time event analytics.
+                </span>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        </section>
 
-        {/* Primary CTA */}
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <a 
-            href="/admin" 
-            className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 text-slate-950 font-bold hover:opacity-90 shadow-lg shadow-teal-500/10 flex items-center gap-2 group transition duration-300"
-          >
-            Enter Dashboard
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition duration-300" />
-          </a>
-          <a 
-            href="https://github.com" 
-            target="_blank" 
-            rel="noreferrer"
-            className="px-8 py-3.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 font-semibold text-slate-300 transition duration-300"
-          >
-            View Documentation
-          </a>
-        </div>
+        {/* ─── Features Tile (Parchment) ─── */}
+        <section className="bg-canvas-parchment border-b border-black/[0.08] py-20 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-apple-display text-ink mb-3">
+                Powerful Event Features
+              </h2>
+              <p className="text-base text-ink-muted max-w-lg mx-auto">
+                Built for speed and scale. Manage thousands of participants with robust tools designed for organizers and hackers alike.
+              </p>
+            </div>
+
+            {/* 3x2 Grid of Store Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, idx) => (
+                <div 
+                  key={idx}
+                  className="p-6 rounded-lg bg-canvas border border-black/[0.05] hover:border-black/[0.12] transition-all duration-300 flex flex-col gap-4"
+                >
+                  <div className="w-10 h-10 rounded-md bg-canvas-parchment border border-black/[0.04] flex items-center justify-center">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[17px] text-ink mb-1">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-ink-muted leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Tech Stack Tile (Dark - Tile-1 Background) ─── */}
+        <section className="bg-tile-1 text-white py-20 px-6 relative overflow-hidden">
+          <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
+            <span className="text-primary-dark font-semibold text-sm tracking-widest uppercase mb-3 block">
+              Built for Performance
+            </span>
+
+            <h2 className="text-3xl sm:text-5xl font-apple-display text-white mb-4 leading-none">
+              Flawless Execution. <br/>Zero Downtime.
+            </h2>
+
+            <p className="text-base sm:text-lg text-ink-muted max-w-xl mb-12">
+              Powered by a modern, type-safe architecture ensuring your event runs smoothly from registration to closing ceremonies.
+            </p>
+
+
+          </div>
+        </section>
+
       </main>
 
-      {/* Footer */}
-      <footer className="relative w-full max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between border-t border-slate-900 text-xs text-slate-500 gap-4">
-        <p>&copy; {new Date().getFullYear()} Syntra next-gen framework migration.</p>
-        <div className="flex gap-6">
-          <span className="hover:text-slate-400 cursor-pointer">Security</span>
-          <span className="hover:text-slate-400 cursor-pointer">Privacy Policy</span>
-          <span className="hover:text-slate-400 cursor-pointer">API Status</span>
+      {/* ─── Footer (Apple Low Density Parchment) ─── */}
+      <footer className="bg-canvas-parchment text-ink-muted border-t border-black/[0.08] py-16 px-6 text-[12px] font-normal tracking-[-0.12px]">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start justify-between gap-8">
+          <div className="flex flex-col gap-2 max-w-xs">
+            <span className="font-semibold text-ink">Syntra</span>
+            <p className="leading-relaxed">
+              The premier console for hackathon workflows, attendance, and teams.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-16">
+            <div className="flex flex-col gap-2">
+              <span className="font-semibold text-ink">Resources</span>
+              <span className="hover:text-ink transition cursor-pointer">Help Center</span>
+              <span className="hover:text-ink transition cursor-pointer">Organizer Guide</span>
+              <span className="hover:text-ink transition cursor-pointer">Participant FAQ</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="font-semibold text-ink">Legal</span>
+              <span className="hover:text-ink transition cursor-pointer">Terms of Service</span>
+              <span className="hover:text-ink transition cursor-pointer">Privacy Policy</span>
+              <span className="hover:text-ink transition cursor-pointer">Cookie Policy</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-black/[0.05] flex flex-col sm:flex-row justify-between text-ink-muted gap-4">
+          <p>&copy; {new Date().getFullYear()} Syntra. All rights reserved.</p>
+          <div className="flex gap-4">
+            <span className="hover:text-ink transition cursor-pointer">System Status</span>
+            <span className="hover:text-ink transition cursor-pointer">Report Issues</span>
+          </div>
         </div>
       </footer>
+
     </div>
   );
 }

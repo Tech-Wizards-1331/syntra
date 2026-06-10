@@ -2,10 +2,10 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Users,
   Calendar,
-  Clock,
   FileText,
   QrCode,
   MapPin,
@@ -110,13 +110,13 @@ export default function HubClient({
     switch (hackathon.status) {
       case "registration":
       case "registration_open":
-        return { text: "Registration Open", color: "bg-teal-500/10 border-teal-500/20 text-teal-400" };
+        return { text: "Registration Open", color: "bg-info-light border-info/10 text-info" };
       case "active":
-        return { text: "Active", color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" };
+        return { text: "Active", color: "bg-success-light border-success/10 text-success" };
       case "completed":
-        return { text: "Completed", color: "bg-slate-800 border-slate-700 text-slate-400" };
+        return { text: "Completed", color: "bg-canvas-parchment border-black/[0.08] text-ink-muted" };
       default:
-        return { text: hackathon.status, color: "bg-slate-800 border-slate-700 text-slate-400" };
+        return { text: hackathon.status, color: "bg-canvas-parchment border-black/[0.08] text-ink-muted" };
     }
   })();
 
@@ -141,96 +141,98 @@ export default function HubClient({
   const displayedMembers = showAllMembers ? team.members : team.members.slice(0, 5);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       {/* Messages */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
+        <div className="p-4 rounded-md bg-danger-light border border-danger/10 text-danger text-xs flex items-center gap-2">
           <X className="w-4 h-4 shrink-0" /> {error}
         </div>
       )}
       {success && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-2">
+        <div className="p-4 rounded-md bg-success-light border border-success/10 text-success text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" /> {success}
         </div>
       )}
 
-      {/* ── Hackathon Header ── */}
-      <div className="p-8 rounded-2xl bg-slate-900/40 border border-slate-900 shadow-glass">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      {/* ── Hackathon Header Card (White) ── */}
+      <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">{hackathon.name}</h2>
-            <div className="flex items-center gap-3 flex-wrap text-sm text-slate-400">
+            <h2 className="text-lg font-semibold text-ink leading-tight mb-1">{hackathon.name}</h2>
+            <div className="flex items-center gap-3 flex-wrap text-xs text-ink-muted">
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-slate-500" />
+                <Calendar className="w-3.5 h-3.5 text-primary" />
                 {formatDate(hackathon.start_date)} — {formatDate(hackathon.end_date)}
               </span>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusLabel.color}`}>
+          <span className={`px-2.5 py-0.5 rounded-pill text-[11px] font-semibold border ${statusLabel.color} shrink-0 self-start sm:self-auto`}>
             {statusLabel.text}
           </span>
         </div>
         {hackathon.description && (
-          <p className="text-sm text-slate-400 leading-relaxed">{hackathon.description}</p>
+          <p className="text-xs text-ink-muted leading-relaxed mt-3 pt-3 border-t border-black/[0.04]">
+            {hackathon.description}
+          </p>
         )}
       </div>
 
-      {/* ── Team Info Card ── */}
-      <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-teal-400" />
+      {/* ── Team Info Card (White) ── */}
+      <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
+        <div className="flex items-center justify-between mb-3 border-b border-black/[0.05] pb-3">
+          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+            <Users className="w-4.5 h-4.5 text-primary" />
             Team: {team.name}
           </h3>
           <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+            className={`px-2.5 py-0.5 rounded-pill text-[11px] font-semibold border ${
               team.is_registered
-                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                ? "bg-success-light border-success/10 text-success"
+                : "bg-warning-light border-warning/10 text-warning"
             }`}
           >
             {team.is_registered ? "Registered" : "Draft"}
           </span>
         </div>
 
-        <div className="text-sm text-slate-400 mb-4">
-          <span className="text-slate-500">Team Leader:</span>{" "}
-          <span className="text-white font-medium">{leaderName}</span>
-          <span className="mx-2 text-slate-700">·</span>
+        <div className="text-xs text-ink-muted mb-4">
+          <span>Team Leader:</span>{" "}
+          <span className="text-ink font-semibold">{leaderName}</span>
+          <span className="mx-2 text-black/[0.12]">·</span>
           <span>{team.members.length}/{hackathon.max_team_size} members</span>
         </div>
 
         {/* Members list */}
         <div className="space-y-2">
-          {displayedMembers.map((member, idx) => (
+          {displayedMembers.map((member) => (
             <div
               key={member.id}
-              className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 flex items-center justify-between gap-3"
+              className="p-3.5 rounded-md bg-canvas-parchment/30 border border-black/[0.04] flex items-center justify-between gap-3"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-white truncate">
+                  <span className="text-sm font-semibold text-ink truncate">
                     {member.name}
                   </span>
-                  {member.email === team.members.find((_, i) => i === 0)?.email && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                  {member.email === team.members[0]?.email && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary/10 border border-primary/20 text-primary">
                       LEADER
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-ink-muted">
                   <span>{member.email}</span>
-                  <span className="text-slate-700">·</span>
+                  <span className="text-black/[0.12]">•</span>
                   <span>{member.college || "N/A"}</span>
-                  <span className="text-slate-700">·</span>
+                  <span className="text-black/[0.12]">•</span>
                   <span>Sem {member.semester || "?"}</span>
                 </div>
                 {member.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {member.skills.map((s, i) => (
                       <span
                         key={i}
-                        className="px-1.5 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-800 text-slate-400"
+                        className="px-1.5 py-0.5 rounded-pill bg-canvas-pearl border border-black/[0.06] text-ink-muted text-[10px]"
                       >
                         {s}
                       </span>
@@ -245,15 +247,15 @@ export default function HubClient({
         {team.members.length > 5 && (
           <button
             onClick={() => setShowAllMembers(!showAllMembers)}
-            className="mt-3 text-xs text-teal-400 hover:text-teal-300 transition flex items-center gap-1 cursor-pointer"
+            className="mt-3 text-xs text-primary hover:underline transition flex items-center gap-1 cursor-pointer font-medium"
           >
             {showAllMembers ? (
               <>
-                <ChevronUp className="w-3 h-3" /> Show less
+                <ChevronUp className="w-3.5 h-3.5" /> Show less
               </>
             ) : (
               <>
-                <ChevronDown className="w-3 h-3" /> Show all {team.members.length} members
+                <ChevronDown className="w-3.5 h-3.5" /> Show all {team.members.length} members
               </>
             )}
           </button>
@@ -261,26 +263,26 @@ export default function HubClient({
 
         {/* Team Pass QR link */}
         {team.is_registered && team.qr_token && (
-          <div className="mt-4 pt-4 border-t border-slate-800">
-            <a
+          <div className="mt-4 pt-4 border-t border-black/[0.06] flex">
+            <Link
               href={`/participant/hackathons/${hackathon.id}/pass`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-semibold hover:bg-teal-500/20 transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition apple-press-effect"
             >
-              <QrCode className="w-4 h-4" />
-              View Team Pass & QR Code
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+              <QrCode className="w-4 h-4 text-ink-muted" />
+              <span>View Team Pass & QR Code</span>
+              <ExternalLink className="w-3 h-3 text-ink-muted" />
+            </Link>
           </div>
         )}
       </div>
 
-      {/* ── Problem Statement Selection ── */}
-      <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-          <FileText className="w-5 h-5 text-teal-400" />
+      {/* ── Problem Statement Selection (White) ── */}
+      <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
+        <h3 className="text-sm font-semibold text-ink flex items-center gap-2 mb-1">
+          <FileText className="w-4.5 h-4.5 text-primary" />
           Problem Statements
         </h3>
-        <p className="text-xs text-slate-400 mb-5">
+        <p className="text-xs text-ink-muted mb-4">
           {team.selected_problem_statement
             ? "Your team has locked in a problem statement. This selection is permanent."
             : isLeader
@@ -290,17 +292,15 @@ export default function HubClient({
 
         {/* Already selected PS */}
         {team.selected_problem_statement && (
-          <div className="p-5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 mb-5">
-            <div className="flex items-center gap-2 mb-2">
-              <Lock className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">
-                Selected & Locked
-              </span>
+          <div className="p-4 rounded-md bg-success-light border border-success/15 mb-4 text-success">
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider">
+              <Lock className="w-3.5 h-3.5 text-success" />
+              <span>Selected & Locked</span>
             </div>
-            <h4 className="text-base font-bold text-white mb-2">
+            <h4 className="text-sm font-semibold text-ink mb-1.5">
               {team.selected_problem_statement.title}
             </h4>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-xs text-ink-muted leading-relaxed">
               {team.selected_problem_statement.description}
             </p>
             {team.selected_problem_statement.pdf_file && (
@@ -308,7 +308,7 @@ export default function HubClient({
                 href={team.selected_problem_statement.pdf_file}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-3 text-xs text-teal-400 hover:text-teal-300 transition"
+                className="inline-flex items-center gap-1.5 mt-3 text-xs text-primary hover:underline font-normal"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download PDF
@@ -319,7 +319,7 @@ export default function HubClient({
 
         {/* PS Grid */}
         {problemStatements.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8 italic">
+          <p className="text-xs text-ink-muted text-center py-8 italic bg-canvas-parchment/20 border border-dashed border-black/[0.08] rounded-md">
             No problem statements available yet for this hackathon.
           </p>
         ) : (
@@ -336,61 +336,61 @@ export default function HubClient({
               return (
                 <div
                   key={ps.id}
-                  className={`p-5 rounded-xl border transition-all ${
+                  className={`p-4 rounded-md border transition-all ${
                     isSelected
-                      ? "bg-emerald-500/5 border-emerald-500/30"
-                      : "bg-slate-950/50 border-slate-800 hover:border-slate-700"
+                      ? "bg-success-light/30 border-success/20"
+                      : "bg-canvas-parchment/20 border-black/[0.05] hover:border-black/[0.12]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="text-sm font-bold text-white flex-1">
+                    <h4 className="text-xs font-semibold text-ink flex-1 leading-snug">
                       {ps.title}
                     </h4>
                     {isSelected && (
-                      <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="shrink-0 px-2 py-0.5 rounded-pill text-[9px] font-semibold bg-success-light border border-success/15 text-success">
                         Selected
                       </span>
                     )}
                     {ps.is_full && !isSelected && (
-                      <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                      <span className="shrink-0 px-2 py-0.5 rounded-pill text-[9px] font-semibold bg-danger-light border border-danger/15 text-danger">
                         Full
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-400 leading-relaxed mb-3 line-clamp-3">
+                  <p className="text-[11px] text-ink-muted leading-relaxed mb-3 line-clamp-3">
                     {ps.description}
                   </p>
 
                   {/* Capacity bar */}
                   <div className="mb-3">
-                    <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                    <div className="flex justify-between text-[9px] text-ink-muted mb-1">
                       <span>Capacity</span>
                       <span>
                         {ps.current_teams_count}/{ps.max_teams_allowed} teams
                       </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-canvas-parchment overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           ps.is_full
-                            ? "bg-red-500"
+                            ? "bg-danger"
                             : capacityPercent > 70
-                            ? "bg-amber-500"
-                            : "bg-teal-500"
+                            ? "bg-warning"
+                            : "bg-primary"
                         }`}
                         style={{ width: `${capacityPercent}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {ps.pdf_file && (
                       <a
                         href={ps.pdf_file}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 transition"
+                        className="text-xs text-primary hover:underline flex items-center gap-1 transition"
                       >
                         <Download className="w-3 h-3" />
                         PDF
@@ -402,7 +402,7 @@ export default function HubClient({
                         setPsModalData(ps);
                         setPsModalOpen(true);
                       }}
-                      className="text-xs text-slate-400 hover:text-white transition cursor-pointer"
+                      className="text-xs text-ink-muted hover:text-ink transition cursor-pointer"
                     >
                       View Details
                     </button>
@@ -413,7 +413,7 @@ export default function HubClient({
                       <button
                         onClick={() => handleSelectPS(ps)}
                         disabled={isPending && selectedPsId === ps.id}
-                        className="px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-pill bg-primary hover:bg-primary-focus text-white text-xs font-normal transition cursor-pointer disabled:opacity-50 flex items-center gap-1 apple-press-effect"
                       >
                         {isPending && selectedPsId === ps.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -431,67 +431,67 @@ export default function HubClient({
         )}
       </div>
 
-      {/* ── Seating Allocation ── */}
+      {/* ── Seating Allocation (White) ── */}
       {teamSeating && (
-        <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-            <MapPin className="w-5 h-5 text-teal-400" />
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
+          <h3 className="text-sm font-semibold text-ink flex items-center gap-2 mb-4 border-b border-black/[0.05] pb-3">
+            <MapPin className="w-4.5 h-4.5 text-primary" />
             Seating Allocation
           </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {teamSeating.room ? (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-slate-500 w-20">Room:</span>
-                <span className="text-white font-medium">
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-ink-muted w-20">Room:</span>
+                <span className="text-ink font-semibold">
                   {String(teamSeating.room)}
                 </span>
               </div>
             ) : null}
             {teamSeating.bench ? (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-slate-500 w-20">Bench:</span>
-                <span className="text-white font-medium">
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-ink-muted w-20">Bench:</span>
+                <span className="text-ink font-semibold">
                   {String(teamSeating.bench)}
                 </span>
               </div>
             ) : null}
             {teamSeating.row !== undefined ? (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-slate-500 w-20">Row:</span>
-                <span className="text-white font-medium">
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-ink-muted w-20">Row:</span>
+                <span className="text-ink font-semibold">
                   {String(teamSeating.row)}
                 </span>
               </div>
             ) : null}
 
             {Array.isArray(teamSeating.members) ? (
-              <div className="mt-3 pt-3 border-t border-slate-800">
-                <h4 className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">
+              <div className="mt-4 pt-4 border-t border-black/[0.06]">
+                <h4 className="text-[10px] font-semibold text-ink-muted mb-2.5 uppercase tracking-wider">
                   Individual Assignments
                 </h4>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {(teamSeating.members as Array<Record<string, unknown>>).map(
                     (m, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-3 text-xs p-2 rounded-lg bg-slate-950/50"
+                        className="flex items-center gap-3 text-xs p-2.5 rounded-md bg-canvas-parchment/30 border border-black/[0.04] text-ink-muted"
                       >
-                        <span className="text-white font-medium min-w-[120px]">
+                        <span className="text-ink font-semibold min-w-[120px]">
                           {String(m.name || `Member ${idx + 1}`)}
                         </span>
                         {m.seat ? (
-                          <span className="text-slate-400">
+                          <span>
                             Seat: {String(m.seat)}
                           </span>
                         ) : null}
                         {m.row !== undefined ? (
-                          <span className="text-slate-400">
+                          <span>
                             Row: {String(m.row)}
                           </span>
                         ) : null}
                         {m.bench ? (
-                          <span className="text-slate-400">
+                          <span>
                             Bench: {String(m.bench)}
                           </span>
                         ) : null}
@@ -509,37 +509,37 @@ export default function HubClient({
       {psModalOpen && psModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-tile-black/30 backdrop-blur-sm animate-backdrop-in"
             onClick={() => setPsModalOpen(false)}
           />
-          <div className="relative w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-6 max-h-[80vh] overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-lg bg-canvas border border-black/[0.08] shadow-overlay p-6 max-h-[80vh] overflow-y-auto z-10">
             <button
               onClick={() => setPsModalOpen(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              className="absolute top-4 right-4 p-1.5 rounded-md text-ink-muted hover:text-ink hover:bg-canvas-pearl transition cursor-pointer border border-black/[0.12]"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <h3 className="text-xl font-bold text-white mb-3 pr-8">
+            <h3 className="text-base font-semibold text-ink mb-3 pr-8">
               {psModalData.title}
             </h3>
 
             {/* Capacity */}
             <div className="mb-4">
-              <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <div className="flex justify-between text-xs text-ink-muted mb-1">
                 <span>Team Capacity</span>
                 <span>
                   {psModalData.current_teams_count}/{psModalData.max_teams_allowed}
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-canvas-parchment overflow-hidden">
                 <div
                   className={`h-full rounded-full ${
                     psModalData.is_full
-                      ? "bg-red-500"
+                      ? "bg-danger"
                       : psModalData.current_teams_count / psModalData.max_teams_allowed > 0.7
-                      ? "bg-amber-500"
-                      : "bg-teal-500"
+                      ? "bg-warning"
+                      : "bg-primary"
                   }`}
                   style={{
                     width: `${Math.min(
@@ -552,7 +552,7 @@ export default function HubClient({
             </div>
 
             {/* Description */}
-            <p className="text-sm text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap">
+            <p className="text-xs text-ink-muted leading-relaxed mb-4 whitespace-pre-wrap">
               {psModalData.description}
             </p>
 
@@ -562,10 +562,10 @@ export default function HubClient({
                 href={psModalData.pdf_file}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-medium hover:bg-teal-500/20 transition mb-4"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition mb-4"
               >
-                <Download className="w-4 h-4" />
-                Download PDF
+                <Download className="w-4 h-4 text-ink-muted" />
+                <span>Download PDF</span>
               </a>
             )}
 
@@ -577,7 +577,7 @@ export default function HubClient({
                   setPsModalOpen(false);
                 }}
                 disabled={isPending}
-                className="w-full mt-2 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold text-sm hover:brightness-110 transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full mt-2 py-2.5 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 apple-press-effect shadow-sm"
               >
                 {isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -589,8 +589,8 @@ export default function HubClient({
             )}
 
             {psModalData.is_full && (
-              <div className="mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
+              <div className="mt-2 p-3 rounded-md bg-danger-light border border-danger/20 text-danger text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-danger" />
                 This problem statement has reached its capacity limit.
               </div>
             )}

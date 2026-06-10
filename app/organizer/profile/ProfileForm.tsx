@@ -11,7 +11,6 @@ import {
   Check, 
   Loader2, 
   AlertCircle, 
-  Sparkles,
   X,
   Image as ImageIcon
 } from "lucide-react";
@@ -147,48 +146,48 @@ function OrganizerProfileForm({
   };
 
   return (
-    <div className="w-full max-w-xl bg-slate-900/40 border border-slate-800 rounded-3xl p-8 shadow-glass relative backdrop-blur-md">
+    <div className="w-full max-w-xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-          <Sparkles className="w-6 h-6 animate-pulse" />
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+          <Building2 className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-white">Complete Your Organizer Profile</h2>
-          <p className="text-sm text-slate-400">Set up your organization workspace settings below.</p>
+          <h2 className="text-lg font-semibold text-ink">Complete Your Organizer Profile</h2>
+          <p className="text-xs text-ink-muted">Set up your organization workspace settings below.</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* User static info banner */}
-        <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-900 flex flex-col sm:flex-row justify-between gap-3 text-sm text-slate-400">
+        <div className="p-4 rounded-md bg-canvas-parchment border border-black/[0.06] flex flex-col sm:flex-row justify-between gap-3 text-sm text-ink-muted">
           <div>
-            <span className="text-slate-500 font-medium block">Account Admin</span>
-            <span className="text-slate-200 font-semibold">{userName}</span>
+            <span className="text-ink-muted text-[10px] font-semibold uppercase tracking-wider block">Account Admin</span>
+            <span className="text-ink font-semibold text-sm">{userName}</span>
           </div>
           <div>
-            <span className="text-slate-500 font-medium block">Admin Email</span>
-            <span className="text-slate-200 font-semibold">{userEmail}</span>
+            <span className="text-ink-muted text-[10px] font-semibold uppercase tracking-wider block">Admin Email</span>
+            <span className="text-ink font-semibold text-sm">{userEmail}</span>
           </div>
         </div>
 
         {error && (
-          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-400 text-sm animate-shake">
-            <AlertCircle className="w-5 h-5 shrink-0" />
+          <div className="p-4 rounded-md bg-danger-light border border-danger/15 flex items-center gap-3 text-danger text-xs font-medium">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 text-emerald-400 text-sm">
-            <Check className="w-5 h-5 shrink-0" />
+          <div className="p-4 rounded-md bg-success-light border border-success/15 flex items-center gap-3 text-success text-xs font-medium">
+            <Check className="w-4 h-4 shrink-0" />
             <span>Profile saved successfully! Redirecting to workspace dashboard...</span>
           </div>
         )}
 
         {/* Organization Name */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="orgName" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-slate-500" /> Organization Name
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="orgName" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5" /> Organization Name
           </label>
           <input
             id="orgName"
@@ -196,15 +195,15 @@ function OrganizerProfileForm({
             value={organizationName}
             onChange={(e) => setOrganizationName(e.target.value)}
             placeholder="e.g. Syntra Labs"
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 transition placeholder-slate-600 outline-none"
+            className="py-3 px-4 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
             disabled={isPending}
           />
         </div>
 
         {/* Website */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="website" className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-            <Globe className="w-4 h-4 text-slate-500" /> Organization Website
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="website" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5" /> Organization Website
           </label>
           <input
             id="website"
@@ -212,15 +211,15 @@ function OrganizerProfileForm({
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
             placeholder="e.g. https://syntralabs.org"
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 text-slate-100 transition placeholder-slate-600 outline-none"
+            className="py-3 px-4 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
             disabled={isPending}
           />
         </div>
 
         {/* Drag & Drop Logo Upload */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-slate-500" /> Organization Logo
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+            <ImageIcon className="w-3.5 h-3.5" /> Organization Logo
           </label>
 
           <input
@@ -240,25 +239,25 @@ function OrganizerProfileForm({
               onDragLeave={handleDrag}
               onDrop={handleDrop}
               onClick={() => !isPending && fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition cursor-pointer select-none ${
+              className={`border-2 border-dashed rounded-md p-8 flex flex-col items-center justify-center gap-3 transition cursor-pointer select-none ${
                 dragActive 
-                  ? "border-emerald-500 bg-emerald-500/5 text-emerald-400" 
-                  : "border-slate-800 hover:border-slate-700 bg-slate-950/40 text-slate-400 hover:text-slate-300"
+                  ? "border-primary bg-primary/5 text-primary" 
+                  : "border-black/[0.12] hover:border-black/[0.2] bg-canvas-pearl text-ink-muted hover:text-ink"
               }`}
             >
-              <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-850 flex items-center justify-center">
-                <UploadCloud className="w-6 h-6 text-slate-400" />
+              <div className="w-12 h-12 rounded-lg bg-canvas-parchment border border-black/[0.06] flex items-center justify-center">
+                <UploadCloud className="w-6 h-6 text-ink-muted" />
               </div>
               <div className="text-center">
-                <span className="font-semibold text-sm text-slate-200">Click to upload</span> or drag and drop
-                <p className="text-[10px] text-slate-500 mt-1">PNG, JPG, or JPEG up to 5MB</p>
+                <span className="font-semibold text-sm text-ink">Click to upload</span> or drag and drop
+                <p className="text-[10px] text-ink-muted mt-1">PNG, JPG, or JPEG up to 5MB</p>
               </div>
             </div>
           ) : (
-            <div className="relative border border-slate-800 rounded-2xl p-6 bg-slate-950/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative border border-black/[0.08] rounded-md p-6 bg-canvas-parchment/50 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 {/* Preview Image */}
-                <div className="relative w-16 h-16 rounded-xl border border-slate-850 overflow-hidden bg-slate-900 flex items-center justify-center">
+                <div className="relative w-16 h-16 rounded-lg border border-black/[0.08] overflow-hidden bg-canvas flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={logoPreview}
@@ -267,8 +266,8 @@ function OrganizerProfileForm({
                   />
                 </div>
                 <div>
-                  <span className="font-semibold text-sm text-slate-200 block">Organization Logo Selected</span>
-                  <span className="text-xs text-slate-500">
+                  <span className="font-semibold text-sm text-ink block">Organization Logo Selected</span>
+                  <span className="text-xs text-ink-muted">
                     {logoBase64 ? "New upload ready" : "Currently saved logo"}
                   </span>
                 </div>
@@ -278,7 +277,7 @@ function OrganizerProfileForm({
                 <button
                   type="button"
                   onClick={handleRemoveLogo}
-                  className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-md bg-danger-light border border-danger/15 text-danger hover:bg-danger/10 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer apple-press-effect"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>Remove Image</span>
@@ -292,15 +291,15 @@ function OrganizerProfileForm({
         <button
           type="submit"
           disabled={isPending || success}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-450 hover:to-teal-450 text-slate-950 font-bold tracking-wide transition shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full py-3 rounded-pill bg-primary hover:bg-primary-focus text-white font-normal text-sm transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer apple-press-effect"
         >
           {isPending ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               <span>Saving Configuration...</span>
             </>
           ) : (
-            <span>Save Profile &amp; Complete Setup</span>
+            <span>Save Profile & Complete Setup</span>
           )}
         </button>
       </form>

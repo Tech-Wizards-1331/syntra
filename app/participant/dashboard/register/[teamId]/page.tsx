@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, QrCode, CheckCircle2, Users, ClipboardList } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Users, ClipboardList } from "lucide-react";
 import CheckoutCard from "../../CheckoutCard";
 import TeamDashboardClient from "../../TeamDashboardClient";
 import QrDisplay from "../../QrDisplay";
@@ -162,7 +162,7 @@ export default async function TeamRegisterPage(props: {
       <div>
         <Link
           href="/participant/dashboard"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-teal-400 transition group"
+          className="inline-flex items-center gap-2 text-xs font-medium text-ink-muted hover:text-primary transition group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform duration-200" />
           Back to Dashboard
@@ -170,29 +170,29 @@ export default async function TeamRegisterPage(props: {
       </div>
 
       {/* Workspace Title Header */}
-      <div className="glass-card gradient-border rounded-2xl p-6">
+      <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-[10px] text-teal-400 font-mono uppercase tracking-[0.2em]">
+            <span className="text-[10px] text-primary font-semibold uppercase tracking-[0.2em]">
               Registration Workspace
             </span>
-            <h2 className="text-2xl font-bold text-white mt-1">
+            <h2 className="text-2xl font-semibold text-ink mt-1">
               Team: {team.name}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5 font-medium">
+            <p className="text-xs text-ink-muted mt-0.5 font-medium">
               {team.organizer_hackathon.name} · {memberCount} members
             </p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-center">
             <span
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-semibold border ${
                 team.is_registered
-                  ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                  : "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                  ? "bg-success-light border-success/15 text-success"
+                  : "bg-warning-light border-warning/15 text-warning"
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${
-                team.is_registered ? "bg-emerald-400" : "bg-amber-400 animate-pulse-dot"
+                team.is_registered ? "bg-success" : "bg-warning animate-pulse-dot"
               }`} />
               {team.is_registered ? "Registered" : "Draft Status"}
             </span>
@@ -200,12 +200,12 @@ export default async function TeamRegisterPage(props: {
         </div>
 
         {/* Registration Progress Stepper */}
-        <div className="mt-6 pt-5 border-t border-slate-800/50">
+        <div className="mt-6 pt-5 border-t border-black/[0.06]">
           <div className="flex items-center justify-between relative">
             {/* Connection line */}
-            <div className="absolute top-4 left-[calc(16.67%)] right-[calc(16.67%)] h-[2px] bg-slate-800 z-0" />
+            <div className="absolute top-4 left-[calc(16.67%)] right-[calc(16.67%)] h-[2px] bg-black/[0.08] z-0" />
             <div
-              className="absolute top-4 left-[calc(16.67%)] h-[2px] bg-gradient-to-r from-teal-500 to-emerald-500 z-0 transition-all duration-700"
+              className="absolute top-4 left-[calc(16.67%)] h-[2px] bg-primary z-0 transition-all duration-700"
               style={{
                 width: team.is_registered
                   ? "66.67%"
@@ -217,10 +217,10 @@ export default async function TeamRegisterPage(props: {
             {steps.map((step, i) => (
               <div key={i} className="flex flex-col items-center relative z-10 flex-1">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-500 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all duration-500 ${
                     step.complete
-                      ? "bg-teal-500 border-teal-500 text-slate-950 shadow-lg shadow-teal-500/30"
-                      : "bg-slate-900 border-slate-700 text-slate-500"
+                      ? "bg-primary border-primary text-white"
+                      : "bg-canvas border-black/[0.12] text-ink-muted"
                   }`}
                 >
                   {step.complete ? (
@@ -232,7 +232,7 @@ export default async function TeamRegisterPage(props: {
                   )}
                 </div>
                 <span className={`mt-2 text-[10px] font-semibold text-center ${
-                  step.complete ? "text-teal-400" : "text-slate-500"
+                  step.complete ? "text-primary" : "text-ink-muted"
                 }`}>
                   {step.label}
                 </span>
@@ -289,22 +289,12 @@ export default async function TeamRegisterPage(props: {
         </div>
 
         <div className="lg:col-span-1">
-          {team.is_registered && team.qr_token ? (
+          {team.is_registered && team.qr_token && (
             <QrDisplay
               qrToken={team.qr_token}
               teamName={team.name}
               isQrActive={team.is_qr_active}
             />
-          ) : (
-            <div className="glass-card rounded-2xl p-6 text-center flex flex-col items-center justify-center min-h-[200px] border-dashed border-slate-805">
-              <div className="w-14 h-14 rounded-xl bg-slate-805/60 border border-slate-700/50 flex items-center justify-center mb-3 animate-float">
-                <QrCode className="w-7 h-7 text-slate-500" />
-              </div>
-              <p className="text-sm font-semibold text-slate-400">QR Pass Locked</p>
-              <p className="text-xs text-slate-500 mt-1 max-w-[200px] leading-relaxed">
-                Your check-in QR pass will generate instantly once your registration is finalized.
-              </p>
-            </div>
           )}
         </div>
       </div>

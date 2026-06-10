@@ -3,16 +3,13 @@ import { auth } from "@/auth";
 import {
   User,
   Mail,
-  QrCode,
   Compass,
   Trophy,
   Users,
-  Sparkles,
   AlertCircle,
   Calendar,
   ChevronRight,
   Settings,
-  ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -180,22 +177,23 @@ export default async function ParticipantDashboard(props: {
   };
 
   return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 z-10 flex flex-col gap-6 animate-fade-in-up">
+    <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
+      
       {/* ─── INTEGRATED HEADER & PROFILE BANNER ─── */}
-      <div className="glass-card rounded-2xl p-6 gradient-border">
+      <div className="bg-canvas rounded-lg p-6 border border-black/[0.06] apple-shadow-overlay">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-base md:text-lg shadow-lg shadow-teal-500/20 shrink-0">
+            <div className="w-12 h-12 md:w-14 md:h-14 rounded-md bg-tile-black flex items-center justify-center text-white font-bold text-base md:text-lg shrink-0">
               {getInitials(session?.user?.name || "P")}
             </div>
             <div>
-              <h2 className="text-lg md:text-xl font-black text-white leading-tight">
+              <h2 className="text-lg md:text-xl font-semibold text-ink leading-tight">
                 Welcome back, {session?.user?.name || "Participant"}!
               </h2>
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
+              <p className="text-[11px] text-ink-muted mt-1.5 flex items-center gap-2">
                 <span>{session?.user?.email}</span>
-                <span className="w-1 h-1 rounded-full bg-slate-800" />
-                <span className="text-teal-400 font-bold uppercase tracking-wider text-[9px]">
+                <span className="w-1 h-1 rounded-full bg-black/[0.12]" />
+                <span className="text-primary font-semibold uppercase tracking-wider text-[9px]">
                   Participant Profile
                 </span>
               </p>
@@ -204,50 +202,50 @@ export default async function ParticipantDashboard(props: {
 
           {/* Header Stats */}
           <div className="flex gap-4 shrink-0">
-            <div className="text-center px-3 py-2 rounded-xl bg-slate-900/30 border border-slate-900/60 min-w-[70px]">
-              <p className="text-lg font-black text-white leading-none">{userTeams.length}</p>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Total Teams</p>
+            <div className="text-center px-4 py-2.5 rounded-md bg-canvas-parchment border border-black/[0.05] min-w-[80px]">
+              <p className="text-lg font-semibold text-ink leading-none">{userTeams.length}</p>
+              <p className="text-[9px] text-ink-muted font-semibold uppercase tracking-wider mt-1.5">Total Teams</p>
             </div>
-            <div className="text-center px-3 py-2 rounded-xl bg-slate-900/30 border border-slate-900/60 min-w-[70px]">
-              <p className="text-lg font-black text-teal-400 leading-none">{activeRegistrations.length}</p>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Registered</p>
+            <div className="text-center px-4 py-2.5 rounded-md bg-canvas-parchment border border-black/[0.05] min-w-[80px]">
+              <p className="text-lg font-semibold text-primary leading-none">{activeRegistrations.length}</p>
+              <p className="text-[9px] text-ink-muted font-semibold uppercase tracking-wider mt-1.5">Registered</p>
             </div>
           </div>
         </div>
 
         {/* Integrated Quick Action Button Pills */}
-        <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-800/40">
+        <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-black/[0.06]">
           <Link
             href="/participant/hackathons"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill bg-canvas-pearl hover:bg-canvas-parchment border border-black/[0.08] text-xs font-normal text-ink transition apple-press-effect"
           >
-            <Compass className="w-3.5 h-3.5 text-teal-400" />
+            <Compass className="w-3.5 h-3.5 text-primary" />
             Explore Hackathons
           </Link>
           <Link
             href="/participant/registrations"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill bg-canvas-pearl hover:bg-canvas-parchment border border-black/[0.08] text-xs font-normal text-ink transition apple-press-effect"
           >
-            <Trophy className="w-3.5 h-3.5 text-teal-400" />
+            <Trophy className="w-3.5 h-3.5 text-primary" />
             My Registrations
           </Link>
           <Link
             href="/participant/inbox"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition relative"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill bg-canvas-pearl hover:bg-canvas-parchment border border-black/[0.08] text-xs font-normal text-ink transition relative apple-press-effect"
           >
-            <Mail className="w-3.5 h-3.5 text-teal-400" />
+            <Mail className="w-3.5 h-3.5 text-primary" />
             Team Inbox
             {pendingInvitesCount > 0 && (
-              <span className="flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black bg-teal-500 text-slate-950 ml-1 shadow-[0_0_8px_rgba(20,184,166,0.3)]">
+              <span className="flex items-center justify-center min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-semibold bg-primary text-white ml-1">
                 {pendingInvitesCount}
               </span>
             )}
           </Link>
           <Link
             href="/participant/profile"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800/50 hover:border-slate-800 text-xs font-bold text-slate-350 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-pill bg-canvas-pearl hover:bg-canvas-parchment border border-black/[0.08] text-xs font-normal text-ink transition apple-press-effect"
           >
-            <Settings className="w-3.5 h-3.5 text-teal-400" />
+            <Settings className="w-3.5 h-3.5 text-primary" />
             Profile Settings
           </Link>
         </div>
@@ -255,89 +253,90 @@ export default async function ParticipantDashboard(props: {
 
       {/* ─── PENDING INVITES ALERT BANNER ─── */}
       {pendingInvitesCount > 0 && (
-        <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/15 text-teal-400 flex items-center justify-between gap-3 text-xs md:text-sm animate-pulse-light">
+        <div className="p-4 rounded-lg bg-warning-light border border-warning/10 text-warning flex items-center justify-between gap-3 text-xs md:text-sm">
           <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0 text-warning" />
             <div>
-              <span className="font-bold">You have pending invitations!</span> You have been invited to join {pendingInvitesCount} hackathon team(s).
+              <span className="font-semibold">You have pending invitations!</span> You have been invited to join {pendingInvitesCount} hackathon team(s).
             </div>
           </div>
           <Link
             href="/participant/inbox"
-            className="px-3 py-1 rounded-md bg-teal-500 text-slate-950 font-bold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center gap-0.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-pill bg-primary text-white font-normal text-xs hover:bg-primary-focus transition apple-press-effect flex items-center gap-0.5 cursor-pointer shadow-sm"
           >
             Open Inbox <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
       )}
 
-      {/* ─── TWO COLUMN GRID LAYOUT (Option A) ─── */}
+      {/* ─── TWO COLUMN GRID LAYOUT ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (Active Teams Console) */}
         <div className="lg:col-span-2 flex flex-col gap-5">
-          <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Trophy className="w-4 h-4 text-teal-400" />
+          <div className="bg-canvas rounded-lg p-6 border border-black/[0.06] apple-shadow-overlay flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
+              <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                <Trophy className="w-4.5 h-4.5 text-primary" />
                 Active Teams
               </h3>
               <Link
                 href="/participant/registrations"
-                className="text-[10px] text-teal-400 hover:text-teal-350 font-bold flex items-center gap-0.5"
+                className="text-[12px] text-primary hover:underline font-normal flex items-center gap-0.5"
               >
                 Manage All <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
 
             {userTeams.length > 0 ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col divide-y divide-black/[0.05]">
                 {userTeams.slice(0, 3).map((team) => (
-                  <div
+                  <Link
                     key={team.id}
-                    className="p-4 rounded-xl bg-slate-900/20 border border-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-800/80 transition duration-200"
+                    href={
+                      team.isRegistered
+                        ? `/participant/hackathons/${team.hackathonId}/hub`
+                        : `/participant/dashboard/register/${team.id}`
+                    }
+                    className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-canvas-parchment/20 transition-all duration-200 group cursor-pointer"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white leading-none">{team.name}</span>
+                        <span className="text-sm font-semibold text-ink leading-none">{team.name}</span>
                         <span
-                          className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          className={`text-[9px] font-semibold px-2 py-0.5 rounded-pill border ${
                             team.isRegistered
-                              ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                              : "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                              ? "bg-success-light border-success/10 text-success"
+                              : "bg-warning-light border-warning/10 text-warning"
                           }`}
                         >
                           {team.isRegistered ? "Registered" : "Draft"}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-455 mt-1 font-medium">{team.hackathonName}</p>
+                      <p className="text-xs text-ink-muted mt-1 leading-none">{team.hackathonName}</p>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-start gap-4">
+                    <div className="flex items-center justify-between sm:justify-start gap-6">
                       {/* Teammates count */}
-                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
-                        <Users className="w-3.5 h-3.5" />
-                        <span>
-                          {team.memberCount} / {team.maxMembers}
-                        </span>
+                      <div className="flex items-center gap-1.5 text-ink-muted text-xs font-normal">
+                        <Users className="w-3.5 h-3.5 text-ink-muted/65" />
+                        <span>{team.memberCount} / {team.maxMembers} Members</span>
                       </div>
-                      <Link
-                        href={`/participant/dashboard/register/${team.id}`}
-                        className="px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800/60 text-slate-200 text-xs font-bold transition-all text-center cursor-pointer"
-                      >
-                        {team.isRegistered ? "Manage" : "Continue"}
-                      </Link>
+                      <span className="flex items-center gap-0.5 text-xs font-normal text-primary group-hover:underline">
+                        {team.isRegistered ? "View Hub" : "Continue"}
+                        <ChevronRight className="w-3 h-3" />
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 border border-dashed border-slate-800/80 rounded-xl">
-                <p className="text-xs text-slate-500">You are not currently in any teams.</p>
+              <div className="text-center py-10 border border-dashed border-black/[0.12] rounded-lg bg-canvas-parchment/10">
+                <p className="text-xs text-ink-muted">You are not currently in any teams.</p>
                 <Link
                   href="/participant/hackathons"
-                  className="inline-flex items-center gap-1 text-xs text-teal-400 hover:underline font-bold mt-2"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-normal mt-2"
                 >
-                  Join or Create a Team <ArrowRight className="w-3 h-3" />
+                  Join or Create a Team <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
             )}
@@ -346,10 +345,10 @@ export default async function ParticipantDashboard(props: {
 
         {/* Right Column (Upcoming Events Timeline) */}
         <div className="flex flex-col gap-5">
-          <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-teal-400" />
+          <div className="bg-canvas rounded-lg p-6 border border-black/[0.06] apple-shadow-overlay flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
+              <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                <Calendar className="w-4.5 h-4.5 text-primary" />
                 Upcoming Events
               </h3>
             </div>
@@ -359,14 +358,14 @@ export default async function ParticipantDashboard(props: {
                 {availableHackathons.map((h) => (
                   <div
                     key={h.id}
-                    className="p-4 rounded-xl bg-slate-900/20 border border-slate-900/60 flex flex-col gap-1.5 hover:border-slate-800 transition"
+                    className="p-4 rounded-md bg-canvas-parchment/40 border border-black/[0.04] flex flex-col gap-1.5 hover:bg-canvas-parchment/80 transition"
                   >
-                    <h4 className="text-xs font-bold text-slate-200">{h.name}</h4>
-                    <div className="flex items-center justify-between mt-1 text-[10px] text-slate-500 font-semibold">
+                    <h4 className="text-xs font-semibold text-ink">{h.name}</h4>
+                    <div className="flex items-center justify-between mt-1 text-[10px] text-ink-muted font-normal">
                       <span>Ends {formatDate(h.registration_deadline)}</span>
                       <Link
                         href={`/participant/dashboard/register/new?hackathonId=${h.id}`}
-                        className="text-teal-450 hover:text-teal-350 font-bold flex items-center gap-0.5"
+                        className="text-primary hover:underline font-medium flex items-center gap-0.5"
                       >
                         Register <ChevronRight className="w-3 h-3" />
                       </Link>
@@ -375,8 +374,8 @@ export default async function ParticipantDashboard(props: {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 border border-dashed border-slate-800/80 rounded-xl">
-                <p className="text-xs text-slate-500">No open hackathons found.</p>
+              <div className="text-center py-10 border border-dashed border-black/[0.12] rounded-lg bg-canvas-parchment/10">
+                <p className="text-xs text-ink-muted">No open hackathons found.</p>
               </div>
             )}
           </div>

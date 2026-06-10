@@ -83,7 +83,7 @@ export default function CheckoutClient({
           }
         },
         prefill: { name: userName, email: userEmail },
-        theme: { color: "#0d9488" },
+        theme: { color: "#0066cc" },
         modal: {
           ondismiss: function () {
             setLoading(false);
@@ -105,7 +105,7 @@ export default function CheckoutClient({
       <div className="w-full max-w-md mb-6">
         <button
           onClick={() => router.push("/participant/dashboard")}
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer"
+          className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Dashboard
@@ -113,47 +113,47 @@ export default function CheckoutClient({
       </div>
 
       {/* Checkout Card */}
-      <div className="w-full max-w-md p-8 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-2xl backdrop-blur-sm">
+      <div className="w-full max-w-md p-8 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Payment Checkout</h1>
-            <p className="text-xs text-slate-400">Complete your team registration</p>
+            <h1 className="text-lg font-semibold text-ink">Payment Checkout</h1>
+            <p className="text-xs text-ink-muted">Complete your team registration</p>
           </div>
         </div>
 
         {/* Details */}
         <div className="space-y-3 mb-6">
-          <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950/50 border border-slate-800">
-            <span className="text-xs text-slate-400">Hackathon</span>
-            <span className="text-sm font-semibold text-white">{hackathonName}</span>
+          <div className="flex justify-between items-center p-3 rounded-md bg-canvas-parchment border border-black/[0.04]">
+            <span className="text-xs text-ink-muted">Hackathon</span>
+            <span className="text-sm font-semibold text-ink">{hackathonName}</span>
           </div>
-          <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950/50 border border-slate-800">
-            <span className="text-xs text-slate-400 flex items-center gap-1"><Users className="w-3 h-3" /> Team</span>
-            <span className="text-sm font-semibold text-white">{teamName}</span>
+          <div className="flex justify-between items-center p-3 rounded-md bg-canvas-parchment border border-black/[0.04]">
+            <span className="text-xs text-ink-muted flex items-center gap-1"><Users className="w-3 h-3" /> Team</span>
+            <span className="text-sm font-semibold text-ink">{teamName}</span>
           </div>
-          <div className="flex justify-between items-center p-4 rounded-xl bg-teal-500/5 border border-teal-500/20">
-            <span className="text-xs text-teal-300 font-bold uppercase tracking-wider">Total Fee</span>
-            <span className="text-2xl font-black text-white">
-              <span className="text-base text-teal-400 mr-0.5">&#8377;</span>{amount}
+          <div className="flex justify-between items-center p-4 rounded-md bg-primary/5 border border-primary/10">
+            <span className="text-xs text-primary font-semibold uppercase tracking-wider">Total Fee</span>
+            <span className="text-2xl font-semibold text-ink">
+              <span className="text-base text-primary mr-0.5">&#8377;</span>{amount}
             </span>
           </div>
         </div>
 
         {/* Security Badge */}
-        <div className="flex items-center gap-2 mb-5 p-2.5 rounded-lg bg-slate-950/40 border border-slate-800">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <p className="text-[10px] text-slate-400 leading-relaxed">
-            Payments are securely processed by <strong className="text-slate-300">Razorpay</strong>. Your card details are never stored on our servers.
+        <div className="flex items-center gap-2 mb-5 p-2.5 rounded-md bg-canvas-parchment border border-black/[0.04]">
+          <ShieldCheck className="w-4 h-4 text-success flex-shrink-0" />
+          <p className="text-[10px] text-ink-muted leading-relaxed">
+            Payments are securely processed by <strong className="text-ink">Razorpay</strong>. Your card details are never stored on our servers.
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3.5 rounded-md bg-danger-light border border-danger/15 text-danger text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span className="font-medium">{error}</span>
           </div>
@@ -163,7 +163,7 @@ export default function CheckoutClient({
         <button
           onClick={handlePay}
           disabled={loading}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-bold transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 disabled:opacity-55 cursor-pointer text-sm"
+          className="w-full py-3 rounded-pill bg-primary hover:bg-primary-focus text-white font-normal text-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer apple-press-effect"
         >
           {loading ? (
             <>

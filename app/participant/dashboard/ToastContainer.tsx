@@ -27,53 +27,53 @@ function Toast({ toast, onClose }: ToastProps) {
     switch (toast.type) {
       case "success":
         return {
-          icon: <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />,
-          borderColor: "border-emerald-500/20",
-          bgColor: "bg-emerald-950/90",
-          textColor: "text-emerald-300",
-          progressColor: "bg-emerald-500",
+          icon: <CheckCircle2 className="w-5 h-5 text-success shrink-0" />,
+          borderColor: "border-success/15",
+          bgColor: "bg-success-light",
+          textColor: "text-success",
+          progressColor: "bg-success",
         };
       case "error":
         return {
-          icon: <XCircle className="w-5 h-5 text-red-400 shrink-0" />,
-          borderColor: "border-red-500/20",
-          bgColor: "bg-red-950/90",
-          textColor: "text-red-300",
-          progressColor: "bg-red-500",
+          icon: <XCircle className="w-5 h-5 text-danger shrink-0" />,
+          borderColor: "border-danger/15",
+          bgColor: "bg-danger-light",
+          textColor: "text-danger",
+          progressColor: "bg-danger",
         };
       case "warning":
         return {
-          icon: <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />,
-          borderColor: "border-amber-500/20",
-          bgColor: "bg-amber-950/90",
-          textColor: "text-amber-300",
-          progressColor: "bg-amber-500",
+          icon: <AlertTriangle className="w-5 h-5 text-warning shrink-0" />,
+          borderColor: "border-warning/15",
+          bgColor: "bg-warning-light",
+          textColor: "text-warning",
+          progressColor: "bg-warning",
         };
     }
   })();
 
   return (
     <div
-      className={`flex flex-col overflow-hidden rounded-xl border ${config.borderColor} ${config.bgColor} backdrop-blur-lg shadow-2xl shadow-black/30 animate-slide-in-right`}
+      className={`flex flex-col overflow-hidden rounded-md border ${config.borderColor} ${config.bgColor} apple-shadow-overlay animate-slide-in-right`}
       role="alert"
     >
       <div className="flex items-start gap-3 p-4">
         {config.icon}
         <div className="flex-1 min-w-0">
-          <p className={`text-xs font-semibold ${config.textColor} leading-relaxed break-words`}>
+          <p className={`text-xs font-medium ${config.textColor} leading-relaxed break-words`}>
             {toast.message}
           </p>
         </div>
         <button
           onClick={() => onClose(toast.id)}
-          className="text-slate-500 hover:text-white hover:bg-white/5 p-1 rounded-lg transition cursor-pointer shrink-0"
+          className="text-ink-muted hover:text-ink p-1 rounded-md transition cursor-pointer shrink-0"
         >
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
       {/* Countdown progress bar */}
       <div className="h-[2px] w-full bg-transparent">
-        <div className={`h-full ${config.progressColor} opacity-40 animate-progress-countdown`} />
+        <div className={`h-full ${config.progressColor} opacity-30 animate-progress-countdown`} />
       </div>
     </div>
   );

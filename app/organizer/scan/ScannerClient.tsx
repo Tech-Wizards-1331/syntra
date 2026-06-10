@@ -218,24 +218,24 @@ export default function ScannerClient({
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-3xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mx-auto mb-4">
-            <ScanLine className="w-10 h-10 text-teal-400" />
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <ScanLine className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Start Scanning</h2>
-          <p className="text-sm text-slate-400 mt-2">
+          <h2 className="text-xl font-semibold text-ink">Start Scanning</h2>
+          <p className="text-sm text-ink-muted mt-2">
             Select a hackathon and scan category to begin
           </p>
         </div>
 
         {error && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
+          <div className="p-4 rounded-md bg-danger-light border border-danger/15 text-danger text-xs font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" /> {error}
           </div>
         )}
 
-        <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 space-y-4">
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay space-y-4">
           <div>
-            <label className="block text-xs text-slate-400 mb-1.5 font-medium">
+            <label className="block text-[11px] text-ink-muted mb-1.5 font-semibold uppercase tracking-wider">
               Hackathon
             </label>
             <div className="relative">
@@ -245,7 +245,7 @@ export default function ScannerClient({
                   setSelectedHackathonId(e.target.value ? Number(e.target.value) : null);
                   setSelectedCategoryId(null);
                 }}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-teal-500/50 transition appearance-none pr-10"
+                className="w-full px-4 py-3 rounded-md bg-canvas-pearl border border-black/[0.08] text-ink text-sm focus:outline-none focus:border-primary transition appearance-none pr-10"
               >
                 <option value="">Choose hackathon...</option>
                 {hackathons.map((h) => (
@@ -254,13 +254,13 @@ export default function ScannerClient({
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
             </div>
           </div>
 
           {selectedHackathonId && (
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 font-medium">
+              <label className="block text-[11px] text-ink-muted mb-1.5 font-semibold uppercase tracking-wider">
                 Scan Category
               </label>
               <div className="relative">
@@ -269,7 +269,7 @@ export default function ScannerClient({
                   onChange={(e) =>
                     setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)
                   }
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-teal-500/50 transition appearance-none pr-10"
+                  className="w-full px-4 py-3 rounded-md bg-canvas-pearl border border-black/[0.08] text-ink text-sm focus:outline-none focus:border-primary transition appearance-none pr-10"
                 >
                   <option value="">Choose category...</option>
                   {selectedHackathonCategories.map((c) => (
@@ -278,10 +278,10 @@ export default function ScannerClient({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
               </div>
               {selectedHackathonCategories.length === 0 && (
-                <p className="text-xs text-amber-400 mt-2">
+                <p className="text-xs text-warning mt-2">
                   No active scan categories found for this hackathon.
                 </p>
               )}
@@ -291,7 +291,7 @@ export default function ScannerClient({
           <button
             onClick={handleStartScanning}
             disabled={!selectedHackathonId || !selectedCategoryId}
-            className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-semibold text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full px-4 py-3 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 cursor-pointer apple-press-effect"
           >
             <Camera className="w-5 h-5" />
             Start Scanner
@@ -307,31 +307,31 @@ export default function ScannerClient({
     return (
       <div className="max-w-lg mx-auto space-y-6">
         {/* Context Bar */}
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+        <div className="p-4 rounded-md bg-canvas border border-black/[0.06] flex items-center justify-between apple-shadow-overlay">
           <div>
-            <p className="text-sm font-medium text-white">{hackathonName}</p>
-            <p className="text-xs text-teal-400">{categoryName}</p>
+            <p className="text-sm font-semibold text-ink">{hackathonName}</p>
+            <p className="text-xs text-primary">{categoryName}</p>
           </div>
           <button
             onClick={() => {
               stopScanner();
               setState("selecting");
             }}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs hover:text-white transition cursor-pointer"
+            className="px-3 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] text-ink-muted text-xs hover:text-ink transition cursor-pointer apple-press-effect"
           >
             Change
           </button>
         </div>
 
         {error && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
+          <div className="p-4 rounded-md bg-danger-light border border-danger/15 text-danger text-xs font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" /> {error}
             <button
               onClick={() => {
                 setError(null);
                 startScanner();
               }}
-              className="ml-auto text-xs underline hover:text-red-300 cursor-pointer"
+              className="ml-auto text-xs underline hover:text-danger cursor-pointer"
             >
               Retry
             </button>
@@ -339,13 +339,13 @@ export default function ScannerClient({
         )}
 
         {isPending && (
-          <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400 text-sm flex items-center gap-2">
+          <div className="p-4 rounded-md bg-info-light border border-info/15 text-info text-xs font-medium flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Processing scan...
           </div>
         )}
 
         {/* Camera Viewport */}
-        <div className="rounded-2xl overflow-hidden bg-black border border-slate-800 relative">
+        <div className="rounded-lg overflow-hidden bg-tile-black border border-black/[0.12] relative">
           <div
             id="qr-reader"
             ref={scannerRef}
@@ -353,16 +353,16 @@ export default function ScannerClient({
           />
           {/* Scanning overlay */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <div className="w-64 h-64 border-2 border-teal-400/40 rounded-2xl relative">
-              <div className="absolute -top-0.5 -left-0.5 w-8 h-8 border-t-2 border-l-2 border-teal-400 rounded-tl-xl" />
-              <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-t-2 border-r-2 border-teal-400 rounded-tr-xl" />
-              <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-b-2 border-l-2 border-teal-400 rounded-bl-xl" />
-              <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-b-2 border-r-2 border-teal-400 rounded-br-xl" />
+            <div className="w-64 h-64 border-2 border-primary/40 rounded-lg relative">
+              <div className="absolute -top-0.5 -left-0.5 w-8 h-8 border-t-2 border-l-2 border-primary rounded-tl-lg" />
+              <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-t-2 border-r-2 border-primary rounded-tr-lg" />
+              <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-b-2 border-l-2 border-primary rounded-bl-lg" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-b-2 border-r-2 border-primary rounded-br-lg" />
             </div>
           </div>
         </div>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-ink-muted">
           Point camera at team QR code to scan
         </p>
       </div>
@@ -375,30 +375,30 @@ export default function ScannerClient({
     return (
       <div className="max-w-lg mx-auto space-y-6">
         {/* Context */}
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+        <div className="p-4 rounded-md bg-canvas border border-black/[0.06] apple-shadow-overlay">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-white">{hackathonName}</p>
-              <p className="text-xs text-teal-400">{categoryName}</p>
+              <p className="text-sm font-semibold text-ink">{hackathonName}</p>
+              <p className="text-xs text-primary">{categoryName}</p>
             </div>
           </div>
         </div>
 
         {error && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
+          <div className="p-4 rounded-md bg-danger-light border border-danger/15 text-danger text-xs font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" /> {error}
           </div>
         )}
 
         {/* Scanned Team Info */}
-        <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80">
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center">
-              <Users className="w-6 h-6 text-teal-400" />
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">{scannedTeam.teamName}</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-lg font-semibold text-ink">{scannedTeam.teamName}</h3>
+              <p className="text-xs text-ink-muted">
                 {scannedTeam.members.length} members
               </p>
             </div>
@@ -409,12 +409,12 @@ export default function ScannerClient({
             {scannedTeam.members.map((member) => (
               <label
                 key={member.id}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition cursor-pointer ${
+                className={`flex items-center gap-3 p-3 rounded-md border transition cursor-pointer ${
                   member.alreadyScanned
-                    ? "bg-slate-800/50 border-slate-700 opacity-60"
+                    ? "bg-canvas-parchment border-black/[0.06] opacity-60"
                     : selectedMembers.has(member.id)
-                    ? "bg-teal-500/5 border-teal-500/30"
-                    : "bg-slate-950/50 border-slate-800 hover:border-slate-700"
+                    ? "bg-primary/5 border-primary/20"
+                    : "bg-canvas-pearl border-black/[0.06] hover:border-black/[0.12]"
                 }`}
               >
                 <input
@@ -422,14 +422,14 @@ export default function ScannerClient({
                   checked={member.alreadyScanned || selectedMembers.has(member.id)}
                   disabled={member.alreadyScanned}
                   onChange={() => toggleMember(member.id)}
-                  className="w-4 h-4 rounded border-slate-600 text-teal-500 focus:ring-teal-500/50 bg-slate-900 cursor-pointer"
+                  className="w-4 h-4 rounded border-black/[0.2] text-primary focus:ring-primary/50 bg-canvas cursor-pointer accent-primary"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white">{member.name}</p>
-                  <p className="text-xs text-slate-400">{member.email}</p>
+                  <p className="text-sm text-ink">{member.name}</p>
+                  <p className="text-xs text-ink-muted">{member.email}</p>
                 </div>
                 {member.alreadyScanned && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="px-2 py-0.5 rounded-pill text-[10px] font-semibold bg-success-light text-success border border-success/15">
                     ✓ CHECKED IN
                   </span>
                 )}
@@ -442,7 +442,7 @@ export default function ScannerClient({
             <button
               onClick={handleSubmitScans}
               disabled={isPending || selectedMembers.size === 0}
-              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-semibold text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 cursor-pointer"
+              className="flex-1 px-4 py-3 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 cursor-pointer apple-press-effect"
             >
               {isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -453,7 +453,7 @@ export default function ScannerClient({
             </button>
             <button
               onClick={handleScanNext}
-              className="px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 text-sm hover:text-white transition cursor-pointer"
+              className="px-4 py-3 rounded-pill bg-canvas border border-black/[0.12] text-ink-muted text-sm hover:text-ink transition cursor-pointer apple-press-effect"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -468,19 +468,19 @@ export default function ScannerClient({
   if (state === "submitted") {
     return (
       <div className="max-w-lg mx-auto space-y-6">
-        <div className="p-8 rounded-2xl bg-slate-900/50 border border-emerald-500/20 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+        <div className="p-8 rounded-lg bg-canvas border border-success/15 text-center apple-shadow-overlay">
+          <div className="w-16 h-16 rounded-full bg-success-light flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-success" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">Scan Submitted</h3>
-          <p className="text-sm text-slate-400 mb-1">
+          <h3 className="text-xl font-semibold text-ink mb-2">Scan Submitted</h3>
+          <p className="text-sm text-ink-muted mb-1">
             {scannedTeam?.teamName}
           </p>
-          <p className="text-sm text-emerald-400">{successMsg}</p>
+          <p className="text-sm text-success">{successMsg}</p>
 
           <button
             onClick={handleScanNext}
-            className="mt-6 px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-semibold text-sm hover:brightness-110 transition flex items-center justify-center gap-2 mx-auto cursor-pointer"
+            className="mt-6 px-6 py-3 rounded-pill bg-primary text-white font-normal text-sm hover:bg-primary-focus transition flex items-center justify-center gap-2 mx-auto cursor-pointer apple-press-effect"
           >
             <Camera className="w-4 h-4" />
             Scan Next Team

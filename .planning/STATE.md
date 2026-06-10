@@ -53,4 +53,6 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 260605-mt4 | Implement registered teams capacity limit | 2026-06-05 |
 | 260606-dsh | Clean and streamline participant dashboard | 2026-06-06 |
 | 260608-uv8 | Add scan button to organizer dashboard hackathon actions | 2026-06-08 |
+| 260610-vf2 | Configure project for Vercel deployment and Supabase database | 2026-06-10 |
+
 
