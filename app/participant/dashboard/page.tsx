@@ -77,36 +77,44 @@ export default async function ParticipantDashboard(props: {
     });
   }
 
-  // Find all teams the user is currently in (both as leader or as member)
-  const allUserTeams = await prisma.participant_team.findMany({
-    where: {
-      OR: [
-        { leader_id: userIdNum },
-        {
-          participant_teammember: {
-            some: { email: userEmail },
+  // Fetch user teams and pending invites count in parallel
+  const [allUserTeams, pendingInvitesCount] = await Promise.all([
+    prisma.participant_team.findMany({
+      where: {
+        OR: [
+          { leader_id: userIdNum },
+          {
+            participant_teammember: {
+              some: { email: userEmail },
+            },
           },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        hackathon_id: true,
+        leader_id: true,
+        is_registered: true,
+        qr_token: true,
+        organizer_hackathon: {
+          select: { name: true, max_team_size: true },
         },
-      ],
-    },
-    select: {
-      id: true,
-      name: true,
-      hackathon_id: true,
-      leader_id: true,
-      is_registered: true,
-      qr_token: true,
-      organizer_hackathon: {
-        select: { name: true, max_team_size: true },
+        accounts_user: {
+          select: { email: true },
+        },
+        participant_teammember: {
+          select: { email: true },
+        },
       },
-      accounts_user: {
-        select: { email: true },
+    }),
+    prisma.participant_teamrequest.count({
+      where: {
+        receiver_id: userIdNum,
+        status: "pending",
       },
-      participant_teammember: {
-        select: { email: true },
-      },
-    },
-  });
+    }),
+  ]);
 
   const userTeams = allUserTeams.map((ut) => {
     const leaderInMembers = ut.participant_teammember.some(
@@ -149,14 +157,6 @@ export default async function ParticipantDashboard(props: {
     },
     orderBy: { registration_deadline: "asc" },
     take: 3, // Limit to top 3 upcoming on dashboard
-  });
-
-  // Count pending invites
-  const pendingInvitesCount = await prisma.participant_teamrequest.count({
-    where: {
-      receiver_id: userIdNum,
-      status: "pending",
-    },
   });
 
   // Helpers
