@@ -27,57 +27,7 @@ export default async function ParticipantDashboard(props: {
   const userIdNum = Number(session?.user?.id);
   const userEmail = session?.user?.email || "";
 
-  // Clean up any expired draft teams for this user before displaying the dashboard
-  const expiredDrafts = await prisma.participant_team.findMany({
-    where: {
-      is_registered: false,
-      OR: [
-        { leader_id: userIdNum },
-        { participant_teammember: { some: { email: userEmail } } },
-      ],
-      organizer_hackathon: {
-        OR: [
-          { status: { notIn: ["registration", "registration_open", "published"] } },
-          { registration_deadline: { lt: new Date() } },
-        ],
-      },
-    },
-    select: { id: true },
-  });
-
-  if (expiredDrafts.length > 0) {
-    const expiredDraftIds = expiredDrafts.map((d) => d.id);
-    // Cascadingly delete team member skills
-    const members = await prisma.participant_teammember.findMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    const memberIds = members.map((m) => m.id);
-    await prisma.participant_teammember_skills.deleteMany({
-      where: { teammember_id: { in: memberIds } },
-    });
-    // Delete scan records
-    await prisma.organizer_scanrecord.deleteMany({
-      where: { team_member_id: { in: memberIds } },
-    });
-    // Delete members
-    await prisma.participant_teammember.deleteMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    // Delete team requests
-    await prisma.participant_teamrequest.deleteMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    // Delete payments
-    await prisma.participant_payment.deleteMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    // Delete teams
-    await prisma.participant_team.deleteMany({
-      where: { id: { in: expiredDraftIds } },
-    });
-  }
-
-  // Fetch user teams and pending invites count in parallel
+  // Fetch user teams and pending invites count in parallel (excluding expired draft teams)
   const [allUserTeams, pendingInvitesCount] = await Promise.all([
     prisma.participant_team.findMany({
       where: {
@@ -89,6 +39,15 @@ export default async function ParticipantDashboard(props: {
             },
           },
         ],
+        NOT: {
+          is_registered: false,
+          organizer_hackathon: {
+            OR: [
+              { status: { notIn: ["registration", "registration_open", "published"] } },
+              { registration_deadline: { lt: new Date() } },
+            ],
+          },
+        },
       },
       select: {
         id: true,
