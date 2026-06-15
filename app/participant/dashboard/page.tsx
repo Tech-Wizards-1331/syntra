@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { getCachedActiveHackathons } from "@/app/actions/hackathons";
 
 export const metadata = {
   title: "Participant Dashboard | Syntra",
@@ -96,27 +97,12 @@ export default async function ParticipantDashboard(props: {
 
   const activeRegistrations = userTeams.filter((t) => t.isRegistered);
 
-  // Get hackathons in registration phase (excluding ones they already have a team in)
+  // Get hackathons in registration phase (excluding ones they already have a team in) from cache
   const userTeamHackathonIds = allUserTeams.map((ut) => ut.hackathon_id);
-  const availableHackathons = await prisma.organizer_hackathon.findMany({
-    where: {
-      status: { in: ["registration", "registration_open", "published"] },
-      registration_deadline: { gte: new Date() },
-      id: { notIn: userTeamHackathonIds },
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      start_date: true,
-      registration_deadline: true,
-      max_team_size: true,
-      min_team_size: true,
-      status: true,
-    },
-    orderBy: { registration_deadline: "asc" },
-    take: 3, // Limit to top 3 upcoming on dashboard
-  });
+  const allActiveHackathons = await getCachedActiveHackathons();
+  const availableHackathons = allActiveHackathons
+    .filter((h) => !userTeamHackathonIds.includes(h.id))
+    .slice(0, 3);
 
   // Helpers
   const getInitials = (name: string) => {

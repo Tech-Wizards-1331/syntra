@@ -67,6 +67,31 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         token.role = user.role;
         token.profileId = user.profileId;
         token.isProfileComplete = user.isProfileComplete;
+
+        // If user fields are missing (e.g. initial social login sign-in), query database once and populate the token
+        if (user.role === undefined || user.isProfileComplete === undefined) {
+          const dbUser = await prisma.accounts_user.findUnique({
+            where: { email: user.email! },
+            select: {
+              id: true,
+              role: true,
+              is_profile_complete: true,
+              participant_participantprofile: { select: { id: true } },
+              organizer_organizerprofile: { select: { id: true } },
+            },
+          });
+          if (dbUser) {
+            token.id = dbUser.id.toString();
+            token.role = dbUser.role;
+            token.isProfileComplete = dbUser.is_profile_complete;
+            token.profileId =
+              dbUser.role === "participant"
+                ? dbUser.participant_participantprofile?.id
+                : dbUser.role === "organizer"
+                ? dbUser.organizer_organizerprofile?.id
+                : null;
+          }
+        }
       }
 
       if (trigger === "update" && session) {
@@ -75,30 +100,6 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         }
         if (session.profileId !== undefined) {
           token.profileId = session.profileId;
-        }
-      }
-
-      if (token.isProfileComplete === undefined && token.email) {
-        const dbUser = await prisma.accounts_user.findUnique({
-          where: { email: token.email },
-          select: {
-            id: true,
-            role: true,
-            is_profile_complete: true,
-            participant_participantprofile: { select: { id: true } },
-            organizer_organizerprofile: { select: { id: true } },
-          },
-        });
-        if (dbUser) {
-          token.id = dbUser.id.toString();
-          token.role = dbUser.role;
-          token.isProfileComplete = dbUser.is_profile_complete;
-          token.profileId =
-            dbUser.role === "participant"
-              ? dbUser.participant_participantprofile?.id
-              : dbUser.role === "organizer"
-              ? dbUser.organizer_organizerprofile?.id
-              : null;
         }
       }
       return token;
