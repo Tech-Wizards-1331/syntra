@@ -26,6 +26,46 @@ async function requireTeamLeader(teamId: number) {
   return { userId, email, session, team };
 }
 
+async function syncTeamMemberSkills(memberId: number, skills: string[]) {
+  if (skills.length === 0) return;
+
+  const uniqueSkills = Array.from(new Set(skills.map((s) => s.trim()).filter(Boolean)));
+  if (uniqueSkills.length === 0) return;
+
+  // 1. Fetch existing skills
+  const existingSkills = await prisma.participant_skill.findMany({
+    where: { name: { in: uniqueSkills } },
+  });
+
+  const existingSkillNames = new Set(existingSkills.map((s) => s.name));
+  const missingSkillNames = uniqueSkills.filter((name) => !existingSkillNames.has(name));
+
+  // 2. Create missing skills in batch
+  if (missingSkillNames.length > 0) {
+    await prisma.participant_skill.createMany({
+      data: missingSkillNames.map((name) => ({ name })),
+      skipDuplicates: true,
+    });
+
+    // Refetch to get all IDs
+    const allSkills = await prisma.participant_skill.findMany({
+      where: { name: { in: uniqueSkills } },
+    });
+    existingSkills.length = 0;
+    existingSkills.push(...allSkills);
+  }
+
+  // 3. Batch insert join table records
+  if (existingSkills.length > 0) {
+    await prisma.participant_teammember_skills.createMany({
+      data: existingSkills.map((skill) => ({
+        teammember_id: memberId,
+        skill_id: skill.id,
+      })),
+    });
+  }
+}
+
 // ─── Create Team ────────────────────────────────────────────────────
 
 export async function createTeam(hackathonId: number, teamName: string) {
@@ -218,23 +258,7 @@ export async function addTeamMember(
   });
 
   if (data.skills.length > 0) {
-    const uniqueSkills = Array.from(new Set(data.skills.map((s) => s.trim()).filter(Boolean)));
-    for (const trimmedSkill of uniqueSkills) {
-      let skill = await prisma.participant_skill.findUnique({
-        where: { name: trimmedSkill },
-      });
-      if (!skill) {
-        skill = await prisma.participant_skill.create({
-          data: { name: trimmedSkill },
-        });
-      }
-      await prisma.participant_teammember_skills.create({
-        data: {
-          teammember_id: member.id,
-          skill_id: skill.id,
-        },
-      });
-    }
+    await syncTeamMemberSkills(member.id, data.skills);
   }
 
   revalidatePath("/participant/dashboard");
@@ -317,23 +341,7 @@ export async function updateTeamMember(
   });
 
   if (data.skills.length > 0) {
-    const uniqueSkills = Array.from(new Set(data.skills.map((s) => s.trim()).filter(Boolean)));
-    for (const trimmedSkill of uniqueSkills) {
-      let skill = await prisma.participant_skill.findUnique({
-        where: { name: trimmedSkill },
-      });
-      if (!skill) {
-        skill = await prisma.participant_skill.create({
-          data: { name: trimmedSkill },
-        });
-      }
-      await prisma.participant_teammember_skills.create({
-        data: {
-          teammember_id: memberId,
-          skill_id: skill.id,
-        },
-      });
-    }
+    await syncTeamMemberSkills(memberId, data.skills);
   }
 
   revalidatePath("/participant/dashboard");

@@ -2,7 +2,31 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache, revalidateTag } from "next/cache";
+
+export const getCachedActiveHackathons = unstable_cache(
+  async () => {
+    return prisma.organizer_hackathon.findMany({
+      where: {
+        status: { in: ["registration", "registration_open", "published"] },
+        registration_deadline: { gte: new Date() },
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        start_date: true,
+        registration_deadline: true,
+        max_team_size: true,
+        min_team_size: true,
+        status: true,
+      },
+      orderBy: { registration_deadline: "asc" },
+    });
+  },
+  ["active-hackathons"],
+  { revalidate: 60, tags: ["active-hackathons"] }
+);
 import { v2 as cloudinary } from "cloudinary";
 import { deleteFromCloudinary } from "@/lib/services/cloudinary";
 
@@ -246,6 +270,7 @@ export async function createHackathon(data: {
   });
 
   revalidatePath("/organizer/dashboard");
+  revalidateTag("active-hackathons");
 
   return {
     success: true,
@@ -381,6 +406,7 @@ export async function updateHackathon(
 
   revalidatePath("/organizer/dashboard");
   revalidatePath(`/organizer/dashboard/hackathons/${id}`);
+  revalidateTag("active-hackathons");
 
   return { success: true };
 }
@@ -461,6 +487,7 @@ export async function deleteHackathon(id: number) {
   }
 
   revalidatePath("/organizer/dashboard");
+  revalidateTag("active-hackathons");
 
   return { success: true };
 }

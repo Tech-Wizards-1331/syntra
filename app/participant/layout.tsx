@@ -28,32 +28,32 @@ export default async function ParticipantLayout({
   const userIdNum = Number(session.user.id);
   const userEmail = session.user.email || "";
 
-  // 3. Query pending invites count (lightweight count query)
-  const pendingInvitesCount = await prisma.participant_teamrequest.count({
-    where: {
-      receiver_id: userIdNum,
-      status: "pending",
-    },
-  });
-
-  // 4. Query if there is an active registration for check-in pass
-  const registeredTeam = await prisma.participant_team.findFirst({
-    where: {
-      OR: [
-        { leader_id: userIdNum },
-        { participant_teammember: { some: { email: userEmail } } },
-      ],
-      is_registered: true,
-    },
-    select: {
-      hackathon_id: true,
-      organizer_hackathon: {
-        select: {
-          name: true,
+  // 3. Query pending invites count and active registration in parallel
+  const [pendingInvitesCount, registeredTeam] = await Promise.all([
+    prisma.participant_teamrequest.count({
+      where: {
+        receiver_id: userIdNum,
+        status: "pending",
+      },
+    }),
+    prisma.participant_team.findFirst({
+      where: {
+        OR: [
+          { leader_id: userIdNum },
+          { participant_teammember: { some: { email: userEmail } } },
+        ],
+        is_registered: true,
+      },
+      select: {
+        hackathon_id: true,
+        organizer_hackathon: {
+          select: {
+            name: true,
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
 
   const activePass = registeredTeam
     ? {

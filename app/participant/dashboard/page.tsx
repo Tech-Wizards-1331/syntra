@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { getCachedActiveHackathons } from "@/app/actions/hackathons";
 
 export const metadata = {
   title: "Participant Dashboard | Syntra",
@@ -27,86 +28,53 @@ export default async function ParticipantDashboard(props: {
   const userIdNum = Number(session?.user?.id);
   const userEmail = session?.user?.email || "";
 
-  // Clean up any expired draft teams for this user before displaying the dashboard
-  const expiredDrafts = await prisma.participant_team.findMany({
-    where: {
-      is_registered: false,
-      OR: [
-        { leader_id: userIdNum },
-        { participant_teammember: { some: { email: userEmail } } },
-      ],
-      organizer_hackathon: {
+  // Fetch user teams and pending invites count in parallel (excluding expired draft teams)
+  const [allUserTeams, pendingInvitesCount] = await Promise.all([
+    prisma.participant_team.findMany({
+      where: {
         OR: [
-          { status: { notIn: ["registration", "registration_open", "published"] } },
-          { registration_deadline: { lt: new Date() } },
+          { leader_id: userIdNum },
+          {
+            participant_teammember: {
+              some: { email: userEmail },
+            },
+          },
         ],
-      },
-    },
-    select: { id: true },
-  });
-
-  if (expiredDrafts.length > 0) {
-    const expiredDraftIds = expiredDrafts.map((d) => d.id);
-    // Cascadingly delete team member skills
-    const members = await prisma.participant_teammember.findMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    const memberIds = members.map((m) => m.id);
-    await prisma.participant_teammember_skills.deleteMany({
-      where: { teammember_id: { in: memberIds } },
-    });
-    // Delete scan records
-    await prisma.organizer_scanrecord.deleteMany({
-      where: { team_member_id: { in: memberIds } },
-    });
-    // Delete members
-    await prisma.participant_teammember.deleteMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    // Delete team requests
-    await prisma.participant_teamrequest.deleteMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    // Delete payments
-    await prisma.participant_payment.deleteMany({
-      where: { team_id: { in: expiredDraftIds } },
-    });
-    // Delete teams
-    await prisma.participant_team.deleteMany({
-      where: { id: { in: expiredDraftIds } },
-    });
-  }
-
-  // Find all teams the user is currently in (both as leader or as member)
-  const allUserTeams = await prisma.participant_team.findMany({
-    where: {
-      OR: [
-        { leader_id: userIdNum },
-        {
-          participant_teammember: {
-            some: { email: userEmail },
+        NOT: {
+          is_registered: false,
+          organizer_hackathon: {
+            OR: [
+              { status: { notIn: ["registration", "registration_open", "published"] } },
+              { registration_deadline: { lt: new Date() } },
+            ],
           },
         },
-      ],
-    },
-    select: {
-      id: true,
-      name: true,
-      hackathon_id: true,
-      leader_id: true,
-      is_registered: true,
-      qr_token: true,
-      organizer_hackathon: {
-        select: { name: true, max_team_size: true },
       },
-      accounts_user: {
-        select: { email: true },
+      select: {
+        id: true,
+        name: true,
+        hackathon_id: true,
+        leader_id: true,
+        is_registered: true,
+        qr_token: true,
+        organizer_hackathon: {
+          select: { name: true, max_team_size: true },
+        },
+        accounts_user: {
+          select: { email: true },
+        },
+        participant_teammember: {
+          select: { email: true },
+        },
       },
-      participant_teammember: {
-        select: { email: true },
+    }),
+    prisma.participant_teamrequest.count({
+      where: {
+        receiver_id: userIdNum,
+        status: "pending",
       },
-    },
-  });
+    }),
+  ]);
 
   const userTeams = allUserTeams.map((ut) => {
     const leaderInMembers = ut.participant_teammember.some(
@@ -129,35 +97,12 @@ export default async function ParticipantDashboard(props: {
 
   const activeRegistrations = userTeams.filter((t) => t.isRegistered);
 
-  // Get hackathons in registration phase (excluding ones they already have a team in)
+  // Get hackathons in registration phase (excluding ones they already have a team in) from cache
   const userTeamHackathonIds = allUserTeams.map((ut) => ut.hackathon_id);
-  const availableHackathons = await prisma.organizer_hackathon.findMany({
-    where: {
-      status: { in: ["registration", "registration_open", "published"] },
-      registration_deadline: { gte: new Date() },
-      id: { notIn: userTeamHackathonIds },
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      start_date: true,
-      registration_deadline: true,
-      max_team_size: true,
-      min_team_size: true,
-      status: true,
-    },
-    orderBy: { registration_deadline: "asc" },
-    take: 3, // Limit to top 3 upcoming on dashboard
-  });
-
-  // Count pending invites
-  const pendingInvitesCount = await prisma.participant_teamrequest.count({
-    where: {
-      receiver_id: userIdNum,
-      status: "pending",
-    },
-  });
+  const allActiveHackathons = await getCachedActiveHackathons();
+  const availableHackathons = allActiveHackathons
+    .filter((h) => !userTeamHackathonIds.includes(h.id))
+    .slice(0, 3);
 
   // Helpers
   const getInitials = (name: string) => {
