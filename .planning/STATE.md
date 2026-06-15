@@ -55,6 +55,5 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | 260608-uv8 | Add scan button to organizer dashboard hackathon actions | 2026-06-08 |
 | 260610-vf2 | Configure project for Vercel deployment and Supabase database | 2026-06-10 |
 | 260615-ric | Fix Prisma P2028 transaction timeout in saveParticipantProfile | 2026-06-15 |
-| 260615-db  | Configure app to use local sqlite database | 2026-06-15 |
 
 
