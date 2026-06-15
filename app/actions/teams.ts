@@ -73,68 +73,59 @@ export async function createTeam(hackathonId: number, teamName: string) {
 
   const now = new Date();
 
-  const team = await prisma.$transaction(async (tx) => {
-    // Create team in Draft state (QR generated on registration, invite token auto-generated like Django)
-    const newTeam = await tx.participant_team.create({
-      data: {
-        name: trimmed,
-        hackathon_id: hackathonId,
-        leader_id: userId,
-        qr_token: null,
-        invite_token: randomUUID(),
-        is_registered: false,
-        is_qr_active: false,
-        food_tokens_total: 0,
-        food_tokens_used: 0,
-        created_at: now,
-        updated_at: now,
-      },
+  // Create team
+  const newTeam = await prisma.participant_team.create({
+    data: {
+      name: trimmed,
+      hackathon_id: hackathonId,
+      leader_id: userId,
+      qr_token: null,
+      invite_token: randomUUID(),
+      is_registered: false,
+      is_qr_active: false,
+      food_tokens_total: 0,
+      food_tokens_used: 0,
+      created_at: now,
+      updated_at: now,
+    },
+  });
+
+  // Add leader as first member
+  const member = await prisma.participant_teammember.create({
+    data: {
+      name: profile.accounts_user.full_name,
+      email: profile.accounts_user.email,
+      college: profile.college,
+      semester: profile.semester,
+      degree: profile.degree,
+      team_id: newTeam.id,
+      created_at: now,
+    },
+  });
+
+  // Clone skills from profile to member
+  const profileSkills = profile.participant_participantprofile_skills;
+  if (profileSkills.length > 0) {
+    await prisma.participant_teammember_skills.createMany({
+      data: profileSkills.map((ps) => ({
+        teammember_id: member.id,
+        skill_id: ps.skill_id,
+      })),
     });
+  }
 
-    // Add leader as first member
-    const member = await tx.participant_teammember.create({
-      data: {
-        name: profile.accounts_user.full_name,
-        email: profile.accounts_user.email,
-        college: profile.college,
-        semester: profile.semester,
-        degree: profile.degree,
-        team_id: newTeam.id,
-        created_at: now,
-      },
-    });
-
-    // Clone skills from profile to member
-    const profileSkills = profile.participant_participantprofile_skills;
-    if (profileSkills.length > 0) {
-      await tx.participant_teammember_skills.createMany({
-        data: profileSkills.map((ps) => ({
-          teammember_id: member.id,
-          skill_id: ps.skill_id,
-        })),
-      });
-    }
-
-    // Clear any pending team requests for this user in this hackathon
-    const pendingRequests = await tx.participant_teamrequest.findMany({
-      where: {
-        receiver_id: userId,
-        status: "pending",
-        participant_team: { hackathon_id: hackathonId },
-      },
-    });
-    if (pendingRequests.length > 0) {
-      await tx.participant_teamrequest.updateMany({
-        where: { id: { in: pendingRequests.map((r) => r.id) } },
-        data: { status: "expired" },
-      });
-    }
-
-    return newTeam;
+  // Clear any pending team requests for this user in this hackathon
+  await prisma.participant_teamrequest.updateMany({
+    where: {
+      receiver_id: userId,
+      status: "pending",
+      participant_team: { hackathon_id: hackathonId },
+    },
+    data: { status: "expired" },
   });
 
   revalidatePath("/participant/dashboard");
-  return { success: true, teamId: team.id };
+  return { success: true, teamId: newTeam.id };
 }
 
 // ─── Add Team Member ────────────────────────────────────────────────
@@ -208,46 +199,43 @@ export async function addTeamMember(
   }
 
   // Format role into degree as "Degree (Role)"
-  const formattedDegree = data.role.trim() 
+  const formattedDegree = data.role.trim()
     ? `${data.degree.trim()} (${data.role.trim()})`
     : data.degree.trim();
 
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    const member = await tx.participant_teammember.create({
-      data: {
-        name: data.name.trim(),
-        email: data.email.toLowerCase().trim(),
-        college: data.college.trim(),
-        degree: formattedDegree,
-        semester: data.semester,
-        team_id: teamId,
-        created_at: now,
-      },
-    });
+  const member = await prisma.participant_teammember.create({
+    data: {
+      name: data.name.trim(),
+      email: data.email.toLowerCase().trim(),
+      college: data.college.trim(),
+      degree: formattedDegree,
+      semester: data.semester,
+      team_id: teamId,
+      created_at: now,
+    },
+  });
 
-    if (data.skills.length > 0) {
-      const uniqueSkills = Array.from(new Set(data.skills.map((s) => s.trim()).filter(Boolean)));
-      for (const trimmed of uniqueSkills) {
-        let skill = await tx.participant_skill.findUnique({
-          where: { name: trimmed },
-        });
-        if (!skill) {
-          skill = await tx.participant_skill.create({
-            data: { name: trimmed },
-          });
-        }
-
-        await tx.participant_teammember_skills.create({
-          data: {
-            teammember_id: member.id,
-            skill_id: skill.id,
-          },
+  if (data.skills.length > 0) {
+    const uniqueSkills = Array.from(new Set(data.skills.map((s) => s.trim()).filter(Boolean)));
+    for (const trimmedSkill of uniqueSkills) {
+      let skill = await prisma.participant_skill.findUnique({
+        where: { name: trimmedSkill },
+      });
+      if (!skill) {
+        skill = await prisma.participant_skill.create({
+          data: { name: trimmedSkill },
         });
       }
+      await prisma.participant_teammember_skills.create({
+        data: {
+          teammember_id: member.id,
+          skill_id: skill.id,
+        },
+      });
     }
-  });
+  }
 
   revalidatePath("/participant/dashboard");
   return { success: true };
@@ -307,49 +295,46 @@ export async function updateTeamMember(
   }
 
   // Format role into degree as "Degree (Role)"
-  const formattedDegree = data.role.trim() 
+  const formattedDegree = data.role.trim()
     ? `${data.degree.trim()} (${data.role.trim()})`
     : data.degree.trim();
 
-  await prisma.$transaction(async (tx) => {
-    // Update member basic details
-    await tx.participant_teammember.update({
-      where: { id: memberId },
-      data: {
-        name: data.name.trim(),
-        email: data.email.toLowerCase().trim(),
-        college: data.college.trim(),
-        degree: formattedDegree,
-        semester: data.semester,
-      },
-    });
+  // Update member basic details
+  await prisma.participant_teammember.update({
+    where: { id: memberId },
+    data: {
+      name: data.name.trim(),
+      email: data.email.toLowerCase().trim(),
+      college: data.college.trim(),
+      degree: formattedDegree,
+      semester: data.semester,
+    },
+  });
 
-    // Update skills (delete old, insert new)
-    await tx.participant_teammember_skills.deleteMany({
-      where: { teammember_id: memberId },
-    });
+  // Update skills (delete old, insert new)
+  await prisma.participant_teammember_skills.deleteMany({
+    where: { teammember_id: memberId },
+  });
 
-    if (data.skills.length > 0) {
-      const uniqueSkills = Array.from(new Set(data.skills.map((s) => s.trim()).filter(Boolean)));
-      for (const trimmed of uniqueSkills) {
-        let skill = await tx.participant_skill.findUnique({
-          where: { name: trimmed },
-        });
-        if (!skill) {
-          skill = await tx.participant_skill.create({
-            data: { name: trimmed },
-          });
-        }
-
-        await tx.participant_teammember_skills.create({
-          data: {
-            teammember_id: memberId,
-            skill_id: skill.id,
-          },
+  if (data.skills.length > 0) {
+    const uniqueSkills = Array.from(new Set(data.skills.map((s) => s.trim()).filter(Boolean)));
+    for (const trimmedSkill of uniqueSkills) {
+      let skill = await prisma.participant_skill.findUnique({
+        where: { name: trimmedSkill },
+      });
+      if (!skill) {
+        skill = await prisma.participant_skill.create({
+          data: { name: trimmedSkill },
         });
       }
+      await prisma.participant_teammember_skills.create({
+        data: {
+          teammember_id: memberId,
+          skill_id: skill.id,
+        },
+      });
     }
-  });
+  }
 
   revalidatePath("/participant/dashboard");
   return { success: true };
@@ -385,19 +370,17 @@ export async function removeTeamMember(memberId: number) {
     throw new Error("Team leader cannot leave the team. Delete the team instead.");
   }
 
-  await prisma.$transaction(async (tx) => {
-    // Delete skills first
-    await tx.participant_teammember_skills.deleteMany({
-      where: { teammember_id: memberId },
-    });
-    // Delete scan records for this member
-    await tx.organizer_scanrecord.deleteMany({
-      where: { team_member_id: memberId },
-    });
-    // Delete the member
-    await tx.participant_teammember.delete({
-      where: { id: memberId },
-    });
+  // Delete skills first
+  await prisma.participant_teammember_skills.deleteMany({
+    where: { teammember_id: memberId },
+  });
+  // Delete scan records for this member
+  await prisma.organizer_scanrecord.deleteMany({
+    where: { team_member_id: memberId },
+  });
+  // Delete the member
+  await prisma.participant_teammember.delete({
+    where: { id: memberId },
   });
 
   revalidatePath("/participant/dashboard");
@@ -536,39 +519,37 @@ export async function submitTeamRegistration(teamId: number) {
 
   const qrToken = randomUUID();
 
-  await prisma.$transaction(async (tx) => {
-    // If the leader is not in members, create a teammember record for them (Django parity)
-    if (!leaderInMembers && leaderProfile) {
-      const member = await tx.participant_teammember.create({
-        data: {
-          team_id: teamId,
-          name: leaderUser.full_name || leaderUser.email,
-          email: leaderUser.email,
-          college: leaderProfile.college,
-          semester: leaderProfile.semester,
-          degree: leaderProfile.degree,
-          created_at: new Date(),
-        },
-      });
-
-      if (leaderProfile.participant_participantprofile_skills?.length > 0) {
-        await tx.participant_teammember_skills.createMany({
-          data: leaderProfile.participant_participantprofile_skills.map((ps) => ({
-            teammember_id: member.id,
-            skill_id: ps.skill_id,
-          })),
-        });
-      }
-    }
-
-    await tx.participant_team.update({
-      where: { id: teamId },
+  // If the leader is not in members, create a teammember record for them (Django parity)
+  if (!leaderInMembers && leaderProfile) {
+    const leaderMember = await prisma.participant_teammember.create({
       data: {
-        is_registered: true,
-        qr_token: qrToken,
-        is_qr_active: true,
+        team_id: teamId,
+        name: leaderUser.full_name || leaderUser.email,
+        email: leaderUser.email,
+        college: leaderProfile.college,
+        semester: leaderProfile.semester,
+        degree: leaderProfile.degree,
+        created_at: new Date(),
       },
     });
+
+    if (leaderProfile.participant_participantprofile_skills?.length > 0) {
+      await prisma.participant_teammember_skills.createMany({
+        data: leaderProfile.participant_participantprofile_skills.map((ps) => ({
+          teammember_id: leaderMember.id,
+          skill_id: ps.skill_id,
+        })),
+      });
+    }
+  }
+
+  await prisma.participant_team.update({
+    where: { id: teamId },
+    data: {
+      is_registered: true,
+      qr_token: qrToken,
+      is_qr_active: true,
+    },
   });
 
   revalidatePath("/participant/dashboard");
@@ -582,41 +563,39 @@ export async function deleteTeam(teamId: number) {
     throw new Error("Cannot delete a fully registered team");
   }
 
-  await prisma.$transaction(async (tx) => {
-    const members = await tx.participant_teammember.findMany({
-      where: { team_id: teamId },
-    });
-    const memberIds = members.map((m) => m.id);
+  const members = await prisma.participant_teammember.findMany({
+    where: { team_id: teamId },
+  });
+  const memberIds = members.map((m) => m.id);
 
-    // Delete skills
-    await tx.participant_teammember_skills.deleteMany({
-      where: { teammember_id: { in: memberIds } },
-    });
+  // Delete skills
+  await prisma.participant_teammember_skills.deleteMany({
+    where: { teammember_id: { in: memberIds } },
+  });
 
-    // Delete scan records
-    await tx.organizer_scanrecord.deleteMany({
-      where: { team_member_id: { in: memberIds } },
-    });
+  // Delete scan records
+  await prisma.organizer_scanrecord.deleteMany({
+    where: { team_member_id: { in: memberIds } },
+  });
 
-    // Delete members
-    await tx.participant_teammember.deleteMany({
-      where: { team_id: teamId },
-    });
+  // Delete members
+  await prisma.participant_teammember.deleteMany({
+    where: { team_id: teamId },
+  });
 
-    // Delete team requests
-    await tx.participant_teamrequest.deleteMany({
-      where: { team_id: teamId },
-    });
+  // Delete team requests
+  await prisma.participant_teamrequest.deleteMany({
+    where: { team_id: teamId },
+  });
 
-    // Delete payments
-    await tx.participant_payment.deleteMany({
-      where: { team_id: teamId },
-    });
+  // Delete payments
+  await prisma.participant_payment.deleteMany({
+    where: { team_id: teamId },
+  });
 
-    // Finally, delete the team
-    await tx.participant_team.delete({
-      where: { id: teamId },
-    });
+  // Finally, delete the team
+  await prisma.participant_team.delete({
+    where: { id: teamId },
   });
 
   revalidatePath("/participant/dashboard");
@@ -624,8 +603,6 @@ export async function deleteTeam(teamId: number) {
 }
 
 // ─── Join Team by Invite Token ──────────────────────────────────────
-// Mirrors Django's JoinTeamAPIView
-// Allows a participant to join a team using the team's invite_token UUID.
 
 export async function joinTeamByToken(inviteToken: string) {
   const { userId, email } = await requireParticipant();
@@ -693,57 +670,53 @@ export async function joinTeamByToken(inviteToken: string) {
   const profile = user?.participant_participantprofile;
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    // Add user as team member (mirrors Django's add_member_to_team)
-    const member = await tx.participant_teammember.create({
-      data: {
-        team_id: team.id,
-        name: user?.full_name || email,
-        email: email,
-        college: profile?.college || "Not Specified",
-        semester: profile?.semester || 1,
-        degree: profile?.degree || "Not Specified",
-        created_at: now,
-      },
-    });
-
-    // Copy skills from profile (mirrors Django's copy_skills_from_user=True)
-    if (profile?.participant_participantprofile_skills.length) {
-      await tx.participant_teammember_skills.createMany({
-        data: profile.participant_participantprofile_skills.map((ps) => ({
-          teammember_id: member.id,
-          skill_id: ps.skill_id,
-        })),
-      });
-    }
-
-    // Auto-delete all pending invites for this user for the same hackathon
-    await tx.participant_teamrequest.deleteMany({
-      where: {
-        receiver_id: userId,
-        status: "pending",
-        participant_team: { hackathon_id: team.hackathon_id },
-      },
-    });
-
-    // If team reached max capacity, delete all remaining pending invites
-    const newMemberCount = await tx.participant_teammember.count({
-      where: { team_id: team.id },
-    });
-    if (newMemberCount >= team.organizer_hackathon.max_team_size) {
-      await tx.participant_teamrequest.deleteMany({
-        where: { team_id: team.id, status: "pending" },
-      });
-    }
+  // Add user as team member
+  const member = await prisma.participant_teammember.create({
+    data: {
+      team_id: team.id,
+      name: user?.full_name || email,
+      email: email,
+      college: profile?.college || "Not Specified",
+      semester: profile?.semester || 1,
+      degree: profile?.degree || "Not Specified",
+      created_at: now,
+    },
   });
+
+  // Copy skills from profile
+  if (profile?.participant_participantprofile_skills.length) {
+    await prisma.participant_teammember_skills.createMany({
+      data: profile.participant_participantprofile_skills.map((ps) => ({
+        teammember_id: member.id,
+        skill_id: ps.skill_id,
+      })),
+    });
+  }
+
+  // Auto-delete all pending invites for this user for the same hackathon
+  await prisma.participant_teamrequest.deleteMany({
+    where: {
+      receiver_id: userId,
+      status: "pending",
+      participant_team: { hackathon_id: team.hackathon_id },
+    },
+  });
+
+  // If team reached max capacity, delete all remaining pending invites
+  const newMemberCount = await prisma.participant_teammember.count({
+    where: { team_id: team.id },
+  });
+  if (newMemberCount >= team.organizer_hackathon.max_team_size) {
+    await prisma.participant_teamrequest.deleteMany({
+      where: { team_id: team.id, status: "pending" },
+    });
+  }
 
   revalidatePath("/participant/dashboard");
   return { success: true, detail: "Successfully joined team." };
 }
 
 // ─── Rename Team ────────────────────────────────────────────────────
-// Mirrors Django's HackathonRegisterWizardView save_team POST action.
-// Only the team leader can rename a draft (not yet registered) team.
 
 export async function renameTeam(teamId: number, newName: string) {
   const { team } = await requireTeamLeader(teamId);
@@ -765,8 +738,6 @@ export async function renameTeam(teamId: number, newName: string) {
 }
 
 // ─── Get Team Seating ───────────────────────────────────────────────
-// Mirrors Django's ParticipantHackathonHubView._get_team_seating
-// Extracts this team's seating rows from hackathon.seating_allocation JSON.
 
 export async function getTeamSeating(hackathonId: number) {
   const { userId, email } = await requireParticipant();

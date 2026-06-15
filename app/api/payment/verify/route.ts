@@ -45,78 +45,75 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Payment already processed" });
     }
 
-    // Perform database transaction atomically
-    await prisma.$transaction(async (tx) => {
-      // Update payment record
-      await tx.participant_payment.update({
-        where: { id: paymentIdNum },
-        data: {
-          razorpay_payment_id,
-          razorpay_signature,
-          status: "paid",
-          updated_at: new Date(),
+    // Update payment record
+    await prisma.participant_payment.update({
+      where: { id: paymentIdNum },
+      data: {
+        razorpay_payment_id,
+        razorpay_signature,
+        status: "paid",
+        updated_at: new Date(),
+      },
+    });
+
+    // Add leader to team members if not already present (Django parity)
+    const leaderUser = await prisma.accounts_user.findUnique({
+      where: { id: payment.participant_team.leader_id },
+      select: { email: true, full_name: true },
+    });
+    if (leaderUser) {
+      const existingMember = await prisma.participant_teammember.findFirst({
+        where: {
+          team_id: payment.team_id,
+          email: leaderUser.email,
         },
       });
-
-      // Add leader to team members if not already present (Django parity)
-      const leaderUser = await tx.accounts_user.findUnique({
-        where: { id: payment.participant_team.leader_id },
-        select: { email: true, full_name: true },
-      });
-      if (leaderUser) {
-        const existingMember = await tx.participant_teammember.findFirst({
-          where: {
-            team_id: payment.team_id,
-            email: leaderUser.email,
+      if (!existingMember) {
+        const leaderProfile = await prisma.participant_participantprofile.findUnique({
+          where: { user_id: payment.participant_team.leader_id },
+          select: {
+            college: true,
+            semester: true,
+            degree: true,
+            participant_participantprofile_skills: {
+              select: { skill_id: true },
+            },
           },
         });
-        if (!existingMember) {
-          const leaderProfile = await tx.participant_participantprofile.findUnique({
-            where: { user_id: payment.participant_team.leader_id },
-            select: {
-              college: true,
-              semester: true,
-              degree: true,
-              participant_participantprofile_skills: {
-                select: { skill_id: true },
-              },
+        if (leaderProfile) {
+          const member = await prisma.participant_teammember.create({
+            data: {
+              team_id: payment.team_id,
+              name: leaderUser.full_name || leaderUser.email,
+              email: leaderUser.email,
+              college: leaderProfile.college,
+              semester: leaderProfile.semester,
+              degree: leaderProfile.degree,
+              created_at: new Date(),
             },
           });
-          if (leaderProfile) {
-            const member = await tx.participant_teammember.create({
-              data: {
-                team_id: payment.team_id,
-                name: leaderUser.full_name || leaderUser.email,
-                email: leaderUser.email,
-                college: leaderProfile.college,
-                semester: leaderProfile.semester,
-                degree: leaderProfile.degree,
-                created_at: new Date(),
-              },
-            });
 
-            if (leaderProfile.participant_participantprofile_skills?.length > 0) {
-              await tx.participant_teammember_skills.createMany({
-                data: leaderProfile.participant_participantprofile_skills.map((ps) => ({
-                  teammember_id: member.id,
-                  skill_id: ps.skill_id,
-                })),
-              });
-            }
+          if (leaderProfile.participant_participantprofile_skills?.length > 0) {
+            await prisma.participant_teammember_skills.createMany({
+              data: leaderProfile.participant_participantprofile_skills.map((ps) => ({
+                teammember_id: member.id,
+                skill_id: ps.skill_id,
+              })),
+            });
           }
         }
       }
+    }
 
-      // Update team registration with QR token
-      await tx.participant_team.update({
-        where: { id: payment.team_id },
-        data: {
-          is_registered: true,
-          qr_token: randomUUID(),
-          is_qr_active: true,
-          updated_at: new Date(),
-        },
-      });
+    // Update team registration with QR token
+    await prisma.participant_team.update({
+      where: { id: payment.team_id },
+      data: {
+        is_registered: true,
+        qr_token: randomUUID(),
+        is_qr_active: true,
+        updated_at: new Date(),
+      },
     });
 
     return NextResponse.json({ success: true });

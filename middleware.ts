@@ -5,6 +5,13 @@ const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { nextUrl } = req;
+
+  // Server Actions use the 'next-action' header. Middleware redirects
+  // corrupt the RSC payload, producing "unexpected response" errors.
+  if (req.headers.get("next-action")) {
+    return;
+  }
+
   const isLoggedIn = !!req.auth;
   const userRole = req.auth?.user?.role;
 

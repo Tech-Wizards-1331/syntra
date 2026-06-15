@@ -138,46 +138,42 @@ export async function submitMemberScans(
 
   const now = new Date();
 
-  const results = await prisma.$transaction(async (tx) => {
-    const created: number[] = [];
-    const skipped: number[] = [];
+  const created: number[] = [];
+  const skipped: number[] = [];
 
-    for (const memberId of memberIds) {
-      // Check for existing scan (double-scan prevention)
-      const existing = await tx.organizer_scanrecord.findFirst({
-        where: {
-          team_member_id: memberId,
-          scan_category_id: scanCategoryId,
-        },
-      });
+  for (const memberId of memberIds) {
+    // Check for existing scan (double-scan prevention)
+    const existing = await prisma.organizer_scanrecord.findFirst({
+      where: {
+        team_member_id: memberId,
+        scan_category_id: scanCategoryId,
+      },
+    });
 
-      if (existing) {
-        skipped.push(memberId);
-        continue;
-      }
-
-      await tx.organizer_scanrecord.create({
-        data: {
-          team_member_id: memberId,
-          scan_category_id: scanCategoryId,
-          scanned_by_id: scannedById,
-          created_at: now,
-        },
-      });
-      created.push(memberId);
+    if (existing) {
+      skipped.push(memberId);
+      continue;
     }
 
-    return { created, skipped };
-  });
+    await prisma.organizer_scanrecord.create({
+      data: {
+        team_member_id: memberId,
+        scan_category_id: scanCategoryId,
+        scanned_by_id: scannedById,
+        created_at: now,
+      },
+    });
+    created.push(memberId);
+  }
 
   return {
     success: true,
-    scannedCount: results.created.length,
-    skippedCount: results.skipped.length,
+    scannedCount: created.length,
+    skippedCount: skipped.length,
     message:
-      results.skipped.length > 0
-        ? `${results.created.length} scanned, ${results.skipped.length} already checked-in`
-        : `${results.created.length} members checked in successfully`,
+      skipped.length > 0
+        ? `${created.length} scanned, ${skipped.length} already checked-in`
+        : `${created.length} members checked in successfully`,
   };
 }
 

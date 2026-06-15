@@ -127,29 +127,47 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         const now = new Date();
 
         if (!existingUser) {
-          // Create user and profile in a transaction
-          await prisma.$transaction(async (tx) => {
-            const newUser = await tx.accounts_user.create({
-              data: {
-                email,
-                password: "", // No password for social logins
-                first_name: user.name?.split(" ")[0] || "",
-                last_name: user.name?.split(" ").slice(1).join(" ") || "",
-                full_name: user.name || "",
-                is_superuser: false,
-                is_staff: false,
-                is_active: true,
-                date_joined: now,
-                created_at: now,
-                updated_at: now,
-                is_profile_complete: false,
-                role: "participant",
-              },
-            });
+          // Create user and profile sequentially
+          const newUser = await prisma.accounts_user.create({
+            data: {
+              email,
+              password: "", // No password for social logins
+              first_name: user.name?.split(" ")[0] || "",
+              last_name: user.name?.split(" ").slice(1).join(" ") || "",
+              full_name: user.name || "",
+              is_superuser: false,
+              is_staff: false,
+              is_active: true,
+              date_joined: now,
+              created_at: now,
+              updated_at: now,
+              is_profile_complete: false,
+              role: "participant",
+            },
+          });
 
-            await tx.participant_participantprofile.create({
+          await prisma.participant_participantprofile.create({
+            data: {
+              user_id: newUser.id,
+              college: "",
+              semester: 1,
+              degree: "",
+              visibility: true,
+              created_at: now,
+              updated_at: now,
+            },
+          });
+        } else if (!existingUser.role) {
+          // If user exists but role is empty, set role and ensure profile exists
+          await prisma.accounts_user.update({
+            where: { id: existingUser.id },
+            data: { role: "participant" },
+          });
+
+          if (!existingUser.participant_participantprofile) {
+            await prisma.participant_participantprofile.create({
               data: {
-                user_id: newUser.id,
+                user_id: existingUser.id,
                 college: "",
                 semester: 1,
                 degree: "",
@@ -158,29 +176,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 updated_at: now,
               },
             });
-          });
-        } else if (!existingUser.role) {
-          // If user exists but role is empty, set role and ensure profile exists
-          await prisma.$transaction(async (tx) => {
-            await tx.accounts_user.update({
-              where: { id: existingUser.id },
-              data: { role: "participant" },
-            });
-
-            if (!existingUser.participant_participantprofile) {
-              await tx.participant_participantprofile.create({
-                data: {
-                  user_id: existingUser.id,
-                  college: "",
-                  semester: 1,
-                  degree: "",
-                  visibility: true,
-                  created_at: now,
-                  updated_at: now,
-                },
-              });
-            }
-          });
+          }
         }
       }
       return true;

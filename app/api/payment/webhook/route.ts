@@ -49,28 +49,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: "Payment already updated" }, { status: 200 });
       }
 
-      // Perform database transaction atomically
-      await prisma.$transaction(async (tx) => {
-        // Update payment record
-        await tx.participant_payment.update({
-          where: { id: payment.id },
-          data: {
-            razorpay_payment_id: paymentId || payment.razorpay_payment_id,
-            status: "paid",
-            updated_at: new Date(),
-          },
-        });
+      // Update payment record
+      await prisma.participant_payment.update({
+        where: { id: payment.id },
+        data: {
+          razorpay_payment_id: paymentId || payment.razorpay_payment_id,
+          status: "paid",
+          updated_at: new Date(),
+        },
+      });
 
-        // Update team registration with QR token
-        await tx.participant_team.update({
-          where: { id: payment.team_id },
-          data: {
-            is_registered: true,
-            qr_token: randomUUID(),
-            is_qr_active: true,
-            updated_at: new Date(),
-          },
-        });
+      // Update team registration with QR token
+      await prisma.participant_team.update({
+        where: { id: payment.team_id },
+        data: {
+          is_registered: true,
+          qr_token: randomUUID(),
+          is_qr_active: true,
+          updated_at: new Date(),
+        },
       });
 
       console.log(`Payment successfully updated via webhook for order ${orderId}`);
