@@ -155,7 +155,7 @@ export async function saveParticipantProfile(data: ParticipantProfileInput) {
   return await prisma.$transaction(async (tx) => {
     // 1. Resolve skills sequentially (Prisma interactive transactions
     //    use a single DB connection and do not support concurrent queries)
-    const skillRecords: Awaited<ReturnType<typeof tx.participant_skill.findUnique>>[] = [];
+    const skillRecords: { id: number; name: string }[] = [];
     for (const skillName of data.skills) {
       const trimmed = skillName.trim();
       let record = await tx.participant_skill.findUnique({

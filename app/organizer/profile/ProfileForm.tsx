@@ -133,10 +133,9 @@ function OrganizerProfileForm({
             profileId: result.profileId,
           });
 
-          // Redirect to organizer dashboard after delay
+          // Hard redirect ensures the browser sends the updated JWT cookie
           setTimeout(() => {
-            router.push("/organizer/dashboard");
-            router.refresh();
+            window.location.href = "/organizer/dashboard";
           }, 1000);
         }
       } catch (err: any) {

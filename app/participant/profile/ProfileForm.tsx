@@ -114,10 +114,10 @@ function ParticipantProfileForm({
             profileId: result.profileId,
           });
 
-          // Redirect to participant dashboard after a short delay
+          // Hard redirect ensures the browser sends the updated JWT cookie
+          // (router.push does a soft navigation that may use the stale cookie)
           setTimeout(() => {
-            router.push("/participant/dashboard");
-            router.refresh();
+            window.location.href = "/participant/dashboard";
           }, 1000);
         }
       } catch (err: any) {
