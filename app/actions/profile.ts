@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { auth, unstable_update } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadToCloudinary } from "@/lib/services/cloudinary";
 
@@ -113,6 +113,14 @@ export async function saveOrganizerProfile(data: OrganizerProfileInput) {
     },
   });
 
+  // Update session on server side to sync middleware immediately
+  await unstable_update({
+    user: {
+      isProfileComplete: true,
+      profileId: profile.id,
+    },
+  });
+
   return {
     success: true,
     profileId: profile.id,
@@ -214,6 +222,14 @@ export async function saveParticipantProfile(data: ParticipantProfileInput) {
     data: {
       is_profile_complete: true,
       updated_at: now,
+    },
+  });
+
+  // Update session on server side to sync middleware immediately
+  await unstable_update({
+    user: {
+      isProfileComplete: true,
+      profileId: profile.id,
     },
   });
 

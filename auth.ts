@@ -4,7 +4,7 @@ import { authConfig } from "./auth.config";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/django-password";
 
-export const { auth, signIn, signOut, handlers } = NextAuth({
+export const { auth, signIn, signOut, handlers, unstable_update } = NextAuth({
   ...authConfig,
   session: { strategy: "jwt" },
   providers: [
@@ -95,11 +95,14 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
       }
 
       if (trigger === "update" && session) {
-        if (session.isProfileComplete !== undefined) {
-          token.isProfileComplete = session.isProfileComplete;
+        const isProfileComplete = session.user?.isProfileComplete !== undefined ? session.user.isProfileComplete : session.isProfileComplete;
+        const profileId = session.user?.profileId !== undefined ? session.user.profileId : session.profileId;
+
+        if (isProfileComplete !== undefined) {
+          token.isProfileComplete = isProfileComplete;
         }
-        if (session.profileId !== undefined) {
-          token.profileId = session.profileId;
+        if (profileId !== undefined) {
+          token.profileId = profileId;
         }
       }
       return token;
