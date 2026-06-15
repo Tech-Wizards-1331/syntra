@@ -47,35 +47,33 @@ export default async function ParticipantDashboard(props: {
 
   if (expiredDrafts.length > 0) {
     const expiredDraftIds = expiredDrafts.map((d) => d.id);
-    await prisma.$transaction(async (tx) => {
-      // Cascadingly delete team member skills
-      const members = await tx.participant_teammember.findMany({
-        where: { team_id: { in: expiredDraftIds } },
-      });
-      const memberIds = members.map((m) => m.id);
-      await tx.participant_teammember_skills.deleteMany({
-        where: { teammember_id: { in: memberIds } },
-      });
-      // Delete scan records
-      await tx.organizer_scanrecord.deleteMany({
-        where: { team_member_id: { in: memberIds } },
-      });
-      // Delete members
-      await tx.participant_teammember.deleteMany({
-        where: { team_id: { in: expiredDraftIds } },
-      });
-      // Delete team requests
-      await tx.participant_teamrequest.deleteMany({
-        where: { team_id: { in: expiredDraftIds } },
-      });
-      // Delete payments
-      await tx.participant_payment.deleteMany({
-        where: { team_id: { in: expiredDraftIds } },
-      });
-      // Delete teams
-      await tx.participant_team.deleteMany({
-        where: { id: { in: expiredDraftIds } },
-      });
+    // Cascadingly delete team member skills
+    const members = await prisma.participant_teammember.findMany({
+      where: { team_id: { in: expiredDraftIds } },
+    });
+    const memberIds = members.map((m) => m.id);
+    await prisma.participant_teammember_skills.deleteMany({
+      where: { teammember_id: { in: memberIds } },
+    });
+    // Delete scan records
+    await prisma.organizer_scanrecord.deleteMany({
+      where: { team_member_id: { in: memberIds } },
+    });
+    // Delete members
+    await prisma.participant_teammember.deleteMany({
+      where: { team_id: { in: expiredDraftIds } },
+    });
+    // Delete team requests
+    await prisma.participant_teamrequest.deleteMany({
+      where: { team_id: { in: expiredDraftIds } },
+    });
+    // Delete payments
+    await prisma.participant_payment.deleteMany({
+      where: { team_id: { in: expiredDraftIds } },
+    });
+    // Delete teams
+    await prisma.participant_team.deleteMany({
+      where: { id: { in: expiredDraftIds } },
     });
   }
 

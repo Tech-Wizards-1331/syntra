@@ -90,35 +90,32 @@ export async function selectProblemStatement(
     );
   }
 
-  // Perform the selection inside a serializable transaction
-  await prisma.$transaction(async (tx) => {
-    // Verify the PS exists, belongs to this hackathon, and is active
-    const ps = await tx.organizer_problemstatement.findFirst({
-      where: {
-        id: problemStatementId,
-        hackathon_id: team.hackathon_id,
-        is_active: true,
-      },
-    });
-    if (!ps) {
-      throw new Error("Problem statement not found or inactive.");
-    }
+  // Verify the PS exists, belongs to this hackathon, and is active
+  const ps = await prisma.organizer_problemstatement.findFirst({
+    where: {
+      id: problemStatementId,
+      hackathon_id: team.hackathon_id,
+      is_active: true,
+    },
+  });
+  if (!ps) {
+    throw new Error("Problem statement not found or inactive.");
+  }
 
-    // Check capacity (Django D-02 + D-03)
-    const currentCount = await tx.participant_team.count({
-      where: { selected_problem_statement_id: problemStatementId },
-    });
-    if (currentCount >= ps.max_teams_allowed) {
-      throw new Error(
-        "This problem statement has reached its capacity limit."
-      );
-    }
+  // Check capacity (Django D-02 + D-03)
+  const currentCount = await prisma.participant_team.count({
+    where: { selected_problem_statement_id: problemStatementId },
+  });
+  if (currentCount >= ps.max_teams_allowed) {
+    throw new Error(
+      "This problem statement has reached its capacity limit."
+    );
+  }
 
-    // Lock in the selection
-    await tx.participant_team.update({
-      where: { id: teamId },
-      data: { selected_problem_statement_id: problemStatementId },
-    });
+  // Lock in the selection
+  await prisma.participant_team.update({
+    where: { id: teamId },
+    data: { selected_problem_statement_id: problemStatementId },
   });
 
   revalidatePath(`/participant/hackathons/${team.hackathon_id}/hub`);

@@ -41,36 +41,32 @@ export async function createScanCategory(hackathonId: number, name: string) {
     throw new Error("Category name is required");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    // 1. Check for duplicate name for this hackathon
-    const existing = await tx.organizer_scancategory.findFirst({
-      where: {
-        hackathon_id: hackathonId,
-        name: {
-          equals: trimmedName,
-        },
-      },
-    });
+  // 1. Check for duplicate name for this hackathon
+  const existing = await prisma.organizer_scancategory.findFirst({
+    where: {
+      hackathon_id: hackathonId,
+      name: { equals: trimmedName },
+    },
+  });
 
-    if (existing) {
-      throw new Error(`Scan category with name "${trimmedName}" already exists for this hackathon`);
-    }
+  if (existing) {
+    throw new Error(`Scan category with name "${trimmedName}" already exists for this hackathon`);
+  }
 
-    // 2. Count existing categories to determine the new order index
-    const count = await tx.organizer_scancategory.count({
-      where: { hackathon_id: hackathonId },
-    });
+  // 2. Count existing categories to determine the new order index
+  const count = await prisma.organizer_scancategory.count({
+    where: { hackathon_id: hackathonId },
+  });
 
-    // 3. Create scan category
-    return await tx.organizer_scancategory.create({
-      data: {
-        hackathon_id: hackathonId,
-        name: trimmedName,
-        is_active: true,
-        display_order: count + 1,
-        created_at: new Date(),
-      },
-    });
+  // 3. Create scan category
+  const result = await prisma.organizer_scancategory.create({
+    data: {
+      hackathon_id: hackathonId,
+      name: trimmedName,
+      is_active: true,
+      display_order: count + 1,
+      created_at: new Date(),
+    },
   });
 
   revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
@@ -146,16 +142,14 @@ export async function deleteScanCategory(id: number) {
     throw new Error("Access denied: You do not own this hackathon");
   }
 
-  await prisma.$transaction(async (tx) => {
-    // Delete scan records first (to ensure SQLite cascades safely)
-    await tx.organizer_scanrecord.deleteMany({
-      where: { scan_category_id: id },
-    });
+  // Delete scan records first
+  await prisma.organizer_scanrecord.deleteMany({
+    where: { scan_category_id: id },
+  });
 
-    // Delete the category itself
-    await tx.organizer_scancategory.delete({
-      where: { id },
-    });
+  // Delete the category itself
+  await prisma.organizer_scancategory.delete({
+    where: { id },
   });
 
   revalidatePath(`/organizer/dashboard/hackathons/${category.hackathon_id}`);

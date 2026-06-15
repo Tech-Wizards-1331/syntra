@@ -422,36 +422,33 @@ export async function deleteHackathon(id: number) {
     select: { pdf_file: true },
   });
 
-  // Perform cascade deletes manually to ensure transactional safety on SQLite
-  await prisma.$transaction(async (tx) => {
-    // Delete scan records associated with scan categories of this hackathon
-    await tx.organizer_scanrecord.deleteMany({
-      where: {
-        organizer_scancategory: {
-          hackathon_id: id,
-        },
+  // Delete scan records associated with scan categories of this hackathon
+  await prisma.organizer_scanrecord.deleteMany({
+    where: {
+      organizer_scancategory: {
+        hackathon_id: id,
       },
-    });
+    },
+  });
 
-    // Delete scan categories
-    await tx.organizer_scancategory.deleteMany({
-      where: { hackathon_id: id },
-    });
+  // Delete scan categories
+  await prisma.organizer_scancategory.deleteMany({
+    where: { hackathon_id: id },
+  });
 
-    // Delete problem statements
-    await tx.organizer_problemstatement.deleteMany({
-      where: { hackathon_id: id },
-    });
+  // Delete problem statements
+  await prisma.organizer_problemstatement.deleteMany({
+    where: { hackathon_id: id },
+  });
 
-    // Delete hackathon coordinators
-    await tx.organizer_hackathoncoordinator.deleteMany({
-      where: { hackathon_id: id },
-    });
+  // Delete hackathon coordinators
+  await prisma.organizer_hackathoncoordinator.deleteMany({
+    where: { hackathon_id: id },
+  });
 
-    // Finally delete hackathon
-    await tx.organizer_hackathon.delete({
-      where: { id },
-    });
+  // Finally delete hackathon
+  await prisma.organizer_hackathon.delete({
+    where: { id },
   });
 
   // Clean up PDF assets from Cloudinary asynchronously

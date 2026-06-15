@@ -78,36 +78,34 @@ export async function registerWithCredentials(prevState: any, formData: FormData
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    await prisma.$transaction(async (tx) => {
-      const newUser = await tx.accounts_user.create({
-        data: {
-          email: cleanEmail,
-          password: hashedPassword,
-          first_name: firstName,
-          last_name: lastName,
-          full_name: fullName,
-          is_superuser: false,
-          is_staff: false,
-          is_active: true,
-          date_joined: now,
-          created_at: now,
-          updated_at: now,
-          is_profile_complete: false,
-          role: "participant",
-        },
-      });
+    const newUser = await prisma.accounts_user.create({
+      data: {
+        email: cleanEmail,
+        password: hashedPassword,
+        first_name: firstName,
+        last_name: lastName,
+        full_name: fullName,
+        is_superuser: false,
+        is_staff: false,
+        is_active: true,
+        date_joined: now,
+        created_at: now,
+        updated_at: now,
+        is_profile_complete: false,
+        role: "participant",
+      },
+    });
 
-      await tx.participant_participantprofile.create({
-        data: {
-          user_id: newUser.id,
-          college: "",
-          semester: 1,
-          degree: "",
-          visibility: true,
-          created_at: now,
-          updated_at: now,
-        },
-      });
+    await prisma.participant_participantprofile.create({
+      data: {
+        user_id: newUser.id,
+        college: "",
+        semester: 1,
+        degree: "",
+        visibility: true,
+        created_at: now,
+        updated_at: now,
+      },
     });
   } catch (err: any) {
     console.error("Registration error:", err);

@@ -371,60 +371,58 @@ export async function acceptTeamInvite(requestId: number) {
   const profile = user?.participant_participantprofile;
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    // Accept this invite
-    await tx.participant_teamrequest.update({
-      where: { id: requestId },
-      data: { status: "accepted" },
-    });
-
-    // Add user as team member (matches Django's add_member_to_team)
-    const member = await tx.participant_teammember.create({
-      data: {
-        team_id: team.id,
-        name: user?.full_name || email,
-        email: email,
-        college: profile?.college || "Not Specified",
-        semester: profile?.semester || 1,
-        degree: profile?.degree || "Not Specified",
-        created_at: now,
-      },
-    });
-
-    // Copy skills from profile
-    if (profile?.participant_participantprofile_skills.length) {
-      await tx.participant_teammember_skills.createMany({
-        data: profile.participant_participantprofile_skills.map((ps) => ({
-          teammember_id: member.id,
-          skill_id: ps.skill_id,
-        })),
-      });
-    }
-
-    // Auto-delete all other pending invites for this user for the same hackathon
-    await tx.participant_teamrequest.deleteMany({
-      where: {
-        receiver_id: userId,
-        status: "pending",
-        participant_team: { hackathon_id: hackathonId },
-        id: { not: requestId },
-      },
-    });
-
-    // If team is now at max capacity, delete all remaining pending invites
-    const currentTxMembersCount = await tx.participant_teammember.count({
-      where: { team_id: team.id },
-    });
-    const leaderExistsInDbTx = await tx.participant_teammember.count({
-      where: { team_id: team.id, email: leaderUser.email },
-    }) > 0;
-    const finalTxSlots = leaderExistsInDbTx ? currentTxMembersCount : 1 + currentTxMembersCount;
-    if (finalTxSlots >= team.organizer_hackathon.max_team_size) {
-      await tx.participant_teamrequest.deleteMany({
-        where: { team_id: team.id, status: "pending" },
-      });
-    }
+  // Accept this invite
+  await prisma.participant_teamrequest.update({
+    where: { id: requestId },
+    data: { status: "accepted" },
   });
+
+  // Add user as team member (matches Django's add_member_to_team)
+  const member = await prisma.participant_teammember.create({
+    data: {
+      team_id: team.id,
+      name: user?.full_name || email,
+      email: email,
+      college: profile?.college || "Not Specified",
+      semester: profile?.semester || 1,
+      degree: profile?.degree || "Not Specified",
+      created_at: now,
+    },
+  });
+
+  // Copy skills from profile
+  if (profile?.participant_participantprofile_skills.length) {
+    await prisma.participant_teammember_skills.createMany({
+      data: profile.participant_participantprofile_skills.map((ps) => ({
+        teammember_id: member.id,
+        skill_id: ps.skill_id,
+      })),
+    });
+  }
+
+  // Auto-delete all other pending invites for this user for the same hackathon
+  await prisma.participant_teamrequest.deleteMany({
+    where: {
+      receiver_id: userId,
+      status: "pending",
+      participant_team: { hackathon_id: hackathonId },
+      id: { not: requestId },
+    },
+  });
+
+  // If team is now at max capacity, delete all remaining pending invites
+  const currentMembersCount = await prisma.participant_teammember.count({
+    where: { team_id: team.id },
+  });
+  const leaderExistsInDb = await prisma.participant_teammember.count({
+    where: { team_id: team.id, email: leaderUser.email },
+  }) > 0;
+  const finalSlots = leaderExistsInDb ? currentMembersCount : 1 + currentMembersCount;
+  if (finalSlots >= team.organizer_hackathon.max_team_size) {
+    await prisma.participant_teamrequest.deleteMany({
+      where: { team_id: team.id, status: "pending" },
+    });
+  }
 
   revalidatePath("/participant/dashboard");
   return { success: true };
