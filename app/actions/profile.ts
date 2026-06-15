@@ -47,6 +47,10 @@ interface OrganizerProfileInput {
 
 /**
  * Save/Update Organizer Profile.
+ *
+ * NOTE: Uses plain sequential prisma calls instead of prisma.$transaction()
+ * because Supabase's PgBouncer pooler (port 6543, pgbouncer=true) runs in
+ * transaction mode which does NOT support Prisma interactive transactions (P2028).
  */
 export async function saveOrganizerProfile(data: OrganizerProfileInput) {
   const session = await auth();
@@ -74,48 +78,46 @@ export async function saveOrganizerProfile(data: OrganizerProfileInput) {
     }
   }
 
-  return await prisma.$transaction(async (tx) => {
-    // 1. Get existing profile to check if logo is already set and not being overwritten
-    const existingProfile = await tx.organizer_organizerprofile.findUnique({
-      where: { user_id: userId },
-    });
-
-    const finalLogoUrl = logoUrl || (existingProfile ? existingProfile.logo : null);
-
-    // 2. Upsert Organizer Profile
-    const profile = await tx.organizer_organizerprofile.upsert({
-      where: { user_id: userId },
-      update: {
-        organization_name: data.organizationName.trim(),
-        website: data.website?.trim() || null,
-        logo: finalLogoUrl,
-        updated_at: now,
-      },
-      create: {
-        user_id: userId,
-        organization_name: data.organizationName.trim(),
-        website: data.website?.trim() || null,
-        logo: finalLogoUrl,
-        created_at: now,
-        updated_at: now,
-      },
-    });
-
-    // 3. Mark accounts_user profile as complete
-    await tx.accounts_user.update({
-      where: { id: userId },
-      data: {
-        is_profile_complete: true,
-        updated_at: now,
-      },
-    });
-
-    return {
-      success: true,
-      profileId: profile.id,
-      logoUrl: finalLogoUrl,
-    };
+  // 1. Get existing profile to preserve logo if not being overwritten
+  const existingProfile = await prisma.organizer_organizerprofile.findUnique({
+    where: { user_id: userId },
   });
+
+  const finalLogoUrl = logoUrl || (existingProfile ? existingProfile.logo : null);
+
+  // 2. Upsert Organizer Profile
+  const profile = await prisma.organizer_organizerprofile.upsert({
+    where: { user_id: userId },
+    update: {
+      organization_name: data.organizationName.trim(),
+      website: data.website?.trim() || null,
+      logo: finalLogoUrl,
+      updated_at: now,
+    },
+    create: {
+      user_id: userId,
+      organization_name: data.organizationName.trim(),
+      website: data.website?.trim() || null,
+      logo: finalLogoUrl,
+      created_at: now,
+      updated_at: now,
+    },
+  });
+
+  // 3. Mark accounts_user profile as complete
+  await prisma.accounts_user.update({
+    where: { id: userId },
+    data: {
+      is_profile_complete: true,
+      updated_at: now,
+    },
+  });
+
+  return {
+    success: true,
+    profileId: profile.id,
+    logoUrl: finalLogoUrl,
+  };
 }
 
 interface ParticipantProfileInput {
@@ -128,6 +130,10 @@ interface ParticipantProfileInput {
 
 /**
  * Save/Update Participant Profile.
+ *
+ * NOTE: Uses plain sequential prisma calls instead of prisma.$transaction()
+ * because Supabase's PgBouncer pooler (port 6543, pgbouncer=true) runs in
+ * transaction mode which does NOT support Prisma interactive transactions (P2028).
  */
 export async function saveParticipantProfile(data: ParticipantProfileInput) {
   const session = await auth();
@@ -152,70 +158,67 @@ export async function saveParticipantProfile(data: ParticipantProfileInput) {
 
   const now = new Date();
 
-  return await prisma.$transaction(async (tx) => {
-    // 1. Resolve skills sequentially (Prisma interactive transactions
-    //    use a single DB connection and do not support concurrent queries)
-    const skillRecords: { id: number; name: string }[] = [];
-    for (const skillName of data.skills) {
-      const trimmed = skillName.trim();
-      let record = await tx.participant_skill.findUnique({
-        where: { name: trimmed },
-      });
-      if (!record) {
-        record = await tx.participant_skill.create({
-          data: { name: trimmed },
-        });
-      }
-      skillRecords.push(record);
-    }
-
-    // 2. Upsert Participant Profile
-    const profile = await tx.participant_participantprofile.upsert({
-      where: { user_id: userId },
-      update: {
-        college: data.college.trim(),
-        semester: data.semester,
-        degree: data.degree.trim(),
-        visibility: data.visibility,
-        updated_at: now,
-      },
-      create: {
-        user_id: userId,
-        college: data.college.trim(),
-        semester: data.semester,
-        degree: data.degree.trim(),
-        visibility: data.visibility,
-        created_at: now,
-        updated_at: now,
-      },
+  // 1. Resolve skills — find existing or create new ones sequentially
+  const skillRecords: { id: number; name: string }[] = [];
+  for (const skillName of data.skills) {
+    const trimmed = skillName.trim();
+    let record = await prisma.participant_skill.findUnique({
+      where: { name: trimmed },
     });
-
-    // 3. Sync skills mappings (delete existing and insert new ones)
-    await tx.participant_participantprofile_skills.deleteMany({
-      where: { participantprofile_id: profile.id },
-    });
-
-    if (skillRecords.length > 0) {
-      await tx.participant_participantprofile_skills.createMany({
-        data: skillRecords.map((skill) => ({
-          participantprofile_id: profile.id,
-          skill_id: skill.id,
-        })),
+    if (!record) {
+      record = await prisma.participant_skill.create({
+        data: { name: trimmed },
       });
     }
+    skillRecords.push(record);
+  }
 
-    // 4. Mark accounts_user profile as complete
-    await tx.accounts_user.update({
-      where: { id: userId },
-      data: {
-        is_profile_complete: true,
-        updated_at: now,
-      },
-    });
-
-    return {
-      success: true,
-      profileId: profile.id,
-    };
+  // 2. Upsert Participant Profile
+  const profile = await prisma.participant_participantprofile.upsert({
+    where: { user_id: userId },
+    update: {
+      college: data.college.trim(),
+      semester: data.semester,
+      degree: data.degree.trim(),
+      visibility: data.visibility,
+      updated_at: now,
+    },
+    create: {
+      user_id: userId,
+      college: data.college.trim(),
+      semester: data.semester,
+      degree: data.degree.trim(),
+      visibility: data.visibility,
+      created_at: now,
+      updated_at: now,
+    },
   });
+
+  // 3. Sync skills mappings (delete existing and insert new ones)
+  await prisma.participant_participantprofile_skills.deleteMany({
+    where: { participantprofile_id: profile.id },
+  });
+
+  if (skillRecords.length > 0) {
+    await prisma.participant_participantprofile_skills.createMany({
+      data: skillRecords.map((skill) => ({
+        participantprofile_id: profile.id,
+        skill_id: skill.id,
+      })),
+    });
+  }
+
+  // 4. Mark accounts_user profile as complete
+  await prisma.accounts_user.update({
+    where: { id: userId },
+    data: {
+      is_profile_complete: true,
+      updated_at: now,
+    },
+  });
+
+  return {
+    success: true,
+    profileId: profile.id,
+  };
 }
