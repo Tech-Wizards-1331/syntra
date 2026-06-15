@@ -70,6 +70,13 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Auto-reject all pending outgoing invites for this team — registration is
+      // now finalised and no new members can be added.
+      await prisma.participant_teamrequest.updateMany({
+        where: { team_id: payment.team_id, status: "pending" },
+        data: { status: "rejected" },
+      });
+
       console.log(`Payment successfully updated via webhook for order ${orderId}`);
     }
 

@@ -552,6 +552,13 @@ export async function submitTeamRegistration(teamId: number) {
     },
   });
 
+  // Auto-reject all pending outgoing invites for this team — registration is
+  // now finalised and no new members can be added.
+  await prisma.participant_teamrequest.updateMany({
+    where: { team_id: teamId, status: "pending" },
+    data: { status: "rejected" },
+  });
+
   revalidatePath("/participant/dashboard");
   return { success: true };
 }
