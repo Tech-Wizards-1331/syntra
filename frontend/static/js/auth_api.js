@@ -33,19 +33,6 @@ function parseError(payload) {
     return 'Something went wrong. Please try again.';
 }
 
-function storeTokens(payload) {
-    const tokens = payload && payload.tokens;
-    if (!tokens) {
-        return;
-    }
-    if (tokens.access) {
-        localStorage.setItem('access_token', tokens.access);
-    }
-    if (tokens.refresh) {
-        localStorage.setItem('refresh_token', tokens.refresh);
-    }
-}
-
 function handleLoginSuccess(payload, nextUrl) {
     const user = payload.user || {};
     if (nextUrl) {
@@ -80,9 +67,25 @@ async function submitAuthForm(form, isSignup) {
         };
     }
 
+    // Determine CSRF token
+    let csrfToken = '';
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === ('csrftoken=')) {
+                csrfToken = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+
     const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
         body: JSON.stringify(data),
     });
 
@@ -92,8 +95,6 @@ async function submitAuthForm(form, isSignup) {
         showApiMessage(parseError(payload), true);
         return;
     }
-
-    storeTokens(payload);
 
     if (isSignup) {
         showApiMessage('Account created. Redirecting to complete profile...', false);

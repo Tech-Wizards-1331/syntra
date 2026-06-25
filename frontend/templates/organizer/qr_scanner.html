@@ -1,0 +1,582 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Syntra | QR Scanner — {{ hackathon.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="{% static 'js/api_client.js' %}"></script>
+    <style>
+        .scanner-main { max-width: 520px; margin: 0 auto; padding: 24px 16px 96px; }
+
+        /* ── Scanner viewport ── */
+        #scanner-viewport {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--bg-secondary);
+            border: 2px solid var(--primary-blue);
+        }
+        #scanner-viewport video { border-radius: 12px; }
+        #scanner-viewport #qr-reader { border: none !important; }
+        #scanner-viewport #qr-reader__scan_region { min-height: 280px; }
+        #qr-reader__dashboard_section_csr,
+        #qr-reader__dashboard_section_fsr,
+        #qr-reader__dashboard,
+        #qr-reader__header_message,
+        #qr-reader__status_span { display: none !important; }
+
+        /* ── Processing overlay ── */
+        .scanner-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 20;
+            border-radius: 12px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(37,99,235,0.2);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Toolbar buttons ── */
+        .toolbar-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toolbar-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); background: var(--selected-bg); }
+        .toolbar-btn:active { transform: scale(0.96); }
+        .toolbar-btn.active { border-color: var(--warning); color: var(--warning); background: var(--warning-bg); }
+        .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── Modal ── */
+        .modal-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 16px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        @media (min-width: 640px) { .modal-backdrop { align-items: center; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-panel {
+            width: 100%; max-width: 480px; max-height: 90vh;
+            overflow-y: auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px 16px 8px 8px;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @media (min-width: 640px) { .modal-panel { border-radius: 16px; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Member rows in modal ── */
+        .member-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            transition: all 0.2s;
+        }
+        .member-row.already-scanned { opacity: 0.55; background: var(--success-bg); border-color: var(--success); }
+        .member-checkbox { width: 18px; height: 18px; accent-color: var(--primary-blue); cursor: pointer; flex-shrink: 0; }
+        .member-checkbox:disabled { cursor: not-allowed; opacity: 0.5; }
+
+        /* ── Success flash ── */
+        .success-flash {
+            position: fixed; inset: 0;
+            background: rgba(34,197,94,0.2);
+            z-index: 200;
+            display: flex; align-items: center; justify-content: center;
+            animation: flashFade 0.5s ease-out forwards;
+        }
+        @keyframes flashFade { 0%,60%{opacity:1} 100%{opacity:0} }
+        .success-flash .checkmark {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(34,197,94,0.2); border: 3px solid var(--success);
+            display: flex; align-items: center; justify-content: center;
+            animation: checkPop 0.35s ease-out both;
+        }
+        @keyframes checkPop { 0%{transform:scale(0);opacity:0} 50%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+
+        /* ── Toast container ── */
+        #toast-container {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            z-index: 300;
+            display: flex; flex-direction: column; gap: 8px;
+            width: calc(100% - 32px); max-width: 400px;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 12px 16px; border-radius: 10px; font-size: 0.8125rem; font-weight: 600;
+            pointer-events: auto;
+            animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 3s forwards;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .toast-success { background: var(--success-bg); border: 1px solid var(--success); color: var(--success); }
+        .toast-error { background: var(--error-bg, #FEF2F2); border: 1px solid var(--danger); color: var(--danger); }
+        @keyframes toastIn { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes toastOut { from{opacity:1} to{opacity:0;transform:translateY(-8px)} }
+
+        @media (max-width: 640px) { .scanner-main { padding: 16px 16px 96px; } }
+    </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Navigation -->
+<nav style="background-color:var(--bg-surface);border-bottom:1px solid var(--border);padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
+    <a href="{% url 'dashboard' %}" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+        <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
+        <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
+    </a>
+    <a href="{% url 'organizer-hackathon-detail' hackathon.pk %}" class="btn btn--secondary btn--small">← Back</a>
+</nav>
+
+<main class="scanner-main">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:20px;">
+        <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-muted);margin:0 0 4px 0;">Scanner</p>
+        <h1 style="margin:0 0 4px 0;font-size:1.25rem;">QR Scanner</h1>
+        <p class="text--secondary" style="margin:0;font-size:0.875rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ hackathon.name }}</p>
+    </div>
+
+    <!-- Category Selector -->
+    <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Scan Category</label>
+        {% if scan_categories %}
+            <select id="category-select" class="input" onchange="onCategoryChange()">
+                <option value="" disabled selected>Select a category…</option>
+                {% for cat in scan_categories %}
+                    {% if cat.is_active %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <div id="no-active-categories" class="message message--warning" style="display:none;margin-top:12px;">
+                No active scan categories available
+            </div>
+        {% else %}
+            <div class="message message--warning">No active scan categories available</div>
+        {% endif %}
+    </div>
+
+    <!-- Scanner Card -->
+    <div id="scanner-card" class="card card--spacious" style="margin-bottom:16px;">
+        <!-- Camera error -->
+        <div id="camera-error" class="message message--error" style="display:none;margin-bottom:16px;text-align:center;">
+            <p style="margin:0 0 4px 0;font-weight:600;">Camera permission denied</p>
+            <p style="margin:0;font-size:0.75rem;">Use manual entry instead.</p>
+        </div>
+
+        <!-- Scanner viewport -->
+        <div id="scanner-viewport">
+            <div id="qr-reader" style="width:100%;"></div>
+            <div id="processing-overlay" class="scanner-overlay" style="display:none;">
+                <div class="spinner" style="margin-bottom:12px;"></div>
+                <span style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Processing scan…</span>
+            </div>
+            <div id="cooldown-overlay" class="scanner-overlay" style="display:none;">
+                <span style="font-size:0.875rem;color:var(--text-muted);">Resetting scanner…</span>
+            </div>
+        </div>
+
+        <!-- Camera Toolbar -->
+        <div id="camera-toolbar" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap;">
+            <button id="btn-switch-camera" class="toolbar-btn" onclick="switchCamera()" title="Switch Camera">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Switch
+            </button>
+            <button id="btn-torch" class="toolbar-btn" onclick="toggleTorch()" title="Toggle Flashlight" style="display:none;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Torch
+            </button>
+            <button id="btn-fullscreen" class="toolbar-btn" onclick="enterFullscreen()" title="Fullscreen">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/></svg>
+                Fullscreen
+            </button>
+        </div>
+    </div>
+
+    <!-- Manual UUID Input -->
+    <div class="card card--spacious" style="margin-bottom:16px;">
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Manual Entry</label>
+        <div style="display:flex;gap:8px;">
+            <input type="text" id="manual-uuid-input" class="input" style="flex:1;" placeholder="Enter QR token UUID…" autocomplete="off" spellcheck="false">
+            <button id="btn-manual-submit" class="btn btn--primary" onclick="handleManualSubmit()" style="min-height:44px;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                Scan
+            </button>
+        </div>
+    </div>
+
+    <div style="text-align:center;">
+        <a href="{% url 'organizer-hackathon-detail' hackathon.pk %}" class="text--secondary" style="font-size:0.875rem;text-decoration:none;">← Back to Hackathon</a>
+    </div>
+
+</main>
+
+<!-- Team Summary Modal -->
+<div id="team-modal" class="modal-backdrop" style="display:none;" onclick="onModalBackdropClick(event)">
+    <div class="modal-panel" onclick="event.stopPropagation()">
+        <div style="height:3px;background:linear-gradient(90deg,var(--primary-blue),#6366f1,#ec4899);border-radius:16px 16px 0 0;"></div>
+        <div style="padding:20px 24px;">
+            <!-- Team header -->
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="width:48px;height:48px;background-color:var(--selected-bg);border:1px solid var(--primary-blue);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <h2 id="modal-team-name" style="margin:0 0 4px 0;font-size:1.125rem;font-weight:800;"></h2>
+                <p class="text--secondary" style="margin:0;font-size:0.875rem;">{{ hackathon.name }}</p>
+            </div>
+
+            <!-- Scan stats -->
+            <div style="display:flex;justify-content:center;margin-bottom:20px;">
+                <span id="modal-scan-stats" class="badge badge--info"></span>
+            </div>
+
+            <!-- Members list -->
+            <div id="modal-members-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;max-height:40vh;overflow-y:auto;"></div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:12px;">
+                <button id="btn-modal-cancel" class="btn btn--secondary btn--block" onclick="closeModal()">Cancel</button>
+                <button id="btn-modal-submit" class="btn btn--primary btn--block" onclick="submitScan()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span id="btn-submit-text">Submit</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    let html5Qrcode = null;
+    let isProcessing = false;
+    let isTorchOn = false;
+    let torchSupported = false;
+    let cameras = [];
+    let currentCameraIndex = 0;
+    let currentQrToken = null;
+    let currentScanData = null;
+    let scannerReady = false;
+
+    const SCAN_COOLDOWN_MS = 1500;
+    const CSRF_TOKEN = '{{ csrf_token }}';
+
+    const categorySelect = document.getElementById('category-select');
+    const scannerCard = document.getElementById('scanner-card');
+    const cameraError = document.getElementById('camera-error');
+    const processingOverlay = document.getElementById('processing-overlay');
+    const cooldownOverlay = document.getElementById('cooldown-overlay');
+    const cameraToolbar = document.getElementById('camera-toolbar');
+    const btnSwitchCamera = document.getElementById('btn-switch-camera');
+    const btnTorch = document.getElementById('btn-torch');
+    const manualInput = document.getElementById('manual-uuid-input');
+    const modalEl = document.getElementById('team-modal');
+    const noActiveCats = document.getElementById('no-active-categories');
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (categorySelect) {
+            const options = categorySelect.querySelectorAll('option[value]');
+            if (options.length === 0) {
+                categorySelect.style.display = 'none';
+                if (noActiveCats) noActiveCats.style.display = 'block';
+                disableScanner();
+                return;
+            }
+        } else {
+            disableScanner();
+            return;
+        }
+        manualInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); handleManualSubmit(); }
+        });
+    });
+
+    function disableScanner() { scannerCard.style.opacity = '0.45'; scannerCard.style.pointerEvents = 'none'; }
+    function enableScanner() { scannerCard.style.opacity = '1'; scannerCard.style.pointerEvents = 'auto'; }
+
+    window.onCategoryChange = function() {
+        if (!categorySelect.value) return;
+        enableScanner();
+        if (!scannerReady) initScanner();
+    };
+
+    async function initScanner() {
+        try {
+            cameras = await Html5Qrcode.getCameras();
+            if (!cameras || cameras.length === 0) { showCameraError(); return; }
+            const rearIndex = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
+            currentCameraIndex = rearIndex >= 0 ? rearIndex : cameras.length - 1;
+            html5Qrcode = new Html5Qrcode('qr-reader');
+            await startCamera();
+            scannerReady = true;
+            if (cameras.length <= 1) btnSwitchCamera.style.display = 'none';
+        } catch (err) { console.error('Camera init error:', err); showCameraError(); }
+    }
+
+    async function startCamera() {
+        try {
+            await html5Qrcode.start(
+                cameras[currentCameraIndex].id,
+                { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                onScanSuccess, onScanFailure
+            );
+            checkTorchSupport();
+        } catch (err) { console.error('Camera start error:', err); showCameraError(); }
+    }
+
+    function showCameraError() {
+        cameraError.style.display = 'block';
+        document.getElementById('scanner-viewport').style.display = 'none';
+        cameraToolbar.style.display = 'none';
+        setTimeout(() => manualInput.focus(), 300);
+    }
+
+    function checkTorchSupport() {
+        try {
+            const videoElem = document.querySelector('#qr-reader video');
+            if (!videoElem || !videoElem.srcObject) return;
+            const track = videoElem.srcObject.getVideoTracks()[0];
+            if (!track) return;
+            const caps = track.getCapabilities ? track.getCapabilities() : {};
+            if (caps.torch) { torchSupported = true; btnTorch.style.display = ''; }
+            else { torchSupported = false; btnTorch.style.display = 'none'; }
+        } catch (e) { torchSupported = false; btnTorch.style.display = 'none'; }
+    }
+
+    window.switchCamera = async function() {
+        if (!html5Qrcode || cameras.length <= 1) return;
+        try {
+            await html5Qrcode.stop();
+            currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+            isTorchOn = false; btnTorch.classList.remove('active');
+            await startCamera();
+        } catch (err) { console.error('Switch camera error:', err); showToast('Failed to switch camera', 'error'); }
+    };
+
+    window.toggleTorch = async function() {
+        if (!torchSupported) return;
+        try {
+            const videoElem = document.querySelector('#qr-reader video');
+            if (!videoElem || !videoElem.srcObject) return;
+            const track = videoElem.srcObject.getVideoTracks()[0];
+            if (!track) return;
+            isTorchOn = !isTorchOn;
+            await track.applyConstraints({ advanced: [{ torch: isTorchOn }] });
+            btnTorch.classList.toggle('active', isTorchOn);
+        } catch (err) { console.error('Torch error:', err); showToast('Torch not available on this device', 'error'); }
+    };
+
+    window.enterFullscreen = function() {
+        try {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        } catch (e) { console.error('Fullscreen error:', e); }
+    };
+
+    function onScanSuccess(decodedText) { if (isProcessing) return; processScan(decodedText.trim()); }
+    function onScanFailure() {}
+
+    window.handleManualSubmit = function() {
+        const uuid = manualInput.value.trim();
+        if (!uuid) { showToast('Please enter a QR token UUID', 'error'); manualInput.focus(); return; }
+        if (isProcessing) return;
+        processScan(uuid);
+    };
+
+    async function processScan(qrToken) {
+        const categoryId = categorySelect ? categorySelect.value : null;
+        if (!categoryId) { showToast('Please select a scan category first', 'error'); return; }
+        isProcessing = true; currentQrToken = qrToken;
+        showProcessingOverlay(true);
+        try {
+            const resp = await fetchWithAuth('/api/organizer/scanner/scan/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ qr_token: qrToken, scan_category_id: parseInt(categoryId) }),
+            });
+            if (!resp.ok) {
+                const errData = await resp.json().catch(() => ({}));
+                throw new Error(errData.detail || errData.message || errData.error || `Scan failed (${resp.status})`);
+            }
+            const data = await resp.json();
+            currentScanData = data;
+            showProcessingOverlay(false);
+            showTeamModal(data);
+        } catch (err) {
+            showProcessingOverlay(false); isProcessing = false;
+            showToast(err.message || 'Scan failed', 'error');
+        }
+    }
+
+    function showProcessingOverlay(show) { processingOverlay.style.display = show ? 'flex' : 'none'; }
+
+    function showTeamModal(data) {
+        const teamNameEl = document.getElementById('modal-team-name');
+        const statsEl = document.getElementById('modal-scan-stats');
+        const membersEl = document.getElementById('modal-members-list');
+        const submitBtn = document.getElementById('btn-modal-submit');
+        const submitText = document.getElementById('btn-submit-text');
+
+        teamNameEl.textContent = data.team_name || 'Unknown Team';
+        const total = data.members ? data.members.length : 0;
+        const alreadyScanned = data.members ? data.members.filter(m => m.already_scanned).length : 0;
+        statsEl.textContent = `${alreadyScanned}/${total} already scanned`;
+
+        membersEl.innerHTML = '';
+        if (data.members && data.members.length > 0) {
+            data.members.forEach(member => {
+                const row = document.createElement('div');
+                row.className = 'member-row' + (member.already_scanned ? ' already-scanned' : '');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox'; checkbox.className = 'member-checkbox';
+                checkbox.dataset.memberId = member.id; checkbox.checked = true;
+                if (member.already_scanned) checkbox.disabled = true;
+                const info = document.createElement('div');
+                info.style.cssText = 'flex:1;min-width:0;';
+                info.innerHTML = `
+                    <span style="font-size:0.875rem;font-weight:500;color:${member.already_scanned ? 'var(--text-muted)' : 'var(--text-primary)'};">${escapeHtml(member.name)}</span>
+                    ${member.already_scanned ? '<span style="display:block;font-size:0.7rem;color:var(--success);font-weight:600;margin-top:2px;">✓ Scanned</span>' : ''}
+                `;
+                row.appendChild(checkbox); row.appendChild(info); membersEl.appendChild(row);
+            });
+        }
+
+        submitBtn.disabled = false; submitText.textContent = 'Submit';
+        modalEl.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.onModalBackdropClick = function(e) { if (e.target === modalEl) closeModal(); };
+
+    window.closeModal = function() {
+        modalEl.style.display = 'none'; document.body.style.overflow = '';
+        currentScanData = null; startCooldown();
+    };
+
+    window.submitScan = async function() {
+        const submitBtn = document.getElementById('btn-modal-submit');
+        const submitText = document.getElementById('btn-submit-text');
+        const categoryId = categorySelect ? categorySelect.value : null;
+        if (!categoryId || !currentQrToken) return;
+
+        const checkboxes = document.querySelectorAll('#modal-members-list .member-checkbox:not(:disabled):checked');
+        const memberIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.memberId));
+        if (memberIds.length === 0) { showToast('No new members selected to scan', 'error'); return; }
+
+        submitBtn.disabled = true; submitText.textContent = 'Submitting…';
+        try {
+            const resp = await fetchWithAuth('/api/organizer/scanner/submit/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ qr_token: currentQrToken, scan_category_id: parseInt(categoryId), member_ids: memberIds }),
+            });
+            if (!resp.ok) {
+                const errData = await resp.json().catch(() => ({}));
+                throw new Error(errData.detail || errData.message || errData.error || `Submit failed (${resp.status})`);
+            }
+            modalEl.style.display = 'none'; document.body.style.overflow = ''; currentScanData = null;
+            showSuccessFlash(); playBeep(); triggerVibration();
+            showToast(`✅ Scanned ${memberIds.length} member${memberIds.length !== 1 ? 's' : ''} successfully`, 'success');
+            startCooldown();
+        } catch (err) {
+            submitBtn.disabled = false; submitText.textContent = 'Submit';
+            showToast(err.message || 'Submit failed', 'error');
+        }
+    };
+
+    function startCooldown() {
+        cooldownOverlay.style.display = 'flex'; manualInput.value = '';
+        setTimeout(() => { cooldownOverlay.style.display = 'none'; isProcessing = false; }, SCAN_COOLDOWN_MS);
+    }
+
+    function showSuccessFlash() {
+        const flash = document.createElement('div');
+        flash.className = 'success-flash';
+        flash.innerHTML = `<div class="checkmark"><svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>`;
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 550);
+    }
+
+    function playBeep() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
+            setTimeout(() => ctx.close(), 200);
+        } catch (e) {}
+    }
+
+    function triggerVibration() {
+        try { if (navigator.vibrate) navigator.vibrate(200); } catch (e) {}
+    }
+
+    function showToast(message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type === 'error' ? 'error' : 'success'}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3500);
+    }
+
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+    }
+
+    window.handleManualSubmit = window.handleManualSubmit;
+})();
+</script>
+</body>
+</html>

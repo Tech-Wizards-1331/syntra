@@ -14,27 +14,26 @@
 
 ### Profile Management
 
-- [ ] **PROF-01**: Organizer can manage their profile (Company Name, Website, Logo, etc.).
-- [ ] **PROF-02**: Participant can manage their profile (Email, Skills, College Name, Semester, Degree, Bio, Resume link).
-- [ ] **PROF-03**: Participants can toggle "Visibility" to be searchable by Team Leaders.
+- [x] **PROF-01**: Organizer can manage their profile (Company Name, Website, Logo, etc.).
+- [x] **PROF-02**: Participant can manage their profile (Email, Skills, College Name, Semester, Degree, Bio, Resume link).
+- [x] **PROF-03**: Participants can toggle "Visibility" to be searchable by Team Leaders.
 
 ### Hackathon Management
 
-- [ ] **HACK-01**: Organizer can create a Hackathon event with basic details (Name, Date, Description).
+- [x] **HACK-01**: Organizer can create a Hackathon event with basic details (Name, Date, Description).
 - [ ] **HACK-02**: Organizer can define phases for a hackathon (e.g., Registration, Team Building, Active).
 - [ ] **HACK-03**: Only one phase can be "Active" at a time per hackathon.
 - [x] **HACK-04**: Organizer can create, view, update, and delete Problem Statements for a hackathon, with optional PDF uploads and an active/inactive toggle.
 
 ### Team Management
 
-- [ ] **TEAM-01**: Participant (as Team Leader) can create a team for a hackathon.
-- [ ] **TEAM-02**: Team Leader can add teammates as "Guest Records" with full info (Name, Email, Skills, College, Semester, Degree - no account created).
-- [ ] **TEAM-03**: Solo participants can search for teams looking for their skills.
-- [ ] **TEAM-04**: Team Leaders can search for solo participants based on skills.
+- [x] **TEAM-01**: Participant (as Team Leader) can create a team for a hackathon.
+- [x] **TEAM-02**: Team Leader can add teammates as "Guest Records" with full info (Name, Email, Skills, College, Semester, Degree - no account created).
+- [x] **TEAM-04**: Team Leaders can search for solo participants based on skills.
 
 ### QR Utility & Attendance
 
-- [ ] **QR-01**: System generates a unique QR code for each team upon successful registration.
+- [x] **QR-01**: System generates a unique QR code for each team upon successful registration.
 - [ ] **QR-02**: Organizer can scan a team QR code to mark attendance for the whole team.
 - [ ] **QR-03**: System tracks "Food Tokens" per team, allowing Organizers to mark tokens as used.
 
@@ -58,6 +57,7 @@
 | Real-time Chat | Use external tools (Discord/Slack) for v1 to reduce complexity. |
 | Automatic Team Matching | Manual search is sufficient for MVP. |
 | Payments/Sponsorships | Focus on management and attendance first. |
+| Solo participants searching teams | Only Team Leaders can search for solo members, not vice versa. |
 
 ## Traceability
 
@@ -65,15 +65,16 @@
 |-------------|-------|--------|
 | AUTH-01 | Phase 1 | Pending |
 | AUTH-02 | Phase 1 | Pending |
-| PROF-01 | Phase 1 | Pending |
-| PROF-02 | Phase 1 | Pending |
-| HACK-01 | Phase 2 | Pending |
+| PROF-01 | Phase 5 | Done |
+| PROF-02 | Phase 9 | Done |
+| PROF-03 | Phase 9 | Done |
+| HACK-01 | Phase 6 | Done |
 | HACK-02 | Phase 2 | Pending |
 | HACK-04 | Phase 1 | Done |
-| TEAM-01 | Phase 3 | Pending |
-| TEAM-02 | Phase 3 | Pending |
-| TEAM-03 | Phase 3 | Pending |
-| QR-01 | Phase 4 | Pending |
+| TEAM-01 | Phase 9 | Done |
+| TEAM-02 | Phase 9 | Done |
+| TEAM-04 | Phase 9 | Done |
+| QR-01 | Phase 9 | Done |
 | QR-02 | Phase 4 | Pending |
 | QR-03 | Phase 4 | Pending |
 

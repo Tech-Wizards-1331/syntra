@@ -5,94 +5,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Syntra | Open Hackathons</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-tech { font-family: 'Orbitron', sans-serif; }
+        .list-main { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        @media (max-width: 640px) { .list-main { padding: 24px 16px; } }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-300 min-h-screen flex flex-col relative overflow-x-hidden selection:bg-teal-500/30">
+<body>
 
-    <!-- Top Navigation -->
-    <nav class="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-14 sm:h-16 items-center">
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    </div>
-                    <span class="font-tech font-bold text-base sm:text-xl tracking-tight text-white">SYNTRA</span>
-                </div>
-                <div class="flex items-center gap-3 sm:gap-4">
-                    <a href="{% url 'dashboard' %}" class="text-sm font-medium text-slate-400 hover:text-teal-400 transition-colors">Dashboard</a>
-                    <a href="{% url 'logout' %}" class="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors">Logout</a>
-                </div>
-            </div>
+    <!-- Navigation -->
+    <nav style="background-color:var(--bg-surface);border-bottom:1px solid var(--border);padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
+        <a href="{% url 'dashboard' %}" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+            <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
+            <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
+        </a>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <a href="{% url 'dashboard' %}" class="btn btn--secondary btn--small">Dashboard</a>
+            <a href="{% url 'logout' %}" class="btn btn--danger btn--small">Logout</a>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full relative z-10">
-        
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-6 sm:mb-8 gap-3">
-            <div>
-                <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-1 sm:mb-2">Open Hackathons</h1>
-                <p class="text-sm sm:text-base text-slate-400">Discover and join upcoming hackathons.</p>
-            </div>
+    <main class="list-main">
+
+        <div style="margin-bottom:32px;">
+            <h1 style="margin:0 0 8px 0;">Open Hackathons</h1>
+            <p class="text--secondary" style="margin:0;">Discover and join upcoming hackathons.</p>
         </div>
 
-        {% if messages %}
-            <div class="mb-8 space-y-3">
-                {% for message in messages %}
-                    <div class="p-4 rounded-xl backdrop-blur-sm border flex items-start gap-3 
-                        {% if message.tags == 'error' %}bg-red-500/10 border-red-500/20 text-red-200
-                        {% elif message.tags == 'success' %}bg-teal-500/10 border-teal-500/20 text-teal-200
-                        {% else %}bg-slate-800/50 border-slate-700/50 text-slate-200{% endif %}">
-                        <div class="flex-1 text-sm">{{ message }}</div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        {% include 'includes/_messages.html' %}
 
         {% if hackathons %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {% for hackathon in hackathons %}
-                <div class="bg-slate-900/60 border border-slate-700/60 rounded-2xl p-4 sm:p-6 backdrop-blur-md hover:border-teal-500/30 transition-all duration-300 flex flex-col h-full group">
-                    <div class="flex justify-between items-start mb-3 sm:mb-4">
-                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700 group-hover:scale-110 group-hover:border-teal-500/30 transition-all duration-300">
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                        </div>
-                    </div>
-                    
-                    <h3 class="text-lg sm:text-xl font-bold text-white mb-2 line-clamp-2">{{ hackathon.name }}</h3>
-                    
-                    <div class="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 flex-grow">
-                        <div class="flex items-center text-xs sm:text-sm text-slate-400">
-                            <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            {{ hackathon.start_date|date:"M d" }} - {{ hackathon.end_date|date:"M d, Y" }}
-                        </div>
-                        <div class="flex items-center text-xs sm:text-sm text-slate-400">
-                            <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Team: {{ hackathon.min_team_size }} - {{ hackathon.max_team_size }}
-                        </div>
-                    </div>
-                    
-                    <a href="{% url 'hackathon-register' pk=hackathon.pk %}" class="w-full flex items-center justify-center px-4 py-3 rounded-xl bg-teal-500/10 text-teal-400 font-semibold hover:bg-teal-500 hover:text-slate-950 transition-all duration-200 min-h-[44px]">
-                        Register Now
-                    </a>
+        <div class="card-grid">
+            {% for hackathon in hackathons %}
+            <div class="card card--elevated" role="article" style="display:flex;flex-direction:column;">
+                <div style="width:48px;height:48px;background-color:var(--selected-bg);color:var(--primary-blue);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
                 </div>
-                {% endfor %}
+                <h3 style="margin:0 0 8px 0;">{{ hackathon.name }}</h3>
+                <p class="text--secondary" style="font-size:0.875rem;margin:0 0 4px 0;">📅 {{ hackathon.start_date|date:"M d" }} – {{ hackathon.end_date|date:"M d, Y" }}</p>
+                <p class="text--secondary" style="font-size:0.875rem;margin:0 0 auto 0;">👥 Team: {{ hackathon.min_team_size }}–{{ hackathon.max_team_size }} members</p>
+                <div style="margin-top:16px;">
+                    <a href="{% url 'hackathon-register' pk=hackathon.pk %}" class="btn btn--primary btn--block">Register Now</a>
+                </div>
             </div>
+            {% endfor %}
+        </div>
+
         {% else %}
-            <div class="text-center py-20 bg-slate-900/40 rounded-3xl border border-slate-800/60 backdrop-blur-sm">
-                <div class="w-20 h-20 mx-auto bg-slate-800/80 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-slate-700/50">
-                    <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                </div>
-                <h2 class="text-2xl font-bold text-white mb-3">No Open Hackathons</h2>
-                <p class="text-slate-400 max-w-md mx-auto">There are currently no hackathons open for registration. Check back later!</p>
+        <div class="card card--spacious" style="text-align:center;padding:64px 24px;">
+            <div style="width:64px;height:64px;background-color:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                </svg>
             </div>
+            <h2 style="margin:0 0 8px 0;">No Open Hackathons</h2>
+            <p class="text--secondary" style="margin:0;">There are currently no hackathons open for registration. Check back later!</p>
+        </div>
         {% endif %}
+
     </main>
+
 </body>
 </html>

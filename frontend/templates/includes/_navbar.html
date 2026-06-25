@@ -1,0 +1,22 @@
+{% load static %}
+
+<nav class="card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div style="display: flex; gap: 16px; align-items: center;">
+    {% if back_link %}
+      <a href="{{ back_link }}" class="btn btn--ghost">← Back</a>
+    {% endif %}
+    <div>
+      {% if page_title %}
+        <h2 style="margin: 0;">{{ page_title }}</h2>
+      {% endif %}
+    </div>
+  </div>
+  <div style="display: flex; gap: 16px; align-items: center;">
+    {% if show_user_info and user.is_authenticated %}
+      <span class="text--secondary" style="font-size: 0.875rem;">{{ user.email }}</span>
+    {% endif %}
+    {% if show_logout %}
+      <a href="{% url 'logout' %}" class="btn btn--ghost">Logout</a>
+    {% endif %}
+  </div>
+</nav>

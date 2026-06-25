@@ -5,227 +5,375 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Syntra | Register for {{ hackathon.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-tech { font-family: 'Orbitron', sans-serif; }
+        .register-main { max-width: 800px; margin: 0 auto; padding: 48px 24px; }
+        .step-divider { border-top: 1px solid var(--border); margin: 32px 0 0 0; padding-top: 24px; }
+        @media (max-width: 640px) { .register-main { padding: 24px 16px; } }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-300 min-h-screen flex flex-col relative overflow-x-hidden selection:bg-teal-500/30">
+<body>
 
-    <!-- Top Navigation -->
-    <nav class="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-14 sm:h-16 items-center">
-                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    </div>
-                    <span class="font-tech font-bold text-base sm:text-xl tracking-tight text-white">SYNTRA</span>
-                </div>
-                <div class="flex items-center gap-3 sm:gap-4">
-                    <a href="{% url 'hackathon-list' %}" class="hidden sm:block text-sm font-medium text-slate-400 hover:text-teal-400 transition-colors">Back to List</a>
-                    <a href="{% url 'dashboard' %}" class="text-sm font-medium text-slate-400 hover:text-teal-400 transition-colors">Dashboard</a>
-                </div>
-            </div>
+    <!-- Navigation -->
+    <nav style="background-color:var(--bg-surface);border-bottom:1px solid var(--border);padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
+        <a href="{% url 'dashboard' %}" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+            <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
+            <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
+        </a>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <a href="{% url 'hackathon-list' %}" class="btn btn--secondary btn--small">← Back to List</a>
+            <a href="{% url 'dashboard' %}" class="btn btn--secondary btn--small">Dashboard</a>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full relative z-10">
-        
-        <div class="mb-6 sm:mb-8 border-b border-slate-800/60 pb-5 sm:pb-6">
-            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-2 leading-tight">Register for {{ hackathon.name }}</h1>
-            <p class="text-sm sm:text-base text-slate-400">Complete the wizard below to form your team and join the hackathon. Required size: {{ hackathon.min_team_size }} - {{ hackathon.max_team_size }} members.</p>
+    <main class="register-main">
+
+        <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border);">
+            <h1 style="margin:0 0 8px 0;">Register for {{ hackathon.name }}</h1>
+            <p class="text--secondary" style="margin:0;">Complete the steps below to form your team. Required size: {{ hackathon.min_team_size }}–{{ hackathon.max_team_size }} members.</p>
         </div>
 
-        {% if messages %}
-            <div class="mb-8 space-y-3">
-                {% for message in messages %}
-                    <div class="p-4 rounded-xl backdrop-blur-sm border flex items-start gap-3 
-                        {% if message.tags == 'error' %}bg-red-500/10 border-red-500/20 text-red-200
-                        {% elif message.tags == 'success' %}bg-teal-500/10 border-teal-500/20 text-teal-200
-                        {% else %}bg-slate-800/50 border-slate-700/50 text-slate-200{% endif %}">
-                        <div class="flex-1 text-sm">{{ message }}</div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        {% include 'includes/_messages.html' %}
 
-        <div class="space-y-8">
-            <!-- Step 1: Team Name -->
-            <div class="bg-slate-900/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur-md">
-                <h3 class="text-xl font-bold text-white mb-4">1. Team Details</h3>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Step 1: Team Details -->
+            <div class="card card--spacious">
+                <h3 style="margin:0 0 16px 0;">1. Team Details</h3>
                 <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}">
                     {% csrf_token %}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Team Name</label>
+                    <div class="form-group">
+                        <label class="form-label">Team Name</label>
                         {{ team_form.name }}
-                        <p class="text-xs text-slate-500 mt-1">Enter a unique name for your team.</p>
+                        <div class="form-hint">Enter a unique name for your team.</div>
                     </div>
-                    <button type="submit" name="save_team" class="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold rounded-lg transition-colors">
+                    <button type="submit" name="save_team" class="btn btn--primary">
                         {% if team %}Update Team Name{% else %}Save Team & Continue{% endif %}
                     </button>
                 </form>
             </div>
 
             {% if team %}
-            <!-- Step 2: Add Members -->
-            <div class="bg-slate-900/60 border border-slate-700/60 rounded-2xl p-4 sm:p-6 backdrop-blur-md">
-                <div class="flex justify-between items-center mb-4 gap-3">
-                    <h3 class="text-lg sm:text-xl font-bold text-white">2. Team Members</h3>
-                    <span class="shrink-0 text-sm px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-                        {{ team.members.count|add:"1" }} / {{ hackathon.max_team_size }}
-                    </span>
-                </div>
-                
-                <p class="text-sm text-slate-400 mb-6">You are automatically included as the team leader. Add up to {{ hackathon.max_team_size|add:"-1" }} more members below.</p>
 
-                <!-- Current Members List -->
-                <div class="space-y-3 mb-6">
-                    <div class="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 flex justify-between items-center">
-                        <div>
-                            <p class="font-medium text-white">{{ request.user.get_full_name|default:request.user.email }} <span class="text-xs ml-2 px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300">Leader</span></p>
-                            <p class="text-sm text-slate-400">{{ request.user.email }}</p>
+            <!-- Step 2: Team Members -->
+            <div class="card card--spacious">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;">
+                    <h3 style="margin:0;">2. Team Members</h3>
+                    <span class="badge badge--primary">{{ team.occupied_slots }} / {{ hackathon.max_team_size }}</span>
+                </div>
+
+                <p class="text--secondary" style="font-size:0.875rem;margin-bottom:20px;">
+                    You are automatically included as the team leader. Add up to {{ hackathon.max_team_size|add:"-1" }} more members (including active pending invitations).
+                </p>
+
+                <!-- Members list -->
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
+                    <!-- Leader -->
+                    <div class="card card--compact" style="display:flex;align-items:center;gap:12px;background-color:var(--selected-bg);border-color:var(--primary-blue);">
+                        <div style="flex:1;">
+                            <p style="margin:0;font-weight:600;">{{ request.user.get_full_name|default:request.user.email }} <span class="badge badge--primary" style="margin-left:6px;">Leader</span></p>
+                            <p class="text--secondary" style="margin:0;font-size:0.75rem;">{{ request.user.email }}</p>
                         </div>
                     </div>
-                    
+
                     {% for member in team.members.all %}
-                    <div class="p-4 rounded-xl border border-slate-700/50 bg-slate-800/50 flex justify-between items-center">
-                        <div>
-                            <p class="font-medium text-white">{{ member.name }}</p>
-                            <p class="text-sm text-slate-400">{{ member.email }}</p>
-                            <p class="text-xs text-slate-500 mt-1">
+                    <div class="card card--compact" style="display:flex;align-items:center;gap:12px;">
+                        <div style="flex:1;min-width:0;">
+                            <p style="margin:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ member.name }}</p>
+                            <p class="text--secondary" style="margin:0;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ member.email }}</p>
+                            {% if member.college or member.semester or member.degree %}
+                            <p class="text--secondary" style="margin:4px 0 0 0;font-size:0.75rem;">{{ member.college|default:"No College" }} · {{ member.degree|default:"No Degree" }} · Semester {{ member.semester|default:"N/A" }}</p>
+                            {% endif %}
+                            <p style="margin:4px 0 0 0;">
                                 {% if not member.college or not member.semester or not member.degree %}
-                                <span class="text-red-400">Incomplete Profile (Required before finishing)</span>
+                                    <span class="badge badge--warning">Incomplete — Missing: {{ member.get_missing_fields }}</span>
                                 {% else %}
-                                <span class="text-emerald-400">Profile Complete</span>
+                                    <span class="badge badge--success">Profile Complete</span>
                                 {% endif %}
                             </p>
                         </div>
-                        <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}" class="ml-4" onsubmit="return confirm('Remove Teammate: Are you sure you want to remove this teammate?');">
-                            {% csrf_token %}
-                            <input type="hidden" name="member_id" value="{{ member.id }}">
-                            <button type="submit" name="remove_member" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                            <button type="button" onclick="editTeammateBtn(this)"
+                                data-id="{{ member.id }}"
+                                data-name="{{ member.name|escapejs }}"
+                                data-email="{{ member.email|escapejs }}"
+                                data-college="{{ member.college|escapejs }}"
+                                data-degree="{{ member.degree|escapejs }}"
+                                data-semester="{% if member.semester %}{{ member.semester }}{% endif %}"
+                                data-skills="[{% for s in member.skills.all %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}]"
+                                class="icon-btn" title="Edit Teammate">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
-                        </form>
+                            <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}" onsubmit="return confirm('Remove this teammate?');" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="member_id" value="{{ member.id }}">
+                                <button type="submit" name="remove_member" class="icon-btn icon-btn--danger" title="Remove Teammate">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
 
-                <!-- Add New Member Form -->
-                {% if team.members.count|add:"1" < hackathon.max_team_size %}
-                <div class="mt-6 border-t border-slate-800 pt-6">
-                    <h4 class="text-md font-semibold text-slate-200 mb-4">Add Guest Teammate</h4>
-                    <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}">
+                <!-- Add/Edit Guest Teammate Form -->
+                <div class="step-divider" id="teammate-form-container">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;">
+                        <h4 style="margin:0;font-size:1rem;" id="form-heading">Add Guest Teammate</h4>
+                        <button type="button" id="cancel-edit-btn" onclick="cancelEdit()"
+                            class="btn btn--danger btn--small" style="display:none;">Cancel Edit</button>
+                    </div>
+
+                    <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}" id="guest-form">
                         {% csrf_token %}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">Name</label>
-                                {{ member_form.name }}
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">Email</label>
-                                {{ member_form.email }}
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">College</label>
-                                {{ member_form.college }}
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">Degree</label>
-                                {{ member_form.degree }}
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-1">Semester</label>
-                                {{ member_form.semester }}
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-slate-300 mb-2">Skills</label>
-                                <div class="skills-checkbox-group">
-                                    {{ member_form.skills }}
+                        <input type="hidden" name="member_id" id="form-member-id" value="">
+
+                        <div id="form-fields-wrapper" {% if team.occupied_slots >= hackathon.max_team_size %}style="opacity:0.5;pointer-events:none;"{% endif %}>
+                            <div class="grid grid--2col" style="gap:12px;margin-bottom:16px;">
+                                <div class="form-group">
+                                    <label class="form-label">Name</label>
+                                    {{ member_form.name }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    {{ member_form.email }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">College</label>
+                                    {{ member_form.college }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Degree</label>
+                                    {{ member_form.degree }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Semester</label>
+                                    {{ member_form.semester }}
+                                </div>
+                                <div class="form-group" style="grid-column:1/-1;">
+                                    <label class="form-label">Skills</label>
+                                    <div class="skills-checkbox-group" style="margin-bottom:12px;">{{ member_form.skills }}</div>
+                                    <label class="form-label">Add New Skills (Free Text)</label>
+                                    {{ member_form.additional_skills }}
+                                    <div class="form-hint">Type skills not in the checklist, separated by commas (e.g., Vue, Rust, GraphQL).</div>
                                 </div>
                             </div>
+
+                            <div style="display:flex;align-items:center;gap:16px;">
+                                <button type="submit" name="add_member" id="submit-member-btn" class="btn btn--primary">Add Teammate</button>
+                                {% if team.occupied_slots >= hackathon.max_team_size %}
+                                <p class="text--warning" style="font-size:0.75rem;margin:0;" id="capacity-warning-text">Team is full. Edit a teammate to modify their details.</p>
+                                {% endif %}
+                            </div>
                         </div>
-                        <button type="submit" name="add_member" class="px-4 py-2 border border-slate-600 hover:border-slate-400 text-slate-200 font-medium rounded-lg transition-colors text-sm">
-                            Add Teammate
-                        </button>
                     </form>
                 </div>
+
+                <!-- Pending Sent Invites -->
+                {% if pending_sent_invites %}
+                <div class="step-divider">
+                    <h4 style="margin:0 0 12px 0;font-size:1rem;">Pending Invites Sent</h4>
+                    <div id="pending-invites-list" style="display:flex;flex-direction:column;gap:8px;">
+                        {% for invite in pending_sent_invites %}
+                        <div id="invite-row-{{ invite.id }}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background-color:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;">
+                            <div style="min-width:0;flex:1;">
+                                <p style="margin:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ invite.receiver.get_full_name|default:invite.receiver.email }}</p>
+                                <p class="text--secondary" style="margin:0;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ invite.receiver.email }}</p>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                                <span class="badge badge--warning">Pending</span>
+                                <button type="button" data-invite-id="{{ invite.id }}"
+                                    onclick="cancelRegistrationInviteBtn(this)"
+                                    class="btn btn--danger btn--small">Cancel</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
+
+                <!-- Search & Invite -->
+                <div class="step-divider">
+                    <h4 style="margin:0 0 4px 0;font-size:1rem;">Search & Invite Members</h4>
+                    <p class="text--secondary" style="font-size:0.75rem;margin-bottom:16px;">Find registered participants who are open for recruiting.</p>
+                    <div style="display:flex;gap:8px;margin-bottom:16px;">
+                        <input type="text" id="skill-search" placeholder="Search by skills (e.g. Python, React)..." class="input" style="flex:1;">
+                        <button type="button" onclick="searchParticipants()" class="btn btn--primary btn--small">Search</button>
+                    </div>
+                    <div id="search-results" style="display:flex;flex-direction:column;gap:8px;max-height:350px;overflow-y:auto;">
+                        <p class="text--muted" style="font-size:0.75rem;text-align:center;padding:24px 0;">Enter a skill or click Search to find available participants.</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Step 3: Complete -->
-            <div class="flex flex-col-reverse sm:flex-row sm:justify-end pt-6 gap-3 sm:gap-4">
-                <a href="{% url 'dashboard' %}" class="flex items-center justify-center px-6 py-3 border border-slate-700 hover:border-slate-500 hover:bg-slate-800 text-slate-300 font-bold rounded-xl transition-all text-sm sm:text-base">
-                    Save Draft &amp; Exit
-                </a>
-                <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}" class="w-full sm:w-auto">
+            <div style="display:flex;flex-direction:column-reverse;gap:12px;padding-top:24px;" id="step-3-actions">
+                <a href="{% url 'dashboard' %}" class="btn btn--secondary btn--block" style="text-align:center;">Save Draft & Exit</a>
+                <form method="POST" action="{% url 'hackathon-register' pk=hackathon.pk %}">
                     {% csrf_token %}
-                    <button type="submit" name="complete_registration" class="w-full sm:w-auto flex items-center justify-center px-6 sm:px-8 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all hover:scale-[1.02] text-sm sm:text-base">
-                        Complete Registration
-                    </button>
+                    <button type="submit" name="complete_registration" class="btn btn--primary btn--block">Complete Registration</button>
                 </form>
             </div>
+
             {% endif %}
         </div>
     </main>
 
-    <!-- Basic CSS overrides for Django forms styling -->
-    <style>
-        input[type="text"], input[type="email"], input[type="number"], select {
-            width: 100%;
-            background-color: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.8);
-            color: #f1f5f9;
-            border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            transition: all 0.2s;
+    <script>
+        (function () {
+            document.querySelectorAll('input[type=text], input[type=email], input[type=number], select, textarea').forEach(el => {
+                if (!el.classList.contains('input')) el.classList.add('input');
+            });
+            document.querySelectorAll('.skills-checkbox-group label').forEach(lbl => lbl.classList.add('chip'));
+        })();
+    </script>
+    <script src="{% static 'js/api_client.js' %}"></script>
+
+    {% if team %}
+    <div id="registration-meta" style="display:none;"
+         data-hackathon-id="{{ hackathon.id }}"
+         data-team-id="{{ team.id }}"
+         data-max-team-size="{{ hackathon.max_team_size }}"
+         data-occupied-slots="{{ team.occupied_slots }}">
+    </div>
+    <script>
+        async function searchParticipants() {
+            const query = document.getElementById('skill-search').value.trim();
+            const resultsContainer = document.getElementById('search-results');
+            resultsContainer.innerHTML = '<p class="text--muted" style="font-size:0.75rem;text-align:center;padding:24px 0;">Searching...</p>';
+            try {
+                const metaEl = document.getElementById('registration-meta');
+                const hackathonId = metaEl ? metaEl.dataset.hackathonId : '';
+                const url = `/api/participant/discovery/?hackathon_id=${hackathonId}&skill=${encodeURIComponent(query)}`;
+                const res = await fetchWithAuth(url);
+                if (!res.ok) throw new Error('Search failed');
+                const data = await res.json();
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<p class="text--muted" style="font-size:0.75rem;text-align:center;padding:24px 0;">No matching participants found.</p>';
+                    return;
+                }
+                resultsContainer.innerHTML = data.map(p => {
+                    const skillsBadges = p.skills && p.skills.length > 0
+                        ? p.skills.map(s => `<span class="badge">${s.name}</span>`).join(' ')
+                        : '<span class="text--muted" style="font-size:0.75rem;">No skills listed</span>';
+                    return `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background-color:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;gap:12px;">
+                            <div style="min-width:0;">
+                                <p style="margin:0;font-weight:600;font-size:0.875rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.full_name || p.user_email}</p>
+                                <p class="text--secondary" style="font-size:0.75rem;margin:2px 0 6px 0;">${p.college || 'No college'} · ${p.degree || ''} · Semester ${p.semester || 'N/A'}</p>
+                                <div style="display:flex;flex-wrap:wrap;gap:4px;">${skillsBadges}</div>
+                            </div>
+                            <button type="button" onclick="sendInvite(this, ${p.user_id})" class="btn btn--secondary btn--small" style="flex-shrink:0;">Invite</button>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                resultsContainer.innerHTML = '<p class="text--danger" style="font-size:0.75rem;text-align:center;padding:24px 0;">Error loading search results.</p>';
+            }
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: rgba(20, 184, 166, 0.5);
-            box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.5);
+
+        async function sendInvite(btn, userId) {
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            try {
+                const metaEl = document.getElementById('registration-meta');
+                const teamId = metaEl ? parseInt(metaEl.dataset.teamId || '0') : 0;
+                const res = await fetchWithAuth('/api/participant/requests/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ team: teamId, receiver: userId })
+                });
+                if (res.ok) {
+                    btn.className = 'btn btn--small';
+                    btn.style.opacity = '0.7';
+                    btn.textContent = 'Invited ✓';
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || data[0] || 'Failed to send invite.');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            } catch (e) {
+                alert('Network error.');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
         }
-        
-        /* Skills Checkbox Styling */
-        .skills-checkbox-group > div {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+
+        window.editTeammateBtn = function (btn) {
+            const id = btn.dataset.id, name = btn.dataset.name, email = btn.dataset.email;
+            const college = btn.dataset.college, degree = btn.dataset.degree, semester = btn.dataset.semester;
+            let skillIds = [];
+            try { skillIds = JSON.parse(btn.dataset.skills); } catch (e) {}
+            editTeammate(id, name, email, college, degree, semester, skillIds);
+        };
+
+        window.editTeammate = function (id, name, email, college, degree, semester, skillIds) {
+            document.getElementById('form-member-id').value = id;
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            set('id_name', name); set('id_email', email); set('id_college', college);
+            set('id_degree', degree); set('id_semester', semester);
+            document.querySelectorAll('.skills-checkbox-group input[type="checkbox"]').forEach(cb => {
+                cb.checked = skillIds.includes(parseInt(cb.value));
+            });
+            document.getElementById('form-heading').textContent = `Edit Teammate: ${name}`;
+            document.getElementById('submit-member-btn').textContent = 'Save Changes';
+            document.getElementById('cancel-edit-btn').style.display = 'inline-flex';
+            const wrapper = document.getElementById('form-fields-wrapper');
+            if (wrapper) { wrapper.style.opacity = '1'; wrapper.style.pointerEvents = 'auto'; }
+            const warning = document.getElementById('capacity-warning-text');
+            if (warning) warning.style.display = 'none';
+            document.getElementById('teammate-form-container').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.cancelEdit = function () {
+            document.getElementById('guest-form').reset();
+            document.getElementById('form-member-id').value = '';
+            document.getElementById('form-heading').textContent = 'Add Guest Teammate';
+            document.getElementById('submit-member-btn').textContent = 'Add Teammate';
+            document.getElementById('cancel-edit-btn').style.display = 'none';
+            const metaEl = document.getElementById('registration-meta');
+            const maxTeamSize = metaEl ? parseInt(metaEl.dataset.maxTeamSize || '0') : 0;
+            const occupiedSlots = metaEl ? parseInt(metaEl.dataset.occupiedSlots || '0') : 0;
+            if (occupiedSlots >= maxTeamSize) {
+                const wrapper = document.getElementById('form-fields-wrapper');
+                if (wrapper) { wrapper.style.opacity = '0.5'; wrapper.style.pointerEvents = 'none'; }
+                const warning = document.getElementById('capacity-warning-text');
+                if (warning) warning.style.display = 'block';
+            }
+            document.getElementById('teammate-form-container').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.cancelRegistrationInviteBtn = function (btn) {
+            cancelRegistrationInvite(btn.dataset.inviteId, btn);
+        };
+
+        async function cancelRegistrationInvite(requestId, btn) {
+            btn.disabled = true;
+            const prevText = btn.textContent;
+            btn.textContent = 'Canceling...';
+            try {
+                const res = await fetchWithAuth(`/api/participant/requests/${requestId}/`, { method: 'DELETE' });
+                if (res.status === 204) {
+                    const row = document.getElementById(`invite-row-${requestId}`);
+                    if (row) row.remove();
+                    return;
+                }
+                const data = await res.json().catch(() => ({}));
+                btn.disabled = false;
+                btn.textContent = prevText;
+                alert(data.detail || 'Failed to cancel invite.');
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = prevText;
+                alert('Network error.');
+            }
         }
-        .skills-checkbox-group > div > div {
-            display: inline-flex;
-        }
-        .skills-checkbox-group label {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.35rem 0.8rem;
-            background-color: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.8);
-            border-radius: 9999px;
-            font-size: 0.85rem;
-            color: #cbd5e1;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-        .skills-checkbox-group label:hover {
-            border-color: rgba(20, 184, 166, 0.5);
-            background-color: rgba(20, 184, 166, 0.1);
-        }
-        .skills-checkbox-group input[type="checkbox"] {
-            display: none;
-        }
-        .skills-checkbox-group input[type="checkbox"]:checked + label,
-        .skills-checkbox-group label:has(input[type="checkbox"]:checked) {
-            background-color: rgba(20, 184, 166, 0.15);
-            border-color: rgba(20, 184, 166, 0.6);
-            color: #5eead4;
-        }
-    </style>
+    </script>
+    {% endif %}
+
 </body>
 </html>

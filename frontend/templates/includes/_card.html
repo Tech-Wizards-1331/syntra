@@ -1,0 +1,8 @@
+{% spaceless %}
+  <div class="card {% if elevated %}card--elevated{% endif %} {% if compact %}card--compact{% endif %} {% if spacious %}card--spacious{% endif %}">
+    {% if title %}
+      <h3 style="margin-top: 0; margin-bottom: 16px;">{{ title }}</h3>
+    {% endif %}
+    {{ content|safe }}
+  </div>
+{% endspaceless %}

@@ -50,3 +50,6 @@ npm-debug.log*
 # ── OS ──
 .DS_Store
 Desktop.ini
+ 
+# Workspace planning notes (local only)
+/planning/

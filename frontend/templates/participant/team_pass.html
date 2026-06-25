@@ -1,0 +1,214 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Syntra | Team Pass — {{ team.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <style>
+        .pass-main { max-width: 440px; margin: 0 auto; padding: 32px 16px 48px; }
+
+        .pass-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        .pass-accent { height: 4px; background: linear-gradient(90deg, var(--primary-blue), #6366f1, #ec4899); }
+        .pass-section { padding: 20px 24px; }
+        .pass-divider { border: none; border-top: 2px dashed var(--border); margin: 0; }
+
+        .qr-frame {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            display: inline-block;
+        }
+
+        .token-text {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.08em;
+            font-size: 0.7rem;
+            word-break: break-all;
+        }
+
+        .copy-btn.copied {
+            background-color: var(--success-bg) !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+        }
+
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        @keyframes qrPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.2); }
+            50% { box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+        }
+        .qr-pulse { animation: qrPulse 2.8s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav style="background-color:var(--bg-surface);border-bottom:1px solid var(--border);padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
+    <a href="{% url 'dashboard' %}" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+        <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
+        <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
+    </a>
+    <a href="{% url 'participant-hackathon-hub' hackathon.pk %}" class="btn btn--secondary btn--small">← Hub</a>
+</nav>
+
+<main class="pass-main">
+
+    <div class="pass-card">
+        <!-- Top accent -->
+        <div class="pass-accent"></div>
+
+        <!-- Hackathon name -->
+        <div class="pass-section" style="text-align:center;">
+            <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-muted);margin:0 0 6px 0;">Team Pass</p>
+            <h1 style="margin:0;font-size:1.125rem;font-weight:800;">{{ hackathon.name }}</h1>
+        </div>
+
+        <hr class="pass-divider">
+
+        <!-- QR Code -->
+        <div class="pass-section" style="display:flex;flex-direction:column;align-items:center;">
+            <div class="qr-frame qr-pulse" id="qr-container">
+                {% if team.qr_code %}
+                <img src="{{ team.qr_code.url }}"
+                     alt="Team QR Code for {{ team.name }}"
+                     id="qr-image"
+                     style="width:224px;height:224px;border-radius:8px;object-fit:contain;background:white;padding:8px;display:block;"
+                     onerror="document.getElementById('qr-image').style.display='none'; document.getElementById('qr-fallback').style.display='flex';">
+                <div id="qr-fallback" style="display:none;width:224px;height:224px;border-radius:8px;border:2px dashed var(--border);align-items:center;justify-content:center;text-align:center;padding:16px;">
+                    <div>
+                        <p style="margin:0 0 4px 0;font-weight:600;font-size:0.875rem;color:var(--text-secondary);">QR image unavailable.</p>
+                        <p style="margin:0;font-size:0.75rem;color:var(--text-muted);">Share the token below.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div style="width:224px;height:224px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;">
+                    <div>
+                        <p style="margin:0 0 4px 0;font-weight:600;font-size:0.875rem;color:var(--text-secondary);">QR code not generated yet.</p>
+                        <p style="margin:0;font-size:0.75rem;color:var(--text-muted);">Share the token below instead.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if team.qr_token %}
+            <div style="margin-top:20px;width:100%;">
+                <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:var(--text-muted);text-align:center;margin:0 0 8px 0;">Pass Token</p>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background-color:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;">
+                    <span class="token-text" id="token-display" style="flex:1;text-align:center;color:var(--text-primary);user-select:all;">{{ team.qr_token }}</span>
+                    <button id="copy-btn" onclick="copyToken()" class="copy-btn btn btn--secondary btn--small" title="Copy token">
+                        <svg id="copy-icon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <span id="copy-label">Copy</span>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <hr class="pass-divider">
+
+        <!-- Team Info -->
+        <div class="pass-section" style="display:flex;flex-direction:column;gap:10px;">
+
+            <!-- Team name row -->
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div style="min-width:0;flex:1;">
+                    <p style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:var(--text-muted);margin:0 0 2px 0;">Team</p>
+                    <p style="margin:0;font-size:1rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ team.name }}</p>
+                </div>
+                <span class="badge">👥 {{ members.count|add:"1" }} member{{ members.count|add:"1"|pluralize }}</span>
+            </div>
+
+            <!-- Leader -->
+            <div class="member-row">
+                <span style="width:28px;height:28px;background-color:var(--selected-bg);color:var(--primary-blue);border:1px solid var(--primary-blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;flex-shrink:0;">L</span>
+                <div style="min-width:0;flex:1;">
+                    <p style="margin:0;font-weight:600;font-size:0.875rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ team.leader.get_full_name|default:team.leader.email }}</p>
+                    <p class="text--muted" style="margin:0;font-size:0.7rem;">Team Leader</p>
+                </div>
+            </div>
+
+            <!-- Members -->
+            {% if members %}
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                {% for m in members %}
+                <div class="member-row">
+                    <span style="width:24px;height:24px;background-color:var(--bg-secondary);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;flex-shrink:0;color:var(--text-muted);">{{ forloop.counter }}</span>
+                    <div style="min-width:0;flex:1;">
+                        <p style="margin:0;font-weight:500;font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.name }}</p>
+                        <p class="text--muted" style="margin:0;font-size:0.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.email }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Bottom accent -->
+        <div class="pass-accent"></div>
+    </div>
+
+    <p style="text-align:center;font-size:0.65rem;color:var(--text-muted);margin-top:16px;letter-spacing:0.15em;text-transform:uppercase;">Powered by Syntra</p>
+
+</main>
+
+<script src="{% static 'js/api_client.js' %}"></script>
+<script>
+    function copyToken() {
+        const token = '{{ team.qr_token }}';
+        const btn = document.getElementById('copy-btn');
+        const label = document.getElementById('copy-label');
+        const icon = document.getElementById('copy-icon');
+
+        navigator.clipboard.writeText(token).then(() => {
+            btn.classList.add('copied');
+            label.textContent = 'Copied!';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                label.textContent = 'Copy';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>';
+            }, 2000);
+        }).catch(() => {
+            const textarea = document.createElement('textarea');
+            textarea.value = token;
+            textarea.style.cssText = 'position:fixed;opacity:0;';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                btn.classList.add('copied');
+                label.textContent = 'Copied!';
+                setTimeout(() => { btn.classList.remove('copied'); label.textContent = 'Copy'; }, 2000);
+            } catch (e) {
+                label.textContent = 'Failed';
+                setTimeout(() => { label.textContent = 'Copy'; }, 2000);
+            }
+            document.body.removeChild(textarea);
+        });
+    }
+</script>
+</body>
+</html>

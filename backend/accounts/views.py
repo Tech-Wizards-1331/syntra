@@ -41,16 +41,78 @@ def dashboard_view(request: HttpRequest) -> HttpResponse:
     if getattr(request.user, 'role', None) == 'organizer':
         from organizer.models import Hackathon
         if hasattr(request.user, 'organizer_profile'):
-            context['hackathons'] = Hackathon.objects.filter(
-                organizer=request.user.organizer_profile
-            ).order_by('-created_at')
+            context['hackathons'] = (
+                Hackathon.objects
+                .filter(organizer=request.user.organizer_profile)
+                # Defer large JSON blobs — only needed on detail pages
+                .defer('room_configuration', 'seating_allocation')
+                .order_by('-created_at')
+            )
         else:
             context['hackathons'] = []
     elif getattr(request.user, 'role', None) == 'participant':
         from organizer.models import Hackathon
-        from participant.models import Team
-        context['upcoming_hackathons'] = Hackathon.objects.filter(status='registration_open').order_by('start_date')
-        context['my_teams'] = Team.objects.filter(leader=request.user).order_by('-created_at')
+        from participant.models import Team, ParticipantProfile
+        from django.utils import timezone
+
+        # Discard any draft teams for expired hackathons
+        Team.objects.filter(
+            is_registered=False,
+            hackathon__registration_deadline__lt=timezone.now()
+        ).delete()
+
+        profile, _ = ParticipantProfile.objects.get_or_create(
+            user=request.user,
+            defaults={'college': 'Not Specified', 'semester': 1, 'degree': 'Not Specified'}
+        )
+
+        # Force recruiting visibility to False if the user is already a team leader or team member
+        from django.db.models import Q
+        from participant.models import TeamMember
+        is_in_team = Team.objects.filter(leader=request.user).exists() or TeamMember.objects.filter(email=request.user.email).exists()
+        if is_in_team and profile.visibility:
+            profile.visibility = False
+            profile.save()
+
+        has_registered_team = (
+            Team.objects.filter(leader=request.user, is_registered=True).exists() or
+            TeamMember.objects.filter(email=request.user.email, team__is_registered=True).exists()
+        )
+        context['has_registered_team'] = has_registered_team
+
+        context['profile'] = profile
+        context['upcoming_hackathons'] = (
+            Hackathon.objects
+            .filter(status='registration_open', registration_deadline__gt=timezone.now())
+            # Only pull columns the template needs — skip the heavy JSON blobs
+            .defer('room_configuration', 'seating_allocation', 'description')
+            .order_by('start_date')
+        )
+        context['my_teams'] = (
+            Team.objects
+            .filter(Q(leader=request.user) | Q(members__email=request.user.email))
+            # Join hackathon and leader in a single query
+            .select_related('hackathon', 'leader')
+            .distinct()
+            .order_by('-created_at')
+        )
+
+        # Notify team leader if any sent team invitations were declined
+        from participant.models import TeamRequest
+        declined_requests = TeamRequest.objects.filter(
+            team__leader=request.user, 
+            status='declined'
+        ).select_related('receiver', 'team', 'team__hackathon')
+        
+        if declined_requests.exists():
+            for req in declined_requests:
+                receiver_name = req.receiver.get_full_name() or req.receiver.email
+                messages.warning(
+                    request,
+                    f"Invitation sent to {receiver_name} for team '{req.team.name}' ({req.team.hackathon.name}) was declined."
+                )
+            # Clear them so the leader is only notified once
+            declined_requests.delete()
 
     return render(request, 'accounts/dashboard.html', context)
 
@@ -133,7 +195,6 @@ def login_view(request: HttpRequest) -> HttpResponse:
     return render(request, 'accounts/login.html', {'form': form, 'next': safe_next or ''})
 
 
-@require_POST
 @login_required
 def logout_view(request: HttpRequest) -> HttpResponse:
     """Log the user out and redirect to login."""
@@ -142,10 +203,14 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     if 'application/json' in request.headers.get('Accept', ''):
         resp = JsonResponse({'ok': True})
         resp.delete_cookie('sessionid')
+        resp.delete_cookie('access')
+        resp.delete_cookie('refresh')
         return resp
 
     response = redirect('/accounts/login/')
     response.delete_cookie('sessionid')
+    response.delete_cookie('access')
+    response.delete_cookie('refresh')
     return response
 
 
@@ -175,20 +240,43 @@ def complete_profile_view(request: HttpRequest) -> HttpResponse:
     is_editable = (not profile_complete) or edit_requested
 
     if request.method == 'POST' and is_participant and is_editable:
-        form = ParticipantProfileForm(request.POST, instance=profile)
+        form = ParticipantProfileForm(request.POST, instance=profile, user=user)
         if form.is_valid():
             new_profile = form.save(commit=False)
             new_profile.user = user
             new_profile.save()
             form.save_m2m()
+            
+            # Save the updated full_name
+            new_full_name = form.cleaned_data.get('full_name', '').strip()
+            user_needs_update = False
+            update_fields = []
+            
+            if new_full_name and user.full_name != new_full_name:
+                user.full_name = new_full_name
+                update_fields.append('full_name')
+                user_needs_update = True
+
             # Mark profile as complete once all required fields are filled
             if new_profile.college and new_profile.degree and new_profile.semester:
-                user.is_profile_complete = True
-                user.save(update_fields=['is_profile_complete'])
+                if not user.is_profile_complete:
+                    user.is_profile_complete = True
+                    update_fields.append('is_profile_complete')
+                    user_needs_update = True
+                
+                # Assign role if missing (e.g. new social logins)
+                if not user.role:
+                    user.role = 'participant'
+                    update_fields.append('role')
+                    user_needs_update = True
+            
+            if user_needs_update:
+                user.save(update_fields=update_fields)
+                
             messages.success(request, 'Profile saved successfully!')
             return redirect('complete_profile')
     else:
-        form = ParticipantProfileForm(instance=profile) if (is_participant and is_editable) else None
+        form = ParticipantProfileForm(instance=profile, user=user) if (is_participant and is_editable) else None
 
     # Skills for read-only display
     skills = []

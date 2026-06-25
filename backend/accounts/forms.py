@@ -33,7 +33,7 @@ class SignUpForm(forms.ModelForm):
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
+        if User.objects.filter(email=email).exists():
             raise forms.ValidationError('An account with this email already exists.')
         return email
 
@@ -69,9 +69,24 @@ class ParticipantProfileForm(forms.ModelForm):
         label='Add Custom Skill',
     )
 
+    full_name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Your full name',
+        }),
+        label='Full Name',
+    )
+
     class Meta:
         model = ParticipantProfile
-        fields = ['college', 'semester', 'degree', 'skills']
+        fields = ['full_name', 'college', 'semester', 'degree', 'skills']
+        
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.user and self.user.full_name:
+            self.fields['full_name'].initial = self.user.full_name
         widgets = {
             'college': forms.TextInput(
                 attrs={'class': 'form-control', 'placeholder': 'Your college/university'}

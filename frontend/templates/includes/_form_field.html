@@ -1,0 +1,39 @@
+{% if field.help_text %}
+  {% autoescape off %}
+    <div class="form-hint">{{ field.help_text }}</div>
+  {% endautoescape %}
+{% endif %}
+
+<div class="form-group">
+  {% if field.label %}
+    <label class="form-label {% if field.field.required %}form-label--required{% endif %}" for="{{ field.id_for_label }}">
+      {{ field.label }}
+    </label>
+  {% endif %}
+
+  {% if field.field.widget.input_type == "checkbox" %}
+    <div style="display: flex; align-items: center; gap: 8px;">
+      {{ field }}
+      <label for="{{ field.id_for_label }}" class="text--small">{{ field.label }}</label>
+    </div>
+  {% elif field.field.widget.input_type == "radio" %}
+    <div style="display: flex; align-items: center; gap: 8px;">
+      {{ field }}
+      <label for="{{ field.id_for_label }}" class="text--small">{{ field.label }}</label>
+    </div>
+  {% elif field.field.widget.input_type == "select" %}
+    {{ field }}
+  {% elif field.field.widget.input_type == "textarea" %}
+    {{ field }}
+  {% else %}
+    {{ field }}
+  {% endif %}
+
+  {% if field.errors %}
+    <div class="form-error" role="alert">
+      {% for error in field.errors %}
+        <span>{{ error }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

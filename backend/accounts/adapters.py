@@ -51,6 +51,6 @@ class SyntraSocialAccountAdapter(DefaultSocialAccountAdapter):
         if not email:
             return
 
-        existing_user = User.objects.filter(email__iexact=email).first()
+        existing_user = User.objects.filter(email=email).first()
         if existing_user:
             sociallogin.connect(request, existing_user)

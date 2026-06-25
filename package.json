@@ -1,0 +1,13 @@
+{
+  "name": "syntra-frontend",
+  "version": "1.0.0",
+  "description": "Syntra frontend asset pipeline",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./frontend/static/css/tailwind.src.css -o ./frontend/static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./frontend/static/css/tailwind.src.css -o ./frontend/static/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

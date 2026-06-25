@@ -27,6 +27,9 @@ class HackathonForm(forms.ModelForm):
             'status',
             'min_team_size',
             'max_team_size',
+            'is_paid',
+            'fee_type',
+            'fee_amount',
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -52,6 +55,20 @@ class HackathonForm(forms.ModelForm):
                 'class': 'syntra-input',
                 'min': 1,
             }),
+            'is_paid': forms.CheckboxInput(attrs={
+                'class': 'form-checkbox',
+                'id': 'id_is_paid'
+            }),
+            'fee_type': forms.Select(attrs={
+                'class': 'syntra-input',
+                'id': 'id_fee_type'
+            }),
+            'fee_amount': forms.NumberInput(attrs={
+                'class': 'syntra-input',
+                'min': 0,
+                'step': '0.01',
+                'id': 'id_fee_amount'
+            }),
         }
 
     def clean(self):
@@ -61,6 +78,9 @@ class HackathonForm(forms.ModelForm):
         reg_deadline = cleaned_data.get('registration_deadline')
         min_size = cleaned_data.get('min_team_size')
         max_size = cleaned_data.get('max_team_size')
+        is_paid = cleaned_data.get('is_paid')
+        fee_type = cleaned_data.get('fee_type')
+        fee_amount = cleaned_data.get('fee_amount')
 
         if start_date and end_date and end_date <= start_date:
             self.add_error('end_date', 'End date must be after the start date.')
@@ -73,6 +93,12 @@ class HackathonForm(forms.ModelForm):
 
         if min_size and max_size and max_size < min_size:
             self.add_error('max_team_size', 'Max team size cannot be less than min team size.')
+
+        if is_paid:
+            if not fee_type:
+                self.add_error('fee_type', 'Fee type is required for paid hackathons.')
+            if fee_amount is None or fee_amount <= 0:
+                self.add_error('fee_amount', 'A valid fee amount greater than 0 is required for paid hackathons.')
 
         return cleaned_data
 

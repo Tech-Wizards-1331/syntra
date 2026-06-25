@@ -5,604 +5,673 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Syntra | {{ hackathon.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-tech { font-family: 'Orbitron', sans-serif; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeInUp 0.45s ease-out both; }
-        .animate-fade-in-1 { animation-delay: 0.06s; }
-        .animate-fade-in-2 { animation-delay: 0.12s; }
-        .animate-fade-in-3 { animation-delay: 0.18s; }
-        .animate-fade-in-4 { animation-delay: 0.24s; }
-        .syntra-input {
+        .detail-main { max-width: 900px; margin: 0 auto; padding: 48px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+        .section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin: 0 0 4px 0; }
+
+        .cap-bar { height: 6px; border-radius: 999px; background-color: var(--bg-secondary); overflow: hidden; }
+        .cap-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+        .cap-fill--empty { background-color: var(--primary-blue); }
+        .cap-fill--partial { background-color: var(--warning); }
+        .cap-fill--full { background-color: var(--danger); }
+
+        /* Room builder inputs */
+        .room-input {
             width: 100%;
-            padding: 10px 14px;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(100, 116, 139, 0.3);
-            background: rgba(15, 23, 42, 0.6);
-            color: #e2e8f0;
-            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
             font-family: 'Inter', sans-serif;
-            transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
+            transition: border-color 0.2s;
         }
-        .syntra-input:focus {
-            border-color: rgba(45, 212, 191, 0.5);
-            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        .room-input:focus { border-color: var(--primary-blue); }
+
+        /* Add Category Modal */
+        #add-category-modal {
+            position: fixed; inset: 0; z-index: 50;
+            display: flex; align-items: center; justify-content: center; padding: 16px;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
         }
-        .syntra-input::placeholder { color: #64748b; }
-        /* â”€â”€ Home-grade design tokens â”€â”€ */
-        .glass { background: linear-gradient(160deg, rgba(17,27,46,0.7), rgba(11,18,32,0.88)); border: 1px solid rgba(148,163,184,0.2); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(2,6,23,0.45); }
-        .glow-ring { border-color: rgba(45,212,191,0.34); box-shadow: 0 0 0 1px rgba(45,212,191,0.24), 0 0 28px rgba(45,212,191,0.12), 0 0 60px rgba(234,179,8,0.1); }
-        .hover-lift { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
-        .hover-lift:hover { transform: translateY(-4px); border-color: rgba(45,212,191,0.35); box-shadow: 0 20px 35px rgba(2,6,23,0.52), 0 0 20px rgba(45,212,191,0.12); }
-        .premium-border { position: relative; }
-        .premium-border::before { content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px; background:linear-gradient(135deg,rgba(45,212,191,.5),rgba(234,179,8,.5),rgba(251,113,133,.5)); -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; opacity:0; transition:opacity .3s; }
-        .premium-border:hover::before { opacity: 1; }
-        .btn-primary { border: 1px solid rgba(45,212,191,0.55); background: linear-gradient(120deg, rgba(45,212,191,0.22), rgba(234,179,8,0.26)); color: #ccfbf1; transition: transform 220ms ease, box-shadow 220ms ease; position: relative; overflow: hidden; }
-        .btn-primary:hover { transform: translateY(-2px); border-color: rgba(94,234,212,0.78); box-shadow: 0 0 0 1px rgba(45,212,191,0.28), 0 0 28px rgba(45,212,191,0.2), 0 0 48px rgba(251,113,133,0.18); }
-        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
-        @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.15)} }
-        @keyframes capacityPulse { 0%,100%{opacity:0.8} 50%{opacity:1} }
-        .cap-bar { height: 6px; border-radius: 999px; background: rgba(30,41,59,0.8); overflow: hidden; }
-        .cap-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #2dd4bf, #eab308); transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+        #add-category-modal.hidden { display: none; }
+        .modal-panel-sm {
+            width: 100%; max-width: 440px;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 16px; box-shadow: var(--shadow-lg); padding: 24px; position: relative;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed; top: 16px; right: 16px; z-index: 200;
+            display: flex; flex-direction: column; gap: 8px;
+            pointer-events: none; max-width: 360px;
+        }
+        .hd-toast {
+            padding: 14px 16px; border-radius: 10px; border: 1px solid;
+            font-size: 0.8125rem; font-weight: 600;
+            display: flex; align-items: center; gap: 10px;
+            pointer-events: auto;
+            background: var(--bg-surface);
+            animation: toastIn 0.3s ease-out;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .hd-toast--success { border-color: var(--success); color: var(--success); }
+        .hd-toast--error { border-color: var(--danger); color: var(--danger); }
+        .hd-toast--info { border-color: var(--primary-blue); color: var(--primary-blue); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Toggle switch */
+        .toggle-switch-wrap { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+        .toggle-track-sm {
+            width: 36px; height: 20px;
+            background: var(--border); border-radius: 999px; position: relative;
+            transition: background 0.25s;
+        }
+        .toggle-track-sm.on { background: var(--primary-blue); }
+        .toggle-knob-sm {
+            width: 16px; height: 16px; background: white; border-radius: 50%;
+            position: absolute; top: 2px; left: 2px;
+            transition: transform 0.25s; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .toggle-track-sm.on .toggle-knob-sm { transform: translateX(16px); }
+
+        @media (max-width: 640px) { .detail-main { padding: 24px 16px; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen">
+<body>
 
-    <!-- Nav -->
-    <nav class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-lg sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6">
-            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 shrink-0">
-                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-teal-300/40 bg-teal-400/15 text-xs font-bold text-teal-200">S</span>
-                <span class="font-tech text-sm tracking-[0.18em] text-white">Syntra</span>
-            </a>
-            <div class="flex items-center gap-2 sm:gap-4 min-w-0">
-                <span class="hidden sm:block text-xs text-slate-400 truncate max-w-[150px] lg:max-w-xs">{{ user.email }}</span>
-                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-600/60 bg-slate-900/40 px-3 py-2 text-sm font-medium text-slate-300 hover:border-teal-400/50 hover:text-teal-300 transition-all shrink-0 min-h-[40px]">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                    <span class="hidden sm:inline">Dashboard</span>
-                </a>
+<!-- Navigation -->
+<nav style="background-color:var(--bg-surface);border-bottom:1px solid var(--border);padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
+    <a href="{% url 'dashboard' %}" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+        <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
+        <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:0.875rem;color:var(--text-secondary);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ user.email }}</span>
+        <a href="{% url 'dashboard' %}" class="btn btn--secondary btn--small">← Dashboard</a>
+    </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<main class="detail-main">
+
+    {% include 'includes/_messages.html' %}
+
+    <!-- Header Card -->
+    <div class="card card--spacious">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px;">
+            <div style="min-width:0;flex:1;">
+                <h1 style="margin:0 0 8px 0;">{{ hackathon.name }}</h1>
+                {% if hackathon.description %}
+                    <p class="text--secondary" style="margin:0;font-size:0.875rem;max-width:560px;">{{ hackathon.description }}</p>
+                {% endif %}
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+                <a href="{% url 'organizer-qr-scanner' hackathon.pk %}" class="btn btn--secondary btn--small">🔲 QR Scanner</a>
+                <a href="{% url 'organizer-edit-hackathon' hackathon.pk %}" class="btn btn--primary btn--small">✏️ Edit Details</a>
             </div>
         </div>
-    </nav>
-
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-
-        <!-- Messages -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 rounded-xl border px-4 py-3 text-sm font-medium animate-fade-in
-                    {% if message.tags == 'success' %}border-emerald-500/30 bg-emerald-500/10 text-emerald-300
-                    {% elif message.tags == 'error' %}border-red-500/30 bg-red-500/10 text-red-300
-                    {% elif message.tags == 'warning' %}border-yellow-500/30 bg-yellow-500/10 text-yellow-300
-                    {% else %}border-slate-600/30 bg-slate-800/50 text-slate-300{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <!-- â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  -->
-        <!-- HEADER CARD                                                 -->
-        <!-- â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  -->
-        <div class="rounded-2xl border border-slate-700/50 bg-slate-900/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 mb-6 animate-fade-in">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                <div class="min-w-0">
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white leading-tight">{{ hackathon.name }}</h1>
-                    {% if hackathon.description %}
-                        <p class="mt-2 text-sm text-slate-400 max-w-xl">{{ hackathon.description }}</p>
-                    {% endif %}
-                </div>
-                <a href="{% url 'organizer-edit-hackathon' hackathon.pk %}" class="btn-primary hover-lift self-start inline-flex items-center gap-2 shrink-0 rounded-xl px-4 sm:px-5 py-2.5 text-sm font-semibold">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    Edit Details
-                </a>
-            </div>
-
-            <!-- Meta badges -->
-            <div class="flex flex-wrap items-center gap-3 mt-5">
-                <!-- Status Badge -->
-                {% with status=hackathon.get_status_display %}
-                <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border
-                    {% if hackathon.status == 'upcoming' %}border-teal-300/35 bg-teal-400/10 text-teal-200
-                    {% elif hackathon.status == 'registration_open' %}border-emerald-300/35 bg-emerald-400/10 text-emerald-200
-                    {% elif hackathon.status == 'ongoing' %}border-yellow-300/35 bg-yellow-400/10 text-yellow-200
-                    {% elif hackathon.status == 'judging' %}border-purple-300/35 bg-purple-400/10 text-purple-200
-                    {% elif hackathon.status == 'completed' %}border-slate-500/35 bg-slate-600/10 text-slate-300
-                    {% else %}border-slate-500/35 bg-slate-600/10 text-slate-300{% endif %}">
-                    <span class="h-1.5 w-1.5 rounded-full
-                        {% if hackathon.status == 'upcoming' %}bg-teal-400
-                        {% elif hackathon.status == 'registration_open' %}bg-emerald-400
-                        {% elif hackathon.status == 'ongoing' %}bg-yellow-400
-                        {% elif hackathon.status == 'judging' %}bg-purple-400
-                        {% else %}bg-slate-400{% endif %}"></span>
-                    {{ status }}
-                </span>
-                {% endwith %}
-
-                <span class="rounded-full border border-slate-700/50 bg-slate-800/30 px-3 py-1 text-xs font-medium text-slate-300 flex items-center gap-2">
-                    <svg class="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    {{ hackathon.start_date|date:"M d, Y" }} &mdash; {{ hackathon.end_date|date:"M d, Y" }}
-                </span>
-                <span class="rounded-full border border-slate-700/50 bg-slate-800/30 px-3 py-1 text-xs font-medium text-slate-300 flex items-center gap-2">
-                    <svg class="h-3.5 w-3.5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Deadline: {{ hackathon.registration_deadline|date:"M d, Y" }}
-                </span>
-                <span class="rounded-full border border-slate-700/50 bg-slate-800/30 px-3 py-1 text-xs font-medium text-slate-300 flex items-center gap-2">
-                    <svg class="h-3.5 w-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    Team: {{ hackathon.min_team_size }} - {{ hackathon.max_team_size }}
-                </span>
-            </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
+            <span class="badge
+                {% if hackathon.status == 'upcoming' %}badge--info
+                {% elif hackathon.status == 'registration_open' %}badge--success
+                {% elif hackathon.status == 'ongoing' %}badge--warning
+                {% else %}badge{% endif %}">
+                {{ hackathon.get_status_display }}
+            </span>
+            <span class="badge">📅 {{ hackathon.start_date|date:"M d, Y" }} – {{ hackathon.end_date|date:"M d, Y" }}</span>
+            <span class="badge">⏰ Deadline: {{ hackathon.registration_deadline|date:"M d, Y" }}</span>
+            <span class="badge">👥 Team: {{ hackathon.min_team_size }}–{{ hackathon.max_team_size }}</span>
         </div>
-
-
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-        <!-- PROBLEM STATEMENTS                                          -->
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-        <div class="rounded-2xl border border-slate-700/50 bg-slate-900/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 mb-6 animate-fade-in animate-fade-in-1">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                <div>
-                    <h2 class="text-lg sm:text-xl font-bold text-white">Problem Statements</h2>
-                    {% if problem_statements %}
-                        <p class="text-xs text-slate-500 mt-0.5">{{ problem_statements|length }} problem{{ problem_statements|length|pluralize }} defined</p>
-                    {% endif %}
-                </div>
-                <a href="{% url 'organizer-add-problem-statement' hackathon.pk %}"
-                   class="self-start inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 hover:from-teal-400 hover:to-teal-500 transition-all">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Add Problem
-                </a>
-            </div>
-
-            {% if problem_statements %}
-                <div class="space-y-4">
-                    {% for ps in problem_statements %}
-                        {% with pct=ps.teams_count|default:0 %}
-                        <div class="group rounded-2xl border border-slate-700/40 bg-slate-800/30 overflow-hidden hover:border-teal-400/30 transition-all hover:shadow-lg hover:shadow-teal-500/5">
-
-                            <!-- Card header -->
-                            <div class="flex items-start justify-between gap-4 p-5 pb-4">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                                        <h3 class="text-base font-bold text-white">{{ ps.title }}</h3>
-                                        <!-- Active / Inactive pill -->
-                                        {% if ps.is_active %}
-                                            <span class="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot"></span> Active
-                                            </span>
-                                        {% else %}
-                                            <span class="inline-flex items-center gap-1 rounded-full border border-slate-600/40 bg-slate-700/30 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-slate-500"></span> Inactive
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    {% if ps.description %}
-                                        <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">{{ ps.description }}</p>
-                                    {% else %}
-                                        <p class="text-xs text-slate-600 italic">No description provided.</p>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Action buttons -->
-                                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
-                                    <!-- PDF download -->
-                                    {% if ps.pdf_file %}
-                                        <a href="{{ ps.pdf_file.url }}" download
-                                           title="Download PDF"
-                                           class="inline-flex items-center gap-1.5 rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-400/20 transition-all">
-                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                            PDF
-                                        </a>
-                                    {% endif %}
-                                    <!-- Edit -->
-                                    <a href="{% url 'organizer-edit-problem-statement' hackathon.pk ps.pk %}"
-                                       class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-400/30 bg-indigo-400/10 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:bg-indigo-400/20 transition-all">
-                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        Edit
-                                    </a>
-                                    <!-- Delete -->
-                                    <form method="post" action="{% url 'organizer-delete-problem-statement' hackathon.pk ps.pk %}" class="inline">
-                                        {% csrf_token %}
-                                        <button type="submit" onclick="return confirm('Delete \"{{ ps.title }}\"? This cannot be undone.')"
-                                                class="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all">
-                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <!-- Capacity footer -->
-                            <div class="px-5 pb-4">
-                                <div class="flex items-center justify-between mb-1.5">
-                                    <span class="text-[11px] text-slate-500 font-medium">Teams selected</span>
-                                    <span class="text-[11px] font-tech
-                                        {% if ps.teams_count >= ps.max_teams_allowed %}text-red-400
-                                        {% elif ps.teams_count > 0 %}text-yellow-300
-                                        {% else %}text-slate-400{% endif %}">
-                                        {{ ps.teams_count }} / {{ ps.max_teams_allowed }}
-                                    </span>
-                                </div>
-                                <!-- capacity bar -->
-                                <div class="cap-bar">
-                                    {% if ps.max_teams_allowed > 0 %}
-                                        {% with fill_pct=ps.teams_count|default:0 %}
-                                        <div class="cap-fill {% if ps.teams_count >= ps.max_teams_allowed %}bg-gradient-to-r from-red-500 to-rose-500{% elif ps.teams_count > 0 %}bg-gradient-to-r from-yellow-400 to-amber-400{% else %}bg-gradient-to-r from-teal-400 to-teal-500{% endif %}"
-                                             style="width: {% widthratio ps.teams_count ps.max_teams_allowed 100 %}%">
-                                        </div>
-                                        {% endwith %}
-                                    {% endif %}
-                                </div>
-                                {% if ps.teams_count >= ps.max_teams_allowed and ps.max_teams_allowed > 0 %}
-                                    <p class="mt-1 text-[10px] text-red-400 font-medium">Capacity full — no more teams can select this problem.</p>
-                                {% endif %}
-                            </div>
-
-                        </div>
-                        {% endwith %}
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="rounded-xl border border-dashed border-slate-700/50 py-8 text-center">
-                    <p class="text-sm text-slate-500">No problem statements yet.</p>
-                    <p class="text-xs text-slate-600 mt-1">Add your first problem statement to get started.</p>
-                </div>
-            {% endif %}
-        </div>
-
-
-        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-        <!-- SEATING ALLOCATION                                          -->
-        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-        <div class="glass glow-ring rounded-3xl p-6 sm:p-8 mb-6 animate-fade-in animate-fade-in-2 relative overflow-hidden">
-            <!-- Gradient accent bar -->
-            <div class="absolute top-0 left-0 right-0 h-[2px] rounded-t-3xl bg-gradient-to-r from-teal-400 via-yellow-400 to-rose-400"></div>
-            <!-- Corner glow -->
-            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-teal-500/10 blur-3xl"></div>
-            <div class="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-yellow-500/8 blur-3xl"></div>
-
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <p class="text-xs uppercase tracking-[0.2em] text-teal-200 font-tech mb-1">Layout Engine</p>
-                    <h2 class="text-2xl font-bold text-white">Seating Allocation</h2>
-                    <p class="text-sm text-slate-400 mt-1">Configure rooms and auto-assign teams to seats.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="total-capacity" class="text-xs text-slate-400 font-tech">0 seats</span>
-                    <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-300/35 bg-teal-400/10 px-3 py-1 text-xs text-teal-200 font-tech">
-                        <span class="pulse-dot h-1.5 w-1.5 rounded-full bg-teal-400"></span> Active
-                    </span>
-                </div>
-            </div>
-
-            <form method="post" action="{% url 'organizer-run-seating' hackathon.pk %}" id="seating-form">
-                {% csrf_token %}
-                <textarea name="room_configuration" id="room-config" class="hidden">{{ room_configuration_json }}</textarea>
-
-                <!-- Room Cards -->
-                <div class="mb-5">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-sm font-semibold text-slate-300">Room Configuration</span>
-                        <span id="room-count-badge" class="rounded-full border border-slate-600/40 bg-slate-800/50 px-2.5 py-0.5 text-xs text-slate-400 font-tech">0 rooms</span>
-                    </div>
-
-                    <div id="rooms-container" class="flex flex-col gap-4"></div>
-
-                    <div id="rooms-empty" class="rounded-2xl border border-dashed border-slate-700/50 py-12 text-center hidden">
-                        <div class="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-teal-400/20 bg-teal-500/10">
-                            <svg class="h-7 w-7 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        </div>
-                        <p class="text-sm text-slate-400 font-medium">No rooms configured</p>
-                        <p class="text-xs text-slate-500 mt-1">Click <strong class="text-teal-300">+ Add Room</strong> to build your layout.</p>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <button type="button" onclick="addRoom()" class="group rounded-xl border border-dashed border-teal-400/40 bg-teal-500/5 px-4 sm:px-5 py-2.5 text-sm font-medium text-teal-300 hover:bg-teal-500/15 hover:border-teal-300 transition-all flex items-center gap-2">
-                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-teal-500/20 text-xs font-bold group-hover:bg-teal-500/30 transition-colors">+</span>
-                        Add Room
-                    </button>
-                    <button type="submit" class="btn-primary rounded-xl px-5 sm:px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        Run Allocation
-                    </button>
-                </div>
-            </form>
-
-            <!-- ─── Allocation Results ─── -->
-            {% if seating_allocation %}
-                <div class="mt-8 pt-6 border-t border-slate-700/40">
-                    <div class="flex items-center justify-between mb-5">
-                        <div class="flex items-center gap-3">
-                            <p class="text-xs uppercase tracking-[0.2em] text-yellow-300 font-tech">Results</p>
-                            <span class="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-2.5 py-0.5 text-xs text-emerald-300 flex items-center gap-1">
-                                <span class="pulse-dot h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Allocated
-                            </span>
-                        </div>
-                        <button onclick="exportCSV()" class="group rounded-lg border border-slate-600/60 bg-slate-900/40 px-4 py-2 text-xs font-medium text-slate-300 hover:border-teal-400/50 hover:text-teal-300 transition-all flex items-center gap-2">
-                            <svg class="h-3.5 w-3.5 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            Export CSV
-                        </button>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        {% for team in seating_allocation.teams %}
-                            <div class="glass premium-border hover-lift rounded-2xl overflow-hidden cursor-default alloc-room" data-room="Allocations">
-                                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700/30">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                        </span>
-                                        <span class="text-sm font-bold text-white">{{ team.name }}</span>
-                                    </div>
-                                    <span class="rounded-full border border-yellow-300/25 bg-yellow-400/10 px-2 py-0.5 text-[11px] text-yellow-200 font-tech">{{ team.seats|length }} seat{{ team.seats|length|pluralize }}</span>
-                                </div>
-                                <div class="p-3 space-y-1.5">
-                                    {% for seat in team.seats %}
-                                        <div class="alloc-row flex flex-col rounded-lg px-3 py-2 bg-slate-800/30 hover:bg-slate-800/50 transition-colors" data-team="{{ team.name }}" data-seat="Room {{ seat.room }} - Row {{ seat.row }} - Bench {{ seat.bench }}">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-sm text-slate-200 font-medium">Room {{ seat.room }}</span>
-                                                <span class="rounded-full border border-teal-300/25 bg-teal-400/10 px-2.5 py-0.5 text-[11px] font-medium text-teal-200">Bench {{ seat.bench }} (Row {{ seat.row }})</span>
-                                            </div>
-                                            <div class="flex flex-wrap gap-1 mt-1">
-                                                {% for member in seat.members %}
-                                                    <span class="inline-flex items-center rounded bg-slate-700/50 px-2 py-0.5 text-[10px] text-slate-300">{{ member }}</span>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                    {% if team.unallocated %}
-                                        <div class="mt-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
-                                            <span class="text-[11px] text-red-400 font-bold block mb-1">Unallocated Members:</span>
-                                            <div class="flex flex-wrap gap-1">
-                                                {% for member in team.unallocated %}
-                                                    <span class="inline-flex items-center rounded bg-red-500/20 px-2 py-0.5 text-[10px] text-red-300">{{ member }}</span>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Back link -->
-        <div class="text-center animate-fade-in animate-fade-in-3">
-            <a href="{% url 'dashboard' %}" class="text-sm text-slate-500 hover:text-teal-300 transition-colors">← Back to Dashboard</a>
-        </div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 pb-10 flex justify-center animate-fade-in animate-fade-in-4">
-        <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-2 rounded-lg border border-slate-600/60 bg-slate-900/40 px-5 py-2.5 text-sm font-medium text-slate-300 hover:border-teal-400/50 hover:text-teal-300 transition-all hover-lift">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Back to Dashboard
-        </a>
     </div>
 
-    <script>
-        let rooms = [];
+    <!-- Problem Statements -->
+    <div class="card card--spacious">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;">
+            <div>
+                <h2 style="margin:0 0 2px 0;font-size:1.125rem;">Problem Statements</h2>
+                {% if problem_statements %}
+                <p class="text--secondary" style="margin:0;font-size:0.75rem;">{{ problem_statements|length }} problem{{ problem_statements|length|pluralize }} defined</p>
+                {% endif %}
+            </div>
+            <a href="{% url 'organizer-add-problem-statement' hackathon.pk %}" class="btn btn--primary btn--small">+ Add Problem</a>
+        </div>
 
-        (function init() {
-            const raw = document.getElementById('room-config').value || '[]';
-            try { rooms = JSON.parse(raw); } catch { rooms = []; }
-            if (!Array.isArray(rooms)) rooms = [];
-            
-            // Map legacy objects to new schema just in case
-            rooms = rooms.map((r, idx) => {
-                if (!r.room_no && r.name) {
-                    return {
-                        room_no: r.name,
-                        type: 'configured',
-                        columns: [
-                            { bench_count: Math.ceil((r.capacity || 30) / 3), capacity: 3 }
-                        ]
-                    };
-                }
-                return r;
-            });
-            
-            renderRooms();
-        })();
+        {% if problem_statements %}
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            {% for ps in problem_statements %}
+            <div class="card" style="overflow:hidden;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:4px;">
+                            <h3 style="margin:0;font-size:1rem;">{{ ps.title }}</h3>
+                            {% if ps.is_active %}
+                                <span class="badge badge--success">● Active</span>
+                            {% else %}
+                                <span class="badge">○ Inactive</span>
+                            {% endif %}
+                        </div>
+                        {% if ps.description %}
+                            <p class="text--secondary" style="margin:0;font-size:0.8rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ ps.description }}</p>
+                        {% else %}
+                            <p class="text--muted" style="margin:0;font-size:0.8rem;font-style:italic;">No description provided.</p>
+                        {% endif %}
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;">
+                        {% if ps.pdf_file %}
+                        <a href="{{ ps.pdf_file.url }}" download class="btn btn--secondary btn--small">📥 PDF</a>
+                        {% endif %}
+                        <a href="{% url 'organizer-edit-problem-statement' hackathon.pk ps.pk %}" class="btn btn--secondary btn--small">Edit</a>
+                        <form method="post" action="{% url 'organizer-delete-problem-statement' hackathon.pk ps.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" onclick="return confirm('Delete \"{{ ps.title }}\"? This cannot be undone.')" class="btn btn--danger btn--small">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Capacity bar -->
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.75rem;">
+                        <span class="text--secondary">Teams selected</span>
+                        <span style="font-weight:600;color:{% if ps.teams_count >= ps.max_teams_allowed %}var(--danger){% elif ps.teams_count > 0 %}var(--warning){% else %}var(--text-secondary){% endif %};">{{ ps.teams_count }} / {{ ps.max_teams_allowed }}</span>
+                    </div>
+                    <div class="cap-bar">
+                        {% if ps.max_teams_allowed > 0 %}
+                        <div class="cap-fill cap-fill--{% if ps.teams_count >= ps.max_teams_allowed %}full{% elif ps.teams_count > 0 %}partial{% else %}empty{% endif %}"
+                             style="width:{% widthratio ps.teams_count ps.max_teams_allowed 100 %}%;"></div>
+                        {% endif %}
+                    </div>
+                    {% if ps.teams_count >= ps.max_teams_allowed and ps.max_teams_allowed > 0 %}
+                    <p class="text--danger" style="margin:4px 0 0 0;font-size:0.7rem;font-weight:600;">Capacity full — no more teams can select this problem.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px 24px;border:1px dashed var(--border);border-radius:8px;">
+            <p class="text--secondary" style="margin:0 0 4px 0;font-size:0.875rem;">No problem statements yet.</p>
+            <p class="text--muted" style="margin:0;font-size:0.75rem;">Add your first problem statement to get started.</p>
+        </div>
+        {% endif %}
+    </div>
 
-        function renderRooms() {
-            const container = document.getElementById('rooms-container');
-            const empty = document.getElementById('rooms-empty');
-            const badge = document.getElementById('room-count-badge');
-            const totalCap = document.getElementById('total-capacity');
+    <!-- Scan Categories -->
+    <div class="card card--spacious">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;">
+            <div>
+                <h2 style="margin:0 0 2px 0;font-size:1.125rem;">Scan Categories</h2>
+                <p class="text--secondary" id="categories-count-text" style="margin:0;font-size:0.75rem;">
+                    {% if scan_categories %}{{ scan_categories|length }} category{{ scan_categories|length|pluralize:"y,ies" }} defined{% else %}No scan categories defined{% endif %}
+                </p>
+            </div>
+            <button onclick="openAddCategoryModal()" class="btn btn--primary btn--small">+ Add Category</button>
+        </div>
 
-            badge.textContent = rooms.length + ' room' + (rooms.length !== 1 ? 's' : '');
-            
-            let totalOverallCap = 0;
+        <div id="categories-container" style="display:flex;flex-direction:column;gap:12px;">
+            {% if scan_categories %}
+                {% for cat in scan_categories %}
+                <div id="category-card-{{ cat.id }}" class="card" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px;">
+                            <h3 class="category-name" style="margin:0;font-size:0.9375rem;">{{ cat.name }}</h3>
+                            <span id="category-status-{{ cat.id }}" class="badge {% if cat.is_active %}badge--success{% else %}badge{% endif %}">
+                                {% if cat.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:0.75rem;" class="text--secondary">
+                            <span>📅 Created: {{ cat.created_at|date:"M d, Y" }}</span>
+                            <span>Order: <span class="category-display-order">{{ cat.display_order }}</span></span>
+                            <span>🔖 Total Scans: <span class="category-scan-count">{{ cat.scan_count|default:0 }}</span></span>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                        <!-- Toggle -->
+                        <label class="toggle-switch-wrap" title="Toggle active status">
+                            <input type="checkbox" {% if cat.is_active %}checked{% endif %}
+                                   onchange="toggleCategoryStatus({{ cat.id }}, this)"
+                                   style="display:none;">
+                            <div class="toggle-track-sm {% if cat.is_active %}on{% endif %}" onclick="this.parentElement.querySelector('input').click()">
+                                <div class="toggle-knob-sm"></div>
+                            </div>
+                            <span style="font-size:0.75rem;color:var(--text-secondary);">Active</span>
+                        </label>
+                        <!-- Delete -->
+                        <button onclick="deleteCategory({{ cat.id }}, '{{ cat.name|escapejs }}', {{ cat.scan_count|default:0 }})"
+                                class="btn btn--danger btn--small" title="Delete Category">Delete</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div id="no-categories-placeholder" style="text-align:center;padding:32px 24px;border:1px dashed var(--border);border-radius:8px;">
+                <p class="text--secondary" style="margin:0 0 4px 0;font-size:0.875rem;">No active scan categories available</p>
+                <p class="text--muted" style="margin:0;font-size:0.75rem;">Create a scan category to enable volunteers to scan QR codes.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-            if (rooms.length === 0) {
-                container.innerHTML = '';
-                empty.classList.remove('hidden');
-                totalCap.textContent = '0 seats';
-                return;
+    <!-- Seating Allocation -->
+    <div class="card card--spacious">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:12px;">
+            <div>
+                <h2 style="margin:0 0 4px 0;font-size:1.125rem;">Seating Allocation</h2>
+                <p class="text--secondary" style="margin:0;font-size:0.875rem;">Configure rooms and auto-assign teams to seats.</p>
+            </div>
+            <span id="total-capacity" class="badge">0 seats</span>
+        </div>
+
+        <form method="post" action="{% url 'organizer-run-seating' hackathon.pk %}" id="seating-form">
+            {% csrf_token %}
+            <textarea name="room_configuration" id="room-config" style="display:none;">{{ room_configuration_json }}</textarea>
+
+            <!-- Room Cards -->
+            <div style="margin-bottom:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span style="font-size:0.875rem;font-weight:600;">Room Configuration</span>
+                    <span id="room-count-badge" class="badge">0 rooms</span>
+                </div>
+                <div id="rooms-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+                <div id="rooms-empty" style="display:none;text-align:center;padding:32px 24px;border:1px dashed var(--border);border-radius:8px;">
+                    <p class="text--secondary" style="margin:0 0 4px 0;">No rooms configured</p>
+                    <p class="text--muted" style="margin:0;font-size:0.75rem;">Click <strong>+ Add Room</strong> to build your layout.</p>
+                </div>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button type="button" onclick="addRoom()" class="btn btn--secondary">+ Add Room</button>
+                <button type="submit" class="btn btn--primary">▶ Run Allocation</button>
+            </div>
+        </form>
+
+        <!-- Allocation Results -->
+        {% if seating_allocation %}
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <h3 style="margin:0;font-size:1rem;">Allocation Results</h3>
+                    <span class="badge badge--success">Allocated</span>
+                </div>
+                <button onclick="exportCSV()" class="btn btn--secondary btn--small">📥 Export CSV</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+                {% for team in seating_allocation.teams %}
+                <div class="card alloc-room" data-room="Allocations">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+                        <span style="font-weight:700;font-size:0.875rem;">{{ team.name }}</span>
+                        <span class="badge badge--info">{{ team.seats|length }} seat{{ team.seats|length|pluralize }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        {% for seat in team.seats %}
+                        <div class="alloc-row" style="padding:8px 10px;background-color:var(--bg-secondary);border-radius:6px;"
+                             data-team="{{ team.name }}" data-seat="Room {{ seat.room }} - Row {{ seat.row }} - Bench {{ seat.bench }}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-weight:600;font-size:0.8rem;">Room {{ seat.room }}</span>
+                                <span class="badge">Bench {{ seat.bench }} · Row {{ seat.row }}</span>
+                            </div>
+                            {% if seat.members %}
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                {% for member in seat.members %}
+                                <span class="badge" style="font-size:0.65rem;">{{ member }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% if team.unallocated %}
+                        <div class="message message--error" style="padding:8px 10px;">
+                            <p style="margin:0 0 4px 0;font-size:0.7rem;font-weight:700;">Unallocated Members:</p>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                                {% for member in team.unallocated %}
+                                <span class="badge badge--danger" style="font-size:0.65rem;">{{ member }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="text-align:center;">
+        <a href="{% url 'dashboard' %}" class="btn btn--secondary">← Back to Dashboard</a>
+    </div>
+
+</main>
+
+<!-- Add Category Modal -->
+<div id="add-category-modal" class="hidden">
+    <div class="modal-panel-sm" onclick="event.stopPropagation()">
+        <button onclick="closeAddCategoryModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;color:var(--text-muted);">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <h3 style="margin:0 0 20px 0;font-size:1.125rem;">Add Scan Category</h3>
+        <form id="add-category-form" onsubmit="submitAddCategory(event)" style="display:flex;flex-direction:column;gap:16px;">
+            <div class="form-group">
+                <label class="form-label form-label--required" for="category-name-input">Category Name</label>
+                <input type="text" id="category-name-input" class="input" placeholder="e.g. Lunch Day 1" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="category-order-input">Display Order</label>
+                <input type="number" id="category-order-input" class="input" value="0" min="0" required>
+                <div class="form-hint">Lower values shown first.</div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+                <button type="button" onclick="closeAddCategoryModal()" class="btn btn--secondary">Cancel</button>
+                <button type="submit" id="submit-category-btn" class="btn btn--primary">
+                    <span class="btn-spinner" style="display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;"></span>
+                    Create Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/api_client.js' %}"></script>
+<script>
+    // ── Room Builder ──
+    let rooms = [];
+
+    (function init() {
+        const raw = document.getElementById('room-config').value || '[]';
+        try { rooms = JSON.parse(raw); } catch { rooms = []; }
+        if (!Array.isArray(rooms)) rooms = [];
+        rooms = rooms.map((r) => {
+            if (!r.room_no && r.name) {
+                return { room_no: r.name, type: 'configured', columns: [{ bench_count: Math.ceil((r.capacity || 30) / 3), capacity: 3 }] };
             }
-            empty.classList.add('hidden');
+            return r;
+        });
+        renderRooms();
+    })();
 
-            container.innerHTML = rooms.map((room, i) => {
-                const roomType = room.type || 'configured';
-                
-                let roomCap = 0;
-                let bodyHtml = '';
+    function renderRooms() {
+        const container = document.getElementById('rooms-container');
+        const empty = document.getElementById('rooms-empty');
+        const badge = document.getElementById('room-count-badge');
+        const totalCap = document.getElementById('total-capacity');
 
-                if (roomType === 'open') {
-                    const ts = parseInt(room.total_seats) || 0;
-                    roomCap = ts;
-                    const spr = parseInt(room.seats_per_row) || 20;
-                    
-                    bodyHtml = `
-                        <div class="grid gap-4 sm:grid-cols-3 mt-4">
-                            <div>
-                                <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-tech mb-1">Total Seats</label>
-                                <input type="number" min="1" value="${ts}" onchange="updateRoom(${i}, 'total_seats', parseInt(this.value) || 0)" class="w-full rounded-lg border border-slate-600/40 bg-slate-900/60 px-3 py-2 text-sm text-white font-medium outline-none focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/15 transition-all">
+        badge.textContent = rooms.length + ' room' + (rooms.length !== 1 ? 's' : '');
+        let totalOverallCap = 0;
+
+        if (rooms.length === 0) {
+            container.innerHTML = '';
+            empty.style.display = 'block';
+            totalCap.textContent = '0 seats';
+            return;
+        }
+        empty.style.display = 'none';
+
+        container.innerHTML = rooms.map((room, i) => {
+            const roomType = room.type || 'configured';
+            let roomCap = 0;
+            let bodyHtml = '';
+
+            if (roomType === 'open') {
+                const ts = parseInt(room.total_seats) || 0;
+                roomCap = ts;
+                const spr = parseInt(room.seats_per_row) || 20;
+                bodyHtml = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+                        <div>
+                            <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;">Total Seats</label>
+                            <input type="number" min="1" value="${ts}" onchange="updateRoom(${i}, 'total_seats', parseInt(this.value)||0)" class="room-input">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;">Seats/Display Row</label>
+                            <input type="number" min="1" value="${spr}" onchange="updateRoom(${i}, 'seats_per_row', parseInt(this.value)||20)" class="room-input">
+                        </div>
+                        <div style="display:flex;align-items:flex-end;">
+                            <span class="badge badge--info" style="font-size:0.7rem;">Each seat = 1 person</span>
+                        </div>
+                    </div>`;
+            } else {
+                const cols = room.columns || [];
+                let colsHtml = cols.map((c, colIndex) => {
+                    const bc = parseInt(c.bench_count) || 0;
+                    const cap = parseInt(c.capacity) || 0;
+                    roomCap += bc * cap;
+                    return `
+                        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;min-width:130px;flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                                <span class="badge badge--info" style="font-size:0.65rem;">C${colIndex+1}</span>
+                                <button type="button" onclick="removeColumn(${i}, ${colIndex})" style="background:none;border:none;cursor:pointer;color:var(--danger);">✕</button>
                             </div>
-                            <div>
-                                <label class="block text-[11px] uppercase tracking-wider text-slate-500 font-tech mb-1">Seats/Display Row</label>
-                                <input type="number" min="1" value="${spr}" onchange="updateRoom(${i}, 'seats_per_row', parseInt(this.value) || 20)" class="w-full rounded-lg border border-slate-600/40 bg-slate-900/60 px-3 py-2 text-sm text-white font-medium outline-none focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/15 transition-all">
-                            </div>
-                            <div class="flex items-end">
-                                <div class="rounded-lg bg-teal-500/10 border border-teal-500/20 px-3 py-2 text-xs text-teal-300 w-full flex items-center gap-2">
-                                    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    Each seat holds 1 person.
+                            <div style="display:flex;gap:8px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:0.65rem;color:var(--text-muted);display:block;margin-bottom:3px;">Benches</label>
+                                    <input type="number" min="1" value="${bc}" onchange="updateColumn(${i},${colIndex},'bench_count',parseInt(this.value)||0)" class="room-input" style="padding:6px 8px;font-size:0.8rem;">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:0.65rem;color:var(--text-muted);display:block;margin-bottom:3px;">Seats/Bench</label>
+                                    <input type="number" min="1" value="${cap}" onchange="updateColumn(${i},${colIndex},'capacity',parseInt(this.value)||0)" class="room-input" style="padding:6px 8px;font-size:0.8rem;">
                                 </div>
                             </div>
-                        </div>
-                    `;
-                } else {
-                    const cols = room.columns || [];
-                    
-                    let colsHtml = cols.map((c, colIndex) => {
-                        const bc = parseInt(c.bench_count) || 0;
-                        const cap = parseInt(c.capacity) || 0;
-                        roomCap += bc * cap;
-                        
-                        return `
-                            <div class="relative rounded-xl border border-slate-600/40 bg-slate-800/40 p-3 min-w-[140px] flex-1">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="rounded bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-300">C${colIndex + 1}</span>
-                                    <button type="button" onclick="removeColumn(${i}, ${colIndex})" class="text-red-400/70 hover:text-red-400 transition-colors">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                </div>
-                                <div class="flex gap-2">
-                                    <div class="w-1/2">
-                                        <label class="block text-[10px] text-slate-500 mb-1">Benches</label>
-                                        <input type="number" min="1" value="${bc}" onchange="updateColumn(${i}, ${colIndex}, 'bench_count', parseInt(this.value) || 0)" class="w-full rounded border border-slate-600/40 bg-slate-900/60 px-2 py-1 text-xs text-white outline-none focus:border-teal-400/50 transition-all">
-                                    </div>
-                                    <div class="w-1/2">
-                                        <label class="block text-[10px] text-slate-500 mb-1">Seats/Bench</label>
-                                        <input type="number" min="1" value="${cap}" onchange="updateColumn(${i}, ${colIndex}, 'capacity', parseInt(this.value) || 0)" class="w-full rounded border border-slate-600/40 bg-slate-900/60 px-2 py-1 text-xs text-white outline-none focus:border-teal-400/50 transition-all">
-                                    </div>
-                                </div>
-                                <div class="mt-2 text-[10px] font-medium text-slate-400">${bc * cap} seats</div>
-                            </div>
-                        `;
-                    }).join('');
-                    
-                    if (cols.length === 0) {
-                        colsHtml = `<div class="text-xs text-slate-500 py-2">No columns yet. Click + Add Column.</div>`;
-                    }
-                    
-                    bodyHtml = `
-                        <div class="flex flex-wrap gap-3 mt-4">
-                            ${colsHtml}
-                        </div>
-                    `;
-                }
+                            <div style="margin-top:6px;font-size:0.7rem;color:var(--text-muted);">${bc*cap} seats</div>
+                        </div>`;
+                }).join('');
+                if (cols.length === 0) colsHtml = `<div class="text--muted" style="font-size:0.8rem;padding:8px 0;">No columns yet. Click + Add Column.</div>`;
+                bodyHtml = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;">${colsHtml}</div>`;
+            }
 
-                totalOverallCap += roomCap;
+            totalOverallCap += roomCap;
 
-                return `
-                <div class="glass hover-lift rounded-2xl overflow-hidden group cursor-default border border-slate-700/50" style="animation: fadeInUp 0.35s ease-out both; animation-delay: ${i * 0.06}s">
-                    <!-- Header exactly like the second image (gradient purple) -->
-                    <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3 flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <svg class="h-5 w-5 text-indigo-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            <span class="font-bold text-white text-[15px]">Room ${escapeHtml(room.room_no || '')}</span>
-                            <span class="ml-2 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium text-white/90">${roomCap} seats</span>
+            return `
+            <div class="card" style="overflow:hidden;">
+                <div style="background:linear-gradient(90deg,#4f46e5,#7c3aed);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-weight:700;color:white;font-size:0.9375rem;">Room ${escapeHtml(room.room_no||'')}</span>
+                        <span style="background:rgba(255,255,255,0.2);color:white;border-radius:12px;padding:2px 10px;font-size:0.7rem;">${roomCap} seats</span>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        ${roomType==='configured'?`<button type="button" onclick="addColumn(${i})" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:6px;padding:4px 10px;font-size:0.75rem;font-weight:600;cursor:pointer;">+ Add Column</button>`:''}
+                        <button type="button" onclick="removeRoom(${i})" style="background:rgba(239,68,68,0.7);border:none;color:white;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.75rem;">✕</button>
+                    </div>
+                </div>
+                <div style="padding:16px;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+                        <div style="min-width:160px;">
+                            <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-bottom:4px;">Room Number / Name</label>
+                            <input type="text" value="${escapeHtml(room.room_no||'')}" onchange="updateRoom(${i},'room_no',this.value)" class="room-input" placeholder="Room 1">
                         </div>
-                        <div class="flex items-center gap-2">
-                            ${roomType === 'configured' ? `
-                            <button type="button" onclick="addColumn(${i})" class="flex items-center gap-1.5 rounded bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition-colors">
-                                <span>+</span> Add Column
-                            </button>
-                            ` : ''}
-                            <button type="button" onclick="removeRoom(${i})" class="flex items-center justify-center rounded bg-red-500/80 p-1.5 text-white hover:bg-red-500 transition-colors">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            </button>
+                        <div style="min-width:200px;">
+                            <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-muted);margin-bottom:4px;">Room Type</label>
+                            <select onchange="updateRoom(${i},'type',this.value)" class="room-input">
+                                <option value="configured" ${roomType==='configured'?'selected':''}>Configured (Columns & Benches)</option>
+                                <option value="open" ${roomType==='open'?'selected':''}>Open Seating</option>
+                            </select>
                         </div>
                     </div>
+                    ${bodyHtml}
+                </div>
+            </div>`;
+        }).join('');
 
-                    <!-- Body -->
-                    <div class="p-5 bg-slate-900/40">
-                        <div class="flex gap-4">
-                            <div class="w-1/2 sm:w-1/3">
-                                <label class="block text-[11px] font-medium text-slate-400 mb-1.5">Room Number / Name</label>
-                                <input type="text" value="${escapeHtml(room.room_no || '')}" onchange="updateRoom(${i}, 'room_no', this.value)" class="w-full rounded-lg border border-slate-600/40 bg-slate-900/80 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400/50 focus:ring-1 focus:ring-indigo-400/20 transition-all" placeholder="Room 1">
-                            </div>
-                            <div class="w-1/2 sm:w-1/3">
-                                <label class="block text-[11px] font-medium text-slate-400 mb-1.5">Room Type</label>
-                                <select onchange="updateRoom(${i}, 'type', this.value)" class="w-full rounded-lg border border-slate-600/40 bg-slate-900/80 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400/50 focus:ring-1 focus:ring-indigo-400/20 transition-all">
-                                    <option value="configured" ${roomType === 'configured' ? 'selected' : ''}>Configured (Columns & Benches)</option>
-                                    <option value="open" ${roomType === 'open' ? 'selected' : ''}>Open Seating</option>
-                                </select>
-                            </div>
-                        </div>
+        totalCap.textContent = totalOverallCap + ' seat' + (totalOverallCap !== 1 ? 's' : '');
+        syncJSON();
+    }
 
-                        ${bodyHtml}
-                    </div>
-                </div>`;
-            }).join('');
+    function addRoom() { rooms.push({ room_no: 'Room '+(rooms.length+1), type: 'configured', columns: [{bench_count:5,capacity:5},{bench_count:5,capacity:3}] }); renderRooms(); }
+    function updateRoom(i, field, value) { rooms[i][field] = value; renderRooms(); }
+    function removeRoom(i) { rooms.splice(i,1); renderRooms(); }
+    function addColumn(i) { if (!rooms[i].columns) rooms[i].columns=[]; rooms[i].columns.push({bench_count:5,capacity:3}); renderRooms(); }
+    function updateColumn(ri, ci, field, value) { rooms[ri].columns[ci][field]=value; renderRooms(); }
+    function removeColumn(ri, ci) { rooms[ri].columns.splice(ci,1); renderRooms(); }
+    function syncJSON() { document.getElementById('room-config').value = JSON.stringify(rooms); }
+    function escapeHtml(str) { const d=document.createElement('div'); d.appendChild(document.createTextNode(str)); return d.innerHTML; }
 
-            totalCap.textContent = totalOverallCap + ' seat' + (totalOverallCap !== 1 ? 's' : '');
-            syncJSON();
-        }
-
-        function addRoom() {
-            rooms.push({ room_no: 'Room ' + (rooms.length + 1), type: 'configured', columns: [{bench_count: 5, capacity: 5}, {bench_count: 5, capacity: 3}] });
-            renderRooms();
-        }
-        function updateRoom(i, field, value) {
-            rooms[i][field] = value;
-            renderRooms();
-        }
-        function removeRoom(i) {
-            rooms.splice(i, 1);
-            renderRooms();
-        }
-        function addColumn(i) {
-            if (!rooms[i].columns) rooms[i].columns = [];
-            rooms[i].columns.push({bench_count: 5, capacity: 3});
-            renderRooms();
-        }
-        function updateColumn(roomIndex, colIndex, field, value) {
-            rooms[roomIndex].columns[colIndex][field] = value;
-            renderRooms();
-        }
-        function removeColumn(roomIndex, colIndex) {
-            rooms[roomIndex].columns.splice(colIndex, 1);
-            renderRooms();
-        }
-        function syncJSON() {
-            document.getElementById('room-config').value = JSON.stringify(rooms);
-        }
-        function escapeHtml(str) {
-            const d = document.createElement('div');
-            d.appendChild(document.createTextNode(str));
-            return d.innerHTML;
-        }
-        function exportCSV() {
-            const resultCards = document.querySelectorAll('[data-export-room]');
-            let csv = 'Team,Room,Seat\n';
-            document.querySelectorAll('.alloc-room').forEach(card => {
-                const roomName = card.dataset.room;
-                card.querySelectorAll('.alloc-row').forEach(row => {
-                    csv += `"${row.dataset.team}","${roomName}","${row.dataset.seat}"\n`;
-                });
+    function exportCSV() {
+        let csv = 'Team,Room,Seat\n';
+        document.querySelectorAll('.alloc-room').forEach(card => {
+            const roomName = card.dataset.room;
+            card.querySelectorAll('.alloc-row').forEach(row => {
+                csv += `"${row.dataset.team}","${roomName}","${row.dataset.seat}"\n`;
             });
-            if (!csv.includes('"')) return;
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'seating_allocation.csv';
-            a.click();
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'seating_allocation.csv'; a.click();
+    }
+
+    // ── Scan Categories ──
+    const addCategoryModal = document.getElementById('add-category-modal');
+
+    function openAddCategoryModal() {
+        addCategoryModal.classList.remove('hidden');
+        document.getElementById('category-name-input').focus();
+    }
+    function closeAddCategoryModal() {
+        addCategoryModal.classList.add('hidden');
+        document.getElementById('add-category-form').reset();
+    }
+    addCategoryModal.addEventListener('click', e => { if (e.target === addCategoryModal) closeAddCategoryModal(); });
+
+    async function submitAddCategory(e) {
+        e.preventDefault();
+        const nameInput = document.getElementById('category-name-input');
+        const orderInput = document.getElementById('category-order-input');
+        const btn = document.getElementById('submit-category-btn');
+        const spinner = btn.querySelector('.btn-spinner');
+        const name = nameInput.value.trim();
+        const displayOrder = parseInt(orderInput.value) || 0;
+        const hackathonId = {{ hackathon.id }};
+        if (!name) return;
+
+        nameInput.disabled = true; orderInput.disabled = true; btn.disabled = true;
+        spinner.style.display = 'inline-block';
+
+        try {
+            const response = await fetchWithAuth('/api/organizer/scan-categories/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hackathon: hackathonId, name, display_order: displayOrder, is_active: true })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                showToast(`Category "${name}" created successfully!`, 'success');
+                closeAddCategoryModal();
+                loadCategories();
+            } else {
+                const errorMsg = data.detail || data.non_field_errors?.join(', ') || data.name?.join(', ') || 'Failed to create category.';
+                showToast(errorMsg, 'error');
+            }
+        } catch (err) { showToast('An unexpected error occurred.', 'error'); console.error(err); }
+        finally {
+            nameInput.disabled = false; orderInput.disabled = false; btn.disabled = false;
+            spinner.style.display = 'none';
         }
-    </script>
+    }
+
+    async function toggleCategoryStatus(catId, checkbox) {
+        const originalState = checkbox.checked;
+        checkbox.disabled = true;
+        try {
+            const response = await fetchWithAuth(`/api/organizer/scan-categories/${catId}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: originalState })
+            });
+            if (response.ok) {
+                showToast(`Category status updated to ${originalState ? 'Active' : 'Inactive'}`, 'success');
+                const pill = document.getElementById(`category-status-${catId}`);
+                if (pill) {
+                    pill.className = 'badge ' + (originalState ? 'badge--success' : '');
+                    pill.textContent = originalState ? 'Active' : 'Inactive';
+                }
+                // sync the visual toggle
+                const card = document.getElementById(`category-card-${catId}`);
+                if (card) {
+                    const track = card.querySelector('.toggle-track-sm');
+                    if (track) track.classList.toggle('on', originalState);
+                }
+            } else {
+                checkbox.checked = !originalState;
+                const data = await response.json();
+                showToast(data.detail || 'Failed to update category status.', 'error');
+            }
+        } catch (err) { checkbox.checked = !originalState; console.error(err); showToast('An unexpected error occurred.', 'error'); }
+        finally { checkbox.disabled = false; }
+    }
+
+    function deleteCategory(catId, catName, scanCount) {
+        if (scanCount > 0) { showToast(`Cannot delete "${catName}" — it has ${scanCount} scan records.`, 'error'); return; }
+        if (confirm(`Delete category "${catName}"? This cannot be undone.`)) performDeleteCategory(catId);
+    }
+
+    async function performDeleteCategory(catId) {
+        try {
+            const response = await fetchWithAuth(`/api/organizer/scan-categories/${catId}/`, { method: 'DELETE' });
+            if (response.status === 204) { showToast('Category deleted successfully!', 'success'); loadCategories(); }
+            else { const data = await response.json(); showToast(data.detail || 'Failed to delete category.', 'error'); }
+        } catch (err) { console.error(err); showToast('An unexpected error occurred.', 'error'); }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetchWithAuth(`/api/organizer/scan-categories/?hackathon={{ hackathon.id }}`);
+            if (response.ok) { const categories = await response.json(); renderCategories(categories); }
+            else showToast('Failed to load scan categories.', 'error');
+        } catch (err) { console.error(err); showToast('Failed to load scan categories.', 'error'); }
+    }
+
+    function renderCategories(categories) {
+        const container = document.getElementById('categories-container');
+        const countText = document.getElementById('categories-count-text');
+        if (categories.length === 0) {
+            countText.textContent = 'No scan categories defined';
+            container.innerHTML = `<div id="no-categories-placeholder" style="text-align:center;padding:32px 24px;border:1px dashed var(--border);border-radius:8px;"><p class="text--secondary" style="margin:0 0 4px 0;font-size:0.875rem;">No active scan categories available</p><p class="text--muted" style="margin:0;font-size:0.75rem;">Create a scan category to enable volunteers to scan QR codes.</p></div>`;
+            return;
+        }
+        countText.textContent = `${categories.length} category${categories.length !== 1 ? 'ies' : 'y'} defined`;
+        container.innerHTML = categories.map(cat => {
+            const createdDate = new Date(cat.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+            const isActive = cat.is_active; const scanCount = cat.scan_count || 0;
+            return `
+            <div id="category-card-${cat.id}" class="card" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px;">
+                        <h3 class="category-name" style="margin:0;font-size:0.9375rem;">${escapeHtml(cat.name)}</h3>
+                        <span id="category-status-${cat.id}" class="badge ${isActive?'badge--success':''}">${isActive?'Active':'Inactive'}</span>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:0.75rem;color:var(--text-secondary);">
+                        <span>📅 Created: ${createdDate}</span>
+                        <span>Order: <span class="category-display-order">${cat.display_order}</span></span>
+                        <span>🔖 Total Scans: <span class="category-scan-count">${scanCount}</span></span>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                    <label class="toggle-switch-wrap">
+                        <input type="checkbox" ${isActive?'checked':''} onchange="toggleCategoryStatus(${cat.id}, this)" style="display:none;">
+                        <div class="toggle-track-sm ${isActive?'on':''}" onclick="this.parentElement.querySelector('input').click()"><div class="toggle-knob-sm"></div></div>
+                        <span style="font-size:0.75rem;color:var(--text-secondary);">Active</span>
+                    </label>
+                    <button onclick="deleteCategory(${cat.id}, '${escapeHtml(cat.name).replace(/'/g,"\\'")}', ${scanCount})" class="btn btn--danger btn--small">Delete</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `hd-toast hd-toast--${type === 'success' ? 'success' : type === 'error' ? 'error' : 'info'}`;
+        toast.innerHTML = `<span style="flex:1;font-size:0.8125rem;">${escapeHtml(message)}</span>
+            <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:inherit;opacity:0.7;font-size:1rem;line-height:1;">✕</button>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateY(-8px)'; setTimeout(()=>toast.remove(), 300); }, 4000);
+    }
+</script>
 </body>
 </html>

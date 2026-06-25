@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntra | Checkout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <style>
+        .checkout-main { max-width: 520px; margin: 0 auto; padding: 48px 24px; }
+        @media (max-width: 640px) { .checkout-main { padding: 24px 16px; } }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav style="background-color:var(--bg-surface);border-bottom:1px solid var(--border);padding:16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
+        <a href="{% url 'dashboard' %}" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+            <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
+            <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
+        </a>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:0.875rem;color:var(--text-secondary);">{{ user.email }}</span>
+            <a href="{% url 'dashboard' %}" class="btn btn--secondary btn--small">← Dashboard</a>
+        </div>
+    </nav>
+
+    <main class="checkout-main">
+
+        <div style="margin-bottom:32px;text-align:center;">
+            <h1 style="margin:0 0 8px 0;">Payment Checkout</h1>
+            <p class="text--secondary" style="margin:0;">Complete your registration for <strong>{{ payment.team.hackathon.name }}</strong></p>
+        </div>
+
+        <div class="card card--spacious">
+            <!-- Order summary -->
+            <div style="background-color:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:24px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span class="text--secondary" style="font-size:0.875rem;">Team Name</span>
+                    <span style="font-weight:600;">{{ payment.team.name }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span class="text--secondary" style="font-size:0.875rem;">Team Size</span>
+                    <span style="font-weight:600;">{{ payment.team.members.count|add:"1" }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:16px;margin-top:4px;border-top:1px solid var(--border);">
+                    <span style="font-weight:700;font-size:1.125rem;">Total Amount</span>
+                    <span style="font-weight:800;font-size:1.25rem;color:var(--primary-blue);">₹{{ payment.amount }}</span>
+                </div>
+            </div>
+
+            <!-- Razorpay hidden form -->
+            <form action="{% url 'payment-verify' payment.id %}" method="POST" id="razorpay-form" style="display:none;">
+                {% csrf_token %}
+                <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+                <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+            </form>
+
+            <button id="rzp-button1" class="btn btn--primary btn--block">Pay Now</button>
+        </div>
+
+    </main>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "{{ razorpay_key_id }}",
+    "name": "Syntra Hackathons",
+    "description": "Registration Fee for {{ payment.team.hackathon.name }}",
+    "order_id": "{{ payment.razorpay_order_id }}",
+    "handler": function (response) {
+        document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+        document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+        document.getElementById('razorpay_signature').value = response.razorpay_signature;
+        document.getElementById('razorpay-form').submit();
+    },
+    "prefill": {
+        "name": "{{ request.user.full_name|default:request.user.email }}",
+        "email": "{{ request.user.email }}"
+    },
+    "theme": {
+        "color": "#2563EB"
+    }
+};
+var rzp1 = new Razorpay(options);
+rzp1.on('payment.failed', function (response) {
+    alert("Payment Failed: " + response.error.description);
+});
+document.getElementById('rzp-button1').onclick = function (e) {
+    rzp1.open();
+    e.preventDefault();
+};
+</script>
+</body>
+</html>
