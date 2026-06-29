@@ -449,17 +449,6 @@
         {% if not has_registered_team %}
         <div style="margin-bottom: 32px;">
             <div class="dashboard-section-title">Inbox &amp; Recruiting</div>
-            <div class="visibility-toggle">
-                <div style="flex: 1;">
-                    <p style="margin: 0 0 3px 0; font-weight: 600; font-size: 0.875rem;">Recruiting Profile</p>
-                    <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary);">
-                        {% if my_teams %}Disabled (Already in a team){% else %}Let teams find you{% endif %}
-                    </p>
-                </div>
-                <button id="visibility-btn" class="toggle-switch {% if profile.visibility %}active{% endif %}" onclick="toggleVisibility()" {% if my_teams %}disabled{% endif %}>
-                    <span class="toggle-knob"></span>
-                </button>
-            </div>
         </div>
 
         <div id="requests-list" style="margin-bottom: 40px;">
@@ -587,32 +576,6 @@
         if (USER_ROLE === 'participant') {
             let isVisible = _cfg.visible === 'true';
 
-            window.toggleVisibility = async function () {
-                const newVis = !isVisible;
-                const btn = document.getElementById('visibility-btn');
-
-                btn.disabled = true;
-                try {
-                    const res = await fetchWithAuth('/api/participant/profile/', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-                        body: JSON.stringify({ visibility: newVis }),
-                    });
-                    if (res.ok) {
-                        isVisible = newVis;
-                        btn.classList.toggle('active', isVisible);
-                        btn.setAttribute('aria-pressed', String(isVisible));
-                        showToast(isVisible ? 'You are now visible to Team Leaders.' : 'You are now hidden from search.', true);
-                        fetchRequests();
-                    } else {
-                        showToast('Failed to update visibility.', false);
-                    }
-                } catch (e) {
-                    showToast('Network error.', false);
-                }
-                btn.disabled = false;
-            };
-
             async function fetchRequests() {
                 const list = document.getElementById('requests-list');
                 if (!list) return;
@@ -620,7 +583,7 @@
                 if (!isVisible) {
                     list.innerHTML = `
                         <div class="card" style="padding: 24px; text-align: center;">
-                            <p class="text--secondary" style="margin: 0;">Your profile is hidden. Turn on visibility to receive team invitations.</p>
+                            <p class="text--secondary" style="margin: 0;">You are currently in a team, so your recruiting profile is disabled.</p>
                         </div>
                     `;
                     return;

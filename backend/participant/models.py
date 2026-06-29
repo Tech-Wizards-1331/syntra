@@ -148,3 +148,39 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.id} for Team {self.team.name} - {self.status}"
+
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.contrib.auth import get_user_model
+
+def sync_user_visibility_by_email(email):
+    User = get_user_model()
+    user = User.objects.filter(email=email).first()
+    if user:
+        sync_user_visibility(user)
+
+def sync_user_visibility(user):
+    profile = getattr(user, 'participant_profile', None)
+    if profile:
+        is_in_team = Team.objects.filter(leader=user).exists() or TeamMember.objects.filter(email=user.email).exists()
+        expected_visibility = not is_in_team
+        if profile.visibility != expected_visibility:
+            profile.visibility = expected_visibility
+            profile.save()
+
+@receiver(post_save, sender=Team)
+@receiver(post_delete, sender=Team)
+def handle_team_change(sender, instance, **kwargs):
+    # Leader is affected
+    sync_user_visibility(instance.leader)
+    # Members (by email) are affected
+    member_emails = TeamMember.objects.filter(team=instance).values_list('email', flat=True)
+    for email in member_emails:
+        sync_user_visibility_by_email(email)
+
+@receiver(post_save, sender=TeamMember)
+@receiver(post_delete, sender=TeamMember)
+def handle_member_change(sender, instance, **kwargs):
+    sync_user_visibility_by_email(instance.email)
+
