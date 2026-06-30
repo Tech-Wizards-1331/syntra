@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
+import { sendTeamInviteEmail } from "@/lib/services/email";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -117,7 +118,7 @@ export async function sendTeamInvite(teamId: number, receiverUserId: number) {
   // Check team capacity (pending invites do NOT reserve seats — Django parity)
   const leaderUser = await prisma.accounts_user.findUnique({
     where: { id: team.leader_id },
-    select: { email: true },
+    select: { email: true, full_name: true },
   });
   if (!leaderUser) throw new Error("Leader user not found.");
 
@@ -177,6 +178,15 @@ export async function sendTeamInvite(teamId: number, receiverUserId: number) {
       status: "pending",
       created_at: new Date(),
     },
+  });
+
+  // Send SMTP email notification
+  await sendTeamInviteEmail({
+    receiverEmail: receiver.email,
+    receiverName: receiver.full_name || receiver.email,
+    teamName: team.name,
+    leaderName: leaderUser.full_name || leaderUser.email,
+    hackathonName: team.organizer_hackathon.name,
   });
 
   revalidatePath("/participant/dashboard");
