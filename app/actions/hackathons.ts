@@ -135,6 +135,35 @@ export async function getHackathonById(id: number) {
       organizer_scancategory: {
         orderBy: [{ display_order: "asc" }, { created_at: "asc" }],
       },
+      participant_team: {
+        orderBy: { created_at: "desc" },
+        include: {
+          accounts_user: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true,
+            },
+          },
+          participant_teammember: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              college: true,
+              semester: true,
+              degree: true,
+            },
+            orderBy: { created_at: "asc" },
+          },
+          organizer_problemstatement: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -151,6 +180,8 @@ export async function getHackathonById(id: number) {
     fee_amount: hackathon.fee_amount ? Number(hackathon.fee_amount) : null,
     organizer_problemstatement: hackathon.organizer_problemstatement,
     organizer_scancategory: hackathon.organizer_scancategory,
+    participant_team: hackathon.participant_team,
+    seating_allocation: hackathon.seating_allocation,
   };
 }
 
