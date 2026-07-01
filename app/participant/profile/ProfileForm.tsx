@@ -30,6 +30,7 @@ interface ProfileFormProps {
   preseededSkills: string[];
   userEmail: string;
   userName: string;
+  hasTeam: boolean;
 }
 
 function ParticipantProfileForm({
@@ -37,6 +38,7 @@ function ParticipantProfileForm({
   preseededSkills,
   userEmail,
   userName,
+  hasTeam,
 }: ProfileFormProps) {
   const { update } = useSession();
   const router = useRouter();
@@ -46,7 +48,7 @@ function ParticipantProfileForm({
   const [college, setCollege] = useState(existingProfile?.college || "");
   const [degree, setDegree] = useState(existingProfile?.degree || "");
   const [semester, setSemester] = useState(existingProfile?.semester || 1);
-  const [visibility, setVisibility] = useState(existingProfile?.visibility !== false);
+  const visibility = !hasTeam;
   const [selectedSkills, setSelectedSkills] = useState<string[]>(existingProfile?.skills || []);
   const [skillSearch, setSkillSearch] = useState("");
   
@@ -224,17 +226,18 @@ function ParticipantProfileForm({
               {visibility ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />} Profile Visibility
             </label>
             <div
-              onClick={() => !isPending && setVisibility(!visibility)}
-              className={`flex items-center justify-between p-3.5 rounded-md bg-canvas-pearl border transition cursor-pointer selection:bg-transparent ${
-                visibility ? "border-primary/30 hover:border-primary/50" : "border-black/[0.08] hover:border-black/[0.15]"
+              className={`flex items-center justify-between p-3.5 rounded-md bg-canvas-pearl border transition cursor-not-allowed selection:bg-transparent ${
+                visibility ? "border-primary/30" : "border-black/[0.08]"
               }`}
             >
               <div className="flex flex-col text-left">
                 <span className="text-xs font-semibold text-ink">
-                  {visibility ? "Public Profile" : "Hidden Profile"}
+                  {visibility ? "Public Profile (Visible)" : "Hidden Profile"}
                 </span>
                 <span className="text-[10px] text-ink-muted">
-                  {visibility ? "Visible to teammates & organizers" : "Only organizers can see you"}
+                  {hasTeam
+                    ? "Automatically hidden because you are in a team"
+                    : "Automatically visible because you are not in any team"}
                 </span>
               </div>
               <div

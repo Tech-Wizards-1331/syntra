@@ -434,6 +434,15 @@ export async function acceptTeamInvite(requestId: number) {
     });
   }
 
+  // Auto-disable recruiting visibility (Django parity: members with a team aren't recruitable)
+  // Conditional write — only update if currently visible to avoid redundant DB writes
+  if (profile?.visibility) {
+    await prisma.participant_participantprofile.update({
+      where: { user_id: userId },
+      data: { visibility: false, updated_at: new Date() },
+    });
+  }
+
   revalidatePath("/participant/dashboard");
   return { success: true };
 }

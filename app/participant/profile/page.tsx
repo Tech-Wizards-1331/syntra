@@ -42,6 +42,40 @@ export default async function ParticipantProfilePage() {
     },
   });
 
+  // Check if user is in any team (excluding expired draft teams)
+  const userEmail = session.user.email || "";
+  const userTeamsCount = await prisma.participant_team.count({
+    where: {
+      OR: [
+        { leader_id: userIdNum },
+        {
+          participant_teammember: {
+            some: { email: userEmail },
+          },
+        },
+      ],
+      NOT: {
+        is_registered: false,
+        organizer_hackathon: {
+          OR: [
+            { status: { notIn: ["registration", "registration_open", "published"] } },
+            { registration_deadline: { lt: new Date() } },
+          ],
+        },
+      },
+    },
+  });
+  const hasTeam = userTeamsCount > 0;
+
+  // Auto-sync visibility database field to ensure consistency
+  if (existingProfileRaw && existingProfileRaw.visibility !== !hasTeam) {
+    await prisma.participant_participantprofile.update({
+      where: { user_id: userIdNum },
+      data: { visibility: !hasTeam, updated_at: new Date() },
+    });
+    existingProfileRaw.visibility = !hasTeam;
+  }
+
   const existingProfile = existingProfileRaw
     ? {
         college: existingProfileRaw.college,
@@ -77,6 +111,7 @@ export default async function ParticipantProfilePage() {
           preseededSkills={preseededSkills}
           userEmail={session.user.email || ""}
           userName={session.user.name || ""}
+          hasTeam={hasTeam}
         />
       </div>
     </main>

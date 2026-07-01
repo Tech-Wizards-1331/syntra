@@ -164,6 +164,15 @@ export async function createTeam(hackathonId: number, teamName: string) {
     data: { status: "expired" },
   });
 
+  // Auto-disable recruiting visibility (Django parity: leaders cannot be visible)
+  // Conditional write — only update if currently visible to avoid redundant DB writes
+  if (profile.visibility) {
+    await prisma.participant_participantprofile.update({
+      where: { user_id: userId },
+      data: { visibility: false, updated_at: new Date() },
+    });
+  }
+
   revalidatePath("/participant/dashboard");
   return { success: true, teamId: newTeam.id };
 }
@@ -724,6 +733,15 @@ export async function joinTeamByToken(inviteToken: string) {
   if (newMemberCount >= team.organizer_hackathon.max_team_size) {
     await prisma.participant_teamrequest.deleteMany({
       where: { team_id: team.id, status: "pending" },
+    });
+  }
+
+  // Auto-disable recruiting visibility (Django parity: members with a team aren't recruitable)
+  // Conditional write — only update if currently visible to avoid redundant DB writes
+  if (profile?.visibility) {
+    await prisma.participant_participantprofile.update({
+      where: { user_id: userId },
+      data: { visibility: false, updated_at: new Date() },
     });
   }
 
