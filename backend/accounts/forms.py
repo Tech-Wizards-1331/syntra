@@ -81,12 +81,6 @@ class ParticipantProfileForm(forms.ModelForm):
     class Meta:
         model = ParticipantProfile
         fields = ['full_name', 'college', 'semester', 'degree', 'skills']
-        
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-        if self.user and self.user.full_name:
-            self.fields['full_name'].initial = self.user.full_name
         widgets = {
             'college': forms.TextInput(
                 attrs={'class': 'form-control', 'placeholder': 'Your college/university'}
@@ -99,18 +93,32 @@ class ParticipantProfileForm(forms.ModelForm):
             ),
             'skills': forms.CheckboxSelectMultiple(),
         }
+        
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.user and self.user.full_name:
+            self.fields['full_name'].initial = self.user.full_name
 
     def save(self, commit=True):
-        """Create the custom skill (if provided) and attach it to the profile."""
+        """Create the custom skill(s) (if provided) and attach them to the profile."""
         from participant.models import Skill
         instance = super().save(commit=False)
         if commit:
             instance.save()
-        # Handle custom skill
-        custom_name = self.cleaned_data.get('custom_skill', '').strip()
-        if custom_name:
-            skill, _ = Skill.objects.get_or_create(name=custom_name)
-            self.cleaned_data['skills'] = list(self.cleaned_data.get('skills', [])) + [skill]
+        # Handle custom skill(s)
+        custom_skills_str = self.cleaned_data.get('custom_skill', '').strip()
+        if custom_skills_str:
+            new_skills = []
+            skill_names = [s.strip() for s in custom_skills_str.split(',') if s.strip()]
+            for name in skill_names:
+                skill, _ = Skill.objects.get_or_create(
+                    name__iexact=name,
+                    defaults={'name': name}
+                )
+                new_skills.append(skill)
+            if new_skills:
+                self.cleaned_data['skills'] = list(self.cleaned_data.get('skills', [])) + new_skills
         if commit:
             self.save_m2m()
         return instance

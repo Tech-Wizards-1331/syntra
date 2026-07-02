@@ -327,3 +327,31 @@ class AccountsAuthTests(TestCase):
         response2 = self.client.post(accept_url)
         # Should be rejected with 404 Not Found (since it's securely excluded from the queryset because they joined a team)
         self.assertEqual(response2.status_code, 404)
+
+    def test_complete_profile_custom_skills(self):
+        user = User.objects.create_user(email='testprofile@example.com', password='StrongPassword123!', role='participant')
+        self.client.force_login(user)
+        
+        # Post to complete-profile with multiple custom skills (comma-separated)
+        url = reverse('complete_profile')
+        response = self.client.post(url, {
+            'full_name': 'Test Participant',
+            'college': 'Test University',
+            'degree': 'B.Tech',
+            'semester': 4,
+            'custom_skill': 'Django, React, Docker',
+        }, secure=True)
+        
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify the participant profile and custom skills were created and linked
+        user.refresh_from_db()
+        self.assertTrue(user.is_profile_complete)
+        
+        profile = user.participant_profile
+        self.assertEqual(profile.college, 'Test University')
+        
+        skills = list(profile.skills.values_list('name', flat=True))
+        self.assertIn('Django', skills)
+        self.assertIn('React', skills)
+        self.assertIn('Docker', skills)

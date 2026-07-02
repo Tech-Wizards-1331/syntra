@@ -59,17 +59,92 @@
         .skills-checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
         .skills-checkbox-group label.chip { cursor: pointer; }
 
-        .skill-tag {
+        /* Searchable Dropdown Selector styles */
+        .skills-dropdown-item {
+            padding: 10px 16px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .skills-dropdown-item:hover, .skills-dropdown-item.focused {
+            background-color: var(--selected-bg);
+            color: var(--primary-blue);
+        }
+
+        .skills-dropdown-item.custom-add {
+            font-weight: 600;
+            color: var(--primary-blue);
+            border-top: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+        }
+
+        .skills-dropdown-item.custom-add:hover, .skills-dropdown-item.custom-add.focused {
+            background-color: var(--selected-bg);
+        }
+
+        .selected-skill-pill {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
+            gap: 6px;
+            padding: 6px 14px;
             background-color: var(--selected-bg);
             color: var(--primary-blue);
             border: 1px solid var(--primary-blue);
-            border-radius: 20px;
-            font-size: 0.8rem;
+            border-radius: 99px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05);
+            transition: all var(--transition-fast);
+            user-select: none;
+        }
+
+        .selected-skill-pill:hover {
+            background-color: var(--danger-bg);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .selected-skill-pill .remove-icon {
+            font-weight: bold;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding-left: 2px;
+            display: inline-block;
+            transition: transform var(--transition-fast);
+        }
+
+        .selected-skill-pill:hover .remove-icon {
+            transform: scale(1.1);
+        }
+
+        #skills-dropdown-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        #skills-dropdown-menu::-webkit-scrollbar-thumb {
+            background-color: var(--text-muted);
+            border-radius: 3px;
+        }
+        #skills-dropdown-menu {
+            scrollbar-width: thin;
+            scrollbar-color: var(--text-muted) transparent;
+        }
+
+        .skill-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            background-color: var(--selected-bg);
+            color: var(--primary-blue);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            border-radius: 99px;
+            font-size: 0.875rem;
             font-weight: 500;
+            user-select: none;
         }
 
         .custom-skill-wrap { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
@@ -173,18 +248,31 @@
             </div>
 
             <div class="section-label">Skills</div>
-            <div class="skills-checkbox-group" style="margin-bottom: 12px;">
+
+            <!-- Selected Skills Container (Visual Pills) -->
+            <div id="selected-skills-container" class="stack-inline" style="margin-bottom: 16px; min-height: 48px; display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border: 1px dashed var(--border); border-radius: var(--radius-xl); background-color: var(--bg-primary); align-items: center;">
+                <span id="no-skills-text" style="font-size: 0.875rem; color: var(--text-muted); padding-left: 4px;">No skills selected yet. Search below to add.</span>
+            </div>
+
+            <!-- Searchable Dropdown Wrapper -->
+            <div class="skills-search-container" style="position: relative; margin-bottom: 24px;">
+                <input type="text" id="skills-search-input" class="input" placeholder="🔍 Type to search or add skills (e.g. Python, React)..." style="width: 100%;" autocomplete="off">
+                
+                <!-- Dropdown Menu -->
+                <div id="skills-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); max-height: 220px; overflow-y: auto; z-index: 100; margin-top: 4px;">
+                    <!-- Dropdown options populated dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Hidden Django checkboxes container -->
+            <div class="skills-checkbox-group" style="display: none !important;">
                 {{ form.skills }}
             </div>
 
-            <!-- Custom skill entry -->
-            <div class="custom-skill-wrap">
+            <!-- Hidden custom skill fields for django integration -->
+            <div style="display: none !important;">
                 {{ form.custom_skill }}
-                <button type="button" id="add-custom-skill-btn" class="btn btn--secondary btn--small">
-                    + Add
-                </button>
             </div>
-            <div id="pending-custom-skills" class="stack-inline"></div>
             <input type="hidden" name="custom_skill" id="custom_skill_hidden">
 
             {% if has_github %}
@@ -287,45 +375,238 @@
     })();
     </script>
     <script>
-    // Custom skill "Add" button logic
+    // Searchable Dropdown Combobox Selector UX
     (function () {
-        const btn = document.getElementById('add-custom-skill-btn');
-        if (!btn) return;
+        const checkboxGroup = document.querySelector('.skills-checkbox-group');
+        const searchInput = document.getElementById('skills-search-input');
+        const dropdownMenu = document.getElementById('skills-dropdown-menu');
+        const selectedContainer = document.getElementById('selected-skills-container');
+        const noSkillsText = document.getElementById('no-skills-text');
+        const hiddenCustomField = document.getElementById('custom_skill_hidden');
 
-        const input = document.getElementById('id_custom_skill');
-        const hidden = document.getElementById('custom_skill_hidden');
-        const container = document.getElementById('pending-custom-skills');
-        const addedSkills = [];
+        if (!checkboxGroup || !searchInput || !dropdownMenu || !selectedContainer) return;
 
-        btn.addEventListener('click', function () {
-            const val = input.value.trim();
-            if (!val || addedSkills.includes(val.toLowerCase())) { input.focus(); return; }
-            addedSkills.push(val.toLowerCase());
+        const dbSkills = [];
+        const addedCustomSkills = [];
+        let focusedIndex = -1;
 
-            const pill = document.createElement('span');
-            pill.className = 'skill-tag';
-            pill.style.cursor = 'pointer';
-            pill.title = 'Click to remove';
-            pill.innerHTML = val + ' ✕';
-            pill.addEventListener('click', function () {
-                const idx = addedSkills.indexOf(val.toLowerCase());
-                if (idx > -1) addedSkills.splice(idx, 1);
-                pill.remove();
-                syncHidden();
+        // --- 1. Load Skills from Django Checkboxes ---
+        const labels = checkboxGroup.querySelectorAll('label');
+        labels.forEach(label => {
+            const checkbox = document.getElementById(label.getAttribute('for'));
+            if (!checkbox) return;
+            dbSkills.push({
+                id: checkbox.id,
+                name: label.textContent.trim(),
+                checkboxEl: checkbox,
+                get checked() { return this.checkboxEl.checked; },
+                set checked(val) { this.checkboxEl.checked = val; }
             });
-            container.appendChild(pill);
-            input.value = '';
-            syncHidden();
-            input.focus();
         });
 
-        input && input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); btn.click(); }
-        });
+        // --- 2. Render Functions ---
+        function renderSelectedPills() {
+            // Clear existing pills but keep noSkillsText reference
+            const pills = selectedContainer.querySelectorAll('.selected-skill-pill');
+            pills.forEach(pill => pill.remove());
 
-        function syncHidden() {
-            hidden.value = addedSkills[addedSkills.length - 1] || '';
+            const selectedDb = dbSkills.filter(s => s.checked);
+            const hasSelections = selectedDb.length > 0 || addedCustomSkills.length > 0;
+
+            if (hasSelections) {
+                noSkillsText.style.display = 'none';
+
+                // Render database selected pills
+                selectedDb.forEach(skill => {
+                    const pill = document.createElement('span');
+                    pill.className = 'selected-skill-pill';
+                    pill.innerHTML = `${skill.name} <span class="remove-icon">✕</span>`;
+                    pill.addEventListener('click', () => {
+                        skill.checked = false;
+                        skill.checkboxEl.dispatchEvent(new Event('change'));
+                        renderSelectedPills();
+                        renderDropdownList();
+                    });
+                    selectedContainer.appendChild(pill);
+                });
+
+                // Render custom selected pills
+                addedCustomSkills.forEach(skillName => {
+                    const pill = document.createElement('span');
+                    pill.className = 'selected-skill-pill';
+                    pill.innerHTML = `${skillName} <span class="remove-icon">✕</span>`;
+                    pill.addEventListener('click', () => {
+                        const idx = addedCustomSkills.indexOf(skillName);
+                        if (idx > -1) {
+                            addedCustomSkills.splice(idx, 1);
+                            syncCustomSkillsHidden();
+                        }
+                        renderSelectedPills();
+                        renderDropdownList();
+                    });
+                    selectedContainer.appendChild(pill);
+                });
+            } else {
+                noSkillsText.style.display = '';
+            }
         }
+
+        function renderDropdownList() {
+            dropdownMenu.innerHTML = '';
+            focusedIndex = -1;
+            const query = searchInput.value.trim().toLowerCase();
+
+            // Filter out skills that are already selected, and match the query
+            const matches = dbSkills.filter(skill => {
+                const matchesQuery = skill.name.toLowerCase().includes(query);
+                return matchesQuery && !skill.checked;
+            });
+
+            if (matches.length > 0) {
+                matches.forEach(skill => {
+                    const item = document.createElement('div');
+                    item.className = 'skills-dropdown-item';
+                    item.textContent = skill.name;
+                    item.addEventListener('click', () => {
+                        selectSkill(skill);
+                    });
+                    dropdownMenu.appendChild(item);
+                });
+            }
+
+            // Show custom add option if query is not empty and not an exact match to any selected/unselected skill
+            if (query) {
+                const exactDbMatch = dbSkills.some(s => s.name.toLowerCase() === query);
+                const exactCustomMatch = addedCustomSkills.some(s => s.toLowerCase() === query);
+                if (!exactDbMatch && !exactCustomMatch) {
+                    const customAdd = document.createElement('div');
+                    customAdd.className = 'skills-dropdown-item custom-add';
+                    customAdd.textContent = `+ Add "${searchInput.value.trim()}" as a custom skill`;
+                    customAdd.addEventListener('click', () => {
+                        addCustomSkill(searchInput.value.trim());
+                    });
+                    dropdownMenu.appendChild(customAdd);
+                }
+            }
+
+            if (dropdownMenu.children.length > 0) {
+                dropdownMenu.style.display = 'block';
+            } else {
+                dropdownMenu.style.display = 'none';
+            }
+        }
+
+        // --- 3. Selection Actions ---
+        function selectSkill(skill) {
+            skill.checked = true;
+            skill.checkboxEl.dispatchEvent(new Event('change'));
+            searchInput.value = '';
+            dropdownMenu.style.display = 'none';
+            renderSelectedPills();
+        }
+
+        function addCustomSkill(skillName) {
+            if (!addedCustomSkills.map(s => s.toLowerCase()).includes(skillName.toLowerCase())) {
+                addedCustomSkills.push(skillName);
+                syncCustomSkillsHidden();
+            }
+            searchInput.value = '';
+            dropdownMenu.style.display = 'none';
+            renderSelectedPills();
+        }
+
+        function syncCustomSkillsHidden() {
+            hiddenCustomField.value = addedCustomSkills.join(',');
+        }
+
+        // --- 4. Event Listeners & Keyboard Navigation ---
+        searchInput.addEventListener('focus', () => {
+            renderDropdownList();
+        });
+
+        searchInput.addEventListener('input', () => {
+            renderDropdownList();
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            const items = dropdownMenu.querySelectorAll('.skills-dropdown-item');
+            if (dropdownMenu.style.display === 'block' && items.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    focusedIndex = (focusedIndex + 1) % items.length;
+                    updateItemFocus(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    focusedIndex = (focusedIndex - 1 + items.length) % items.length;
+                    updateItemFocus(items);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (focusedIndex >= 0 && focusedIndex < items.length) {
+                        items[focusedIndex].click();
+                    } else if (items.length > 0) {
+                        items[0].click();
+                    }
+                } else if (e.key === 'Escape') {
+                    dropdownMenu.style.display = 'none';
+                    searchInput.blur();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = searchInput.value.trim();
+                if (val) {
+                    const match = dbSkills.find(s => s.name.toLowerCase() === val.toLowerCase());
+                    if (match) {
+                        if (!match.checked) selectSkill(match);
+                    } else {
+                        addCustomSkill(val);
+                    }
+                }
+            }
+        });
+
+        function updateItemFocus(items) {
+            items.forEach((item, idx) => {
+                if (idx === focusedIndex) {
+                    item.classList.add('focused');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    item.classList.remove('focused');
+                }
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+
+        // Intercept form submit to capture whatever was in search bar
+        const formEl = searchInput.closest('form');
+        if (formEl) {
+            formEl.addEventListener('submit', () => {
+                const val = searchInput.value.trim();
+                if (val) {
+                    const match = dbSkills.find(s => s.name.toLowerCase() === val.toLowerCase());
+                    if (match) {
+                        if (!match.checked) {
+                            match.checked = true;
+                            match.checkboxEl.dispatchEvent(new Event('change'));
+                        }
+                    } else {
+                        if (!addedCustomSkills.map(s => s.toLowerCase()).includes(val.toLowerCase())) {
+                            addedCustomSkills.push(val);
+                            syncCustomSkillsHidden();
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 5. Initial Render ---
+        renderSelectedPills();
     })();
     </script>
 
