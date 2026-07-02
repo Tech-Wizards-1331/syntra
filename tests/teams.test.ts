@@ -25,81 +25,80 @@ vi.mock("crypto", () => ({
 
 // Mock prisma
 vi.mock("@/lib/prisma", () => {
+  const mockTeam = {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    update: vi.fn(),
+    count: vi.fn(),
+    create: vi.fn(),
+  };
+  const mockTeamMember = {
+    count: vi.fn(),
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  };
+  const mockTeamMemberSkills = {
+    createMany: vi.fn(),
+    create: vi.fn(),
+    deleteMany: vi.fn(),
+  };
+  const mockTeamRequest = {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(() => []),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+    create: vi.fn(),
+  };
+  const mockScanRecord = {
+    deleteMany: vi.fn(),
+  };
+  const mockSkill = {
+    findUnique: vi.fn(),
+    findMany: vi.fn(async () => {
+      const mockVal = await mockSkill.findUnique();
+      if (mockVal) {
+        return [mockVal];
+      }
+      return [];
+    }),
+    create: vi.fn(),
+    createMany: vi.fn(),
+  };
+
   const mockTx = {
-    participant_team: {
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    participant_teammember: {
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    participant_teammember_skills: {
-      createMany: vi.fn(),
-      create: vi.fn(),
-      deleteMany: vi.fn(),
-    },
-    participant_teamrequest: {
-      findMany: vi.fn(() => []),
-      updateMany: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
-    },
-    organizer_scanrecord: {
-      deleteMany: vi.fn(),
-    },
-    participant_skill: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
+    participant_team: mockTeam,
+    participant_teammember: mockTeamMember,
+    participant_teammember_skills: mockTeamMemberSkills,
+    participant_teamrequest: mockTeamRequest,
+    organizer_scanrecord: mockScanRecord,
+    participant_skill: mockSkill,
   };
 
   const mockPrisma = {
-    participant_team: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      update: vi.fn(),
-      count: vi.fn(),
-    },
-    participant_teammember: {
-      count: vi.fn(),
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      delete: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    participant_teammember_skills: {
-      deleteMany: vi.fn(),
-    },
+    participant_team: mockTeam,
+    participant_teammember: mockTeamMember,
+    participant_teammember_skills: mockTeamMemberSkills,
     participant_participantprofile: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
-    },
-    participant_teamrequest: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
       update: vi.fn(),
-      create: vi.fn(),
     },
+    participant_teamrequest: mockTeamRequest,
     organizer_hackathon: {
       findUnique: vi.fn(),
     },
-    organizer_scanrecord: {
-      deleteMany: vi.fn(),
-    },
+    organizer_scanrecord: mockScanRecord,
     accounts_user: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
     },
-    participant_skill: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
+    participant_skill: mockSkill,
     $transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
     _tx: mockTx,
   };

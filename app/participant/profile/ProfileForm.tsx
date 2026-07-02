@@ -46,7 +46,7 @@ function ParticipantProfileForm({
   const [college, setCollege] = useState(existingProfile?.college || "");
   const [degree, setDegree] = useState(existingProfile?.degree || "");
   const [semester, setSemester] = useState(existingProfile?.semester || 1);
-  const [visibility, setVisibility] = useState(existingProfile?.visibility !== false);
+  const visibility = true;
   const [selectedSkills, setSelectedSkills] = useState<string[]>(existingProfile?.skills || []);
   const [skillSearch, setSkillSearch] = useState("");
   
@@ -198,7 +198,7 @@ function ParticipantProfileForm({
           </div>
         </div>
 
-        {/* Semester & Profile Visibility */}
+        {/* Semester */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="semester" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
@@ -217,38 +217,6 @@ function ParticipantProfileForm({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
-              {visibility ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />} Profile Visibility
-            </label>
-            <div
-              onClick={() => !isPending && setVisibility(!visibility)}
-              className={`flex items-center justify-between p-3.5 rounded-md bg-canvas-pearl border transition cursor-pointer selection:bg-transparent ${
-                visibility ? "border-primary/30 hover:border-primary/50" : "border-black/[0.08] hover:border-black/[0.15]"
-              }`}
-            >
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-semibold text-ink">
-                  {visibility ? "Public Profile" : "Hidden Profile"}
-                </span>
-                <span className="text-[10px] text-ink-muted">
-                  {visibility ? "Visible to teammates & organizers" : "Only organizers can see you"}
-                </span>
-              </div>
-              <div
-                className={`w-9 h-5 rounded-full p-0.5 transition duration-300 flex items-center ${
-                  visibility ? "bg-primary" : "bg-black/[0.12]"
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition duration-300 ${
-                    visibility ? "translate-x-4" : "translate-x-0"
-                  }`}
-                />
-              </div>
-            </div>
           </div>
         </div>
 
