@@ -14,7 +14,6 @@ import {
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { getCachedActiveHackathons } from "@/app/actions/hackathons";
-import InboxSection from "./InboxSection";
 
 export const metadata = {
   title: "Participant Dashboard | Syntra",
@@ -30,7 +29,7 @@ export default async function ParticipantDashboard(props: {
   const userEmail = session?.user?.email || "";
 
   // Fetch user teams and pending invites count in parallel (excluding expired draft teams)
-  const [allUserTeams, pendingInvitesCount, participantProfile] = await Promise.all([
+  const [allUserTeams, pendingInvitesCount] = await Promise.all([
     prisma.participant_team.findMany({
       where: {
         OR: [
@@ -75,10 +74,6 @@ export default async function ParticipantDashboard(props: {
         status: "pending",
       },
     }),
-    prisma.participant_participantprofile.findUnique({
-      where: { user_id: userIdNum },
-      select: { visibility: true },
-    }),
   ]);
 
   const userTeams = allUserTeams.map((ut) => {
@@ -101,15 +96,6 @@ export default async function ParticipantDashboard(props: {
   });
 
   const activeRegistrations = userTeams.filter((t) => t.isRegistered);
-  const hasTeam = userTeams.length > 0;
-
-  // Auto-sync visibility database field to ensure consistency
-  if (participantProfile && participantProfile.visibility !== !hasTeam) {
-    await prisma.participant_participantprofile.update({
-      where: { user_id: userIdNum },
-      data: { visibility: !hasTeam, updated_at: new Date() },
-    });
-  }
 
   // Get hackathons in registration phase (excluding ones they already have a team in) from cache
   const userTeamHackathonIds = allUserTeams.map((ut) => ut.hackathon_id);
@@ -300,16 +286,8 @@ export default async function ParticipantDashboard(props: {
           </div>
         </div>
 
-        {/* Right Column (Inbox & Recruiting + Upcoming Events) */}
+        {/* Right Column (Upcoming Events Timeline) */}
         <div className="flex flex-col gap-5">
-          {/* Inbox & Recruiting */}
-          <div className="bg-canvas rounded-lg p-6 border border-black/[0.06] apple-shadow-overlay">
-            <InboxSection
-              hasTeam={hasTeam}
-            />
-          </div>
-
-          {/* Upcoming Events */}
           <div className="bg-canvas rounded-lg p-6 border border-black/[0.06] apple-shadow-overlay flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
               <h3 className="text-sm font-semibold text-ink flex items-center gap-2">

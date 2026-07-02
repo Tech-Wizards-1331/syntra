@@ -66,14 +66,13 @@ def dashboard_view(request: HttpRequest) -> HttpResponse:
             defaults={'college': 'Not Specified', 'semester': 1, 'degree': 'Not Specified'}
         )
 
-        # Sync recruiting visibility: True when solo, False when in any team
+        # Force recruiting visibility to False if the user is already a team leader or team member
         from django.db.models import Q
         from participant.models import TeamMember
         is_in_team = Team.objects.filter(leader=request.user).exists() or TeamMember.objects.filter(email=request.user.email).exists()
-        expected_visibility = not is_in_team
-        if profile.visibility != expected_visibility:
-            profile.visibility = expected_visibility
-            profile.save(update_fields=['visibility'])
+        if is_in_team and profile.visibility:
+            profile.visibility = False
+            profile.save()
 
         has_registered_team = (
             Team.objects.filter(leader=request.user, is_registered=True).exists() or

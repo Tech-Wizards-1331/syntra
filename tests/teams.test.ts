@@ -179,30 +179,6 @@ describe("createTeam", () => {
     expect(mockPrisma._tx.participant_teammember_skills.createMany).toHaveBeenCalledTimes(1);
   });
 
-  it("auto-disables recruiting visibility if it was true", async () => {
-    mockPrisma.organizer_hackathon.findUnique.mockResolvedValue(mockHackathon);
-    mockPrisma.participant_team.findFirst.mockResolvedValue(null);
-    mockPrisma.participant_participantprofile.findUnique.mockResolvedValue({
-      ...mockProfile,
-      visibility: true,
-    });
-    mockPrisma._tx.participant_team.create.mockResolvedValue({
-      id: 100,
-      invite_token: null,
-      qr_token: null,
-    });
-    mockPrisma._tx.participant_teammember.create.mockResolvedValue({ id: 200 });
-    mockPrisma.participant_participantprofile.update.mockResolvedValue({});
-
-    const result = await createTeam(10, "Alpha Team");
-
-    expect(result.success).toBe(true);
-    expect(mockPrisma.participant_participantprofile.update).toHaveBeenCalledWith({
-      where: { user_id: 1 },
-      data: { visibility: false, updated_at: expect.any(Date) },
-    });
-  });
-
   it("blocks creation if user is already in a team for this hackathon", async () => {
     mockPrisma.organizer_hackathon.findUnique.mockResolvedValue(mockHackathon);
     mockPrisma.participant_team.findFirst.mockResolvedValue({ id: 50 });

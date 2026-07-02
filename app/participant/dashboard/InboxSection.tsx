@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import {
   getIncomingInvites,
   acceptTeamInvite,
   declineTeamInvite,
+  toggleRecruitingVisibility,
 } from "@/app/actions/teamRequests";
 import { Mail, Check, X, Loader2, EyeOff, Eye, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -13,21 +14,28 @@ import ToastContainer, { ToastMessage } from "./ToastContainer";
 
 /**
  * Inbox & Recruiting section — matches Django's dashboard "Inbox & Recruiting" section.
- *
- * Visibility is AUTO-MANAGED by team status:
- * - hasTeam = true  → profile hidden, no invites shown
- * - hasTeam = false → profile visible, incoming invites shown
- *
- * Users cannot manually toggle visibility.
+ * Shows:
+ * - Recruiting Profile visibility toggle
+ * - Incoming team invites with Accept/Decline buttons
  */
-export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
+export default function InboxSection({
+  initialVisibility,
+  hasTeam,
+}: {
+  initialVisibility: boolean;
+  hasTeam: boolean;
+}) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [visible, setVisible] = useState(initialVisibility);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [invites, setInvites] = useState<
     { id: number; teamName: string; hackathonName: string; createdAt: string }[]
   >([]);
-  const [loading, setLoading] = useState(!hasTeam); // only load invites if visible
+  const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
 
+  // UX Enhancements States
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
@@ -70,19 +78,29 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
   };
 
   useEffect(() => {
-    if (!hasTeam) {
-      loadInvites();
-    }
-  }, [hasTeam]);
+    loadInvites();
+  }, []);
 
   const loadInvites = async () => {
     try {
       const data = await getIncomingInvites();
       setInvites(data);
-    } catch {
-      /* ignore */
-    } finally {
+    } catch { /* ignore */ } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleVisibility = async () => {
+    const newVis = !visible;
+    setTogglingVisibility(true);
+    try {
+      await toggleRecruitingVisibility(newVis);
+      setVisible(newVis);
+      if (!newVis) {
+        setInvites([]); // Turning off clears pending invites (Django parity)
+      }
+    } catch { /* ignore */ } finally {
+      setTogglingVisibility(false);
     }
   };
 
@@ -99,11 +117,8 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
           setTimeout(() => {
             router.refresh();
           }, 1000);
-        } catch (e: unknown) {
-          addToast(
-            e instanceof Error ? e.message : "Failed to accept invite.",
-            "error"
-          );
+        } catch (e: any) {
+          addToast(e.message || "Failed to accept invite.", "error");
         } finally {
           setProcessingId(null);
         }
@@ -123,11 +138,8 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
           await declineTeamInvite(id);
           addToast(`Declined invitation from team "${teamName}".`, "success");
           setInvites((prev) => prev.filter((inv) => inv.id !== id));
-        } catch (e: unknown) {
-          addToast(
-            e instanceof Error ? e.message : "Failed to decline invite.",
-            "error"
-          );
+        } catch (e: any) {
+          addToast(e.message || "Failed to decline invite.", "error");
         } finally {
           setProcessingId(null);
         }
@@ -139,45 +151,45 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
 
   return (
     <div>
-      {/* Header with auto-managed status badge */}
+      {/* Header with toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
           <Mail className="w-4 h-4 text-primary" />
-          Inbox &amp; Recruiting
+          Inbox & Recruiting
         </h2>
-
-        {/* Read-only status indicator — auto-set by team membership */}
-        <div className="flex items-center gap-2.5 bg-canvas-parchment border border-black/[0.06] rounded-md px-3.5 py-2">
-          {hasTeam ? (
-            <>
-              <EyeOff className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-              <div>
-                <p className="text-[11px] font-semibold text-ink">Profile Hidden</p>
-                <p className="text-[10px] text-ink-muted">You&apos;re in a team</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <Eye className="w-3.5 h-3.5 text-primary shrink-0" />
-              <div>
-                <p className="text-[11px] font-semibold text-ink">Profile Visible</p>
-                <p className="text-[10px] text-ink-muted">Teams can find you</p>
-              </div>
-            </>
-          )}
+        <div className="flex items-center gap-3 bg-canvas-parchment border border-black/[0.06] rounded-md px-4 py-2.5">
+          <div>
+            <p className="text-[11px] font-semibold text-ink">Recruiting Profile</p>
+            <p className="text-[10px] text-ink-muted">
+              {hasTeam ? "Disabled (Already in a team)" : "Let teams find you"}
+            </p>
+          </div>
+          <button
+            onClick={handleToggleVisibility}
+            disabled={hasTeam || togglingVisibility}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+              visible ? "bg-primary" : "bg-black/[0.12]"
+            }`}
+            aria-pressed={visible}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                visible ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
         </div>
       </div>
 
       {/* Content */}
-      {hasTeam ? (
-        /* User is in a team — recruiting is off */
+      {!visible ? (
         <div className="rounded-md border border-dashed border-black/[0.12] bg-canvas-parchment/50 py-8 text-center">
           <div className="w-12 h-12 rounded-full bg-canvas-parchment flex items-center justify-center mx-auto mb-3 border border-black/[0.04]">
             <EyeOff className="w-5 h-5 text-ink-muted" />
           </div>
-          <p className="text-sm font-medium text-ink">Recruiting is off</p>
+          <p className="text-sm font-medium text-ink">Your profile is hidden</p>
           <p className="text-xs text-ink-muted mt-1">
-            Your profile is hidden while you&apos;re in a team.
+            Turn on visibility to allow Team Leaders to find you and send invitations.
           </p>
         </div>
       ) : loading ? (
@@ -185,18 +197,14 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
           <Loader2 className="w-5 h-5 text-ink-muted animate-spin mx-auto" />
         </div>
       ) : invites.length === 0 ? (
-        /* Visible, no pending invites */
         <div className="rounded-md border border-dashed border-black/[0.12] bg-canvas-parchment/50 py-8 text-center">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 border border-primary/10">
             <Eye className="w-5 h-5 text-primary/50" />
           </div>
           <p className="text-sm text-ink-muted font-medium">No pending team invitations.</p>
-          <p className="text-xs text-ink-muted mt-1">
-            Your profile is visible — teams can find and invite you.
-          </p>
+          <p className="text-xs text-ink-muted mt-1">Your profile is visible — teams can find and invite you.</p>
         </div>
       ) : (
-        /* Invite list */
         <div className="space-y-2">
           {invites.map((inv, idx) => (
             <div
@@ -209,9 +217,7 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-ink">{inv.teamName}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">
-                    Hackathon: {inv.hackathonName}
-                  </p>
+                  <p className="text-xs text-ink-muted mt-0.5">Hackathon: {inv.hackathonName}</p>
                 </div>
               </div>
               <div className="flex gap-2 shrink-0">
@@ -236,7 +242,6 @@ export default function InboxSection({ hasTeam }: { hasTeam: boolean }) {
           ))}
         </div>
       )}
-
       <CustomModal
         isOpen={modalOpen}
         title={modalConfig.title}

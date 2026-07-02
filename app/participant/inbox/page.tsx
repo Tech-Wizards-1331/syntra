@@ -22,6 +22,8 @@ export default async function InboxPage() {
     where: { user_id: userIdNum },
     select: { visibility: true },
   });
+  const profileVisibility = participantProfile?.visibility ?? false;
+
   // Determine if the user has any team for any active hackathon
   const userTeams = await prisma.participant_team.findMany({
     where: {
@@ -32,15 +34,6 @@ export default async function InboxPage() {
     },
     select: { id: true },
   });
-  const hasTeam = userTeams.length > 0;
-
-  // Auto-sync visibility database field to ensure consistency
-  if (participantProfile && participantProfile.visibility !== !hasTeam) {
-    await prisma.participant_participantprofile.update({
-      where: { user_id: userIdNum },
-      data: { visibility: !hasTeam, updated_at: new Date() },
-    });
-  }
 
   return (
     <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8 flex flex-col gap-6 animate-fade-in-up">
@@ -48,7 +41,7 @@ export default async function InboxPage() {
       <div>
         <h2 className="text-xl font-semibold text-ink tracking-tight flex items-center gap-2">
           <Mail className="w-5 h-5 text-primary" />
-          Team Inbox &amp; Invites
+          Team Inbox & Invites
         </h2>
         <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
           Manage invitations to join other teams or toggle your visibility so organizers/team leaders can recruit you.
@@ -58,7 +51,8 @@ export default async function InboxPage() {
       {/* Renders the dynamic interactive inbox component */}
       <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay">
         <InboxSection
-          hasTeam={hasTeam}
+          initialVisibility={profileVisibility}
+          hasTeam={userTeams.length > 0}
         />
       </div>
     </main>
