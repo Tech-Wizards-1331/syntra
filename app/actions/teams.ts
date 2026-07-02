@@ -417,8 +417,8 @@ export async function searchUsersToRegister(query: string) {
       role: "participant",
       id: { not: userId },
       OR: [
-        { email: { contains: q, mode: 'insensitive' } },
-        { full_name: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q } },
+        { full_name: { contains: q } },
       ],
     },
     include: {

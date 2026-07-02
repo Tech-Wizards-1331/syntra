@@ -70,7 +70,7 @@ export async function searchParticipantsForInvite(
     whereClause.participant_participantprofile_skills = {
       some: {
         participant_skill: {
-          name: { contains: skillQuery.trim(), mode: 'insensitive' },
+          name: { contains: skillQuery.trim() },
         },
       },
     };
@@ -163,32 +163,22 @@ export async function sendTeamInvite(teamId: number, receiverUserId: number) {
     throw new Error("This user is already in a team for this hackathon.");
   }
 
-  // Check for duplicate invite (handling the team_id + receiver_id unique constraint)
+  // Check for duplicate invite
   const existing = await prisma.participant_teamrequest.findFirst({
-    where: { team_id: teamId, receiver_id: receiverUserId },
+    where: { team_id: teamId, receiver_id: receiverUserId, status: "pending" },
   });
   if (existing) {
-    if (existing.status === "pending") {
-      throw new Error("An invite is already pending for this user.");
-    }
-    // Reuse the existing record to bypass the unique constraint
-    await prisma.participant_teamrequest.update({
-      where: { id: existing.id },
-      data: {
-        status: "pending",
-        created_at: new Date(),
-      },
-    });
-  } else {
-    await prisma.participant_teamrequest.create({
-      data: {
-        team_id: teamId,
-        receiver_id: receiverUserId,
-        status: "pending",
-        created_at: new Date(),
-      },
-    });
+    throw new Error("An invite is already pending for this user.");
   }
+
+  await prisma.participant_teamrequest.create({
+    data: {
+      team_id: teamId,
+      receiver_id: receiverUserId,
+      status: "pending",
+      created_at: new Date(),
+    },
+  });
 
   // Send SMTP email notification
   await sendTeamInviteEmail({
