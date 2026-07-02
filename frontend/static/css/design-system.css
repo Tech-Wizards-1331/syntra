@@ -25,10 +25,16 @@
   --danger-bg: #FEE2E2;
 
   /* Typography */
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* SF Pro resolves natively on Apple devices; Inter is the open-source equivalent */
+  --font-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'Monaco', 'Courier New', monospace;
-  --letter-spacing-tight: -0.02em;
-  --letter-spacing-normal: 0;
+
+  /* Letter-spacing — Apple tight scale */
+  --tracking-display: -0.28px;   /* hero / h1 */
+  --tracking-heading: -0.374px;  /* h2, h3, body-strong */
+  --tracking-tagline: 0.231px;   /* h4 — slight positive for small-caps feel */
+  --tracking-caption: -0.224px;  /* captions, buttons, fine print */
+  --tracking-normal: 0;
 
   /* Spacing — 4px Grid */
   --spacing-1: 4px;
@@ -39,6 +45,7 @@
   --spacing-6: 24px;
   --spacing-8: 32px;
   --spacing-12: 48px;
+  --spacing-section: 80px; /* Apple full-bleed section rhythm */
 
   /* Shadows — Subtle */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -74,56 +81,106 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-primary);
   font-weight: 400;
-  line-height: 1.5;
+  font-size: 1.0625rem; /* 17px — Apple body standard */
+  line-height: 1.47;
+  letter-spacing: var(--tracking-heading);
 }
 
 /* ====== TYPOGRAPHY ====== */
 
-h1, h2, h3, h4, h5, h6 {
+/*
+  Weight ladder: 400 (body) / 600 (headings, strong) / 700 (tagline assertion)
+  500 is deliberately absent — matches Apple's typographic cadence.
+  Negative letter-spacing at display sizes = the "Apple tight" headline feel.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 600;
-  letter-spacing: var(--letter-spacing-tight);
   line-height: 1.2;
   color: var(--text-primary);
 }
 
 h1 {
-  font-size: 2rem;
-  font-weight: 700;
+  /* display-lg: 40px / 600 / lh 1.10 / tracking 0 */
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: var(--tracking-display);
   margin-bottom: var(--spacing-4);
 }
 
 h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
+  /* display-md: 34px / 600 / lh 1.2 / tracking -0.374px */
+  font-size: 2.125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-heading);
   margin-bottom: var(--spacing-3);
 }
 
 h3 {
-  font-size: 1.375rem;
+  /* tagline: 21px / 600 / lh 1.19 / tracking 0.231px */
+  font-size: 1.3125rem;
   font-weight: 600;
+  line-height: 1.19;
+  letter-spacing: var(--tracking-tagline);
   margin-bottom: var(--spacing-3);
 }
 
 h4 {
-  font-size: 1.125rem;
+  /* body-strong: 17px / 600 / lh 1.24 / tracking -0.374px */
+  font-size: 1.0625rem;
   font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: var(--tracking-heading);
   margin-bottom: var(--spacing-2);
 }
 
 h5 {
-  font-size: 1rem;
+  /* caption-strong: 14px / 600 / lh 1.29 / tracking -0.224px */
+  font-size: 0.875rem;
   font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: var(--tracking-caption);
   margin-bottom: var(--spacing-2);
 }
 
 h6 {
-  font-size: 0.875rem;
-  font-weight: 600;
+  /* fine-print: 12px / 400 / lh 1.0 / tracking -0.12px */
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.0;
+  letter-spacing: -0.12px;
   margin-bottom: var(--spacing-2);
 }
 
 p {
+  /* body: 17px / 400 / lh 1.47 / tracking -0.374px */
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: var(--tracking-heading);
   margin-bottom: var(--spacing-4);
+}
+
+/* Caption utility — 14px secondary text */
+.text--caption {
+  font-size: 0.875rem;
+  line-height: 1.43;
+  letter-spacing: var(--tracking-caption);
+}
+
+/* Fine-print utility — 12px legal/footer */
+.text--fine {
+  font-size: 0.75rem;
+  line-height: 1.0;
+  letter-spacing: -0.12px;
+  color: var(--text-muted);
 }
 
 a {
@@ -170,9 +227,9 @@ a:hover {
   padding: var(--spacing-2) var(--spacing-4);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  font-family: var(--font-primary);
-  font-weight: 500;
+  font-weight: 400; /* Apple: body buttons use 400, not 500 */
   font-size: 0.875rem;
+  letter-spacing: var(--tracking-caption); /* -0.224px — Apple button-utility */
   cursor: pointer;
   transition: all var(--transition-standard);
   text-decoration: none;
@@ -182,6 +239,7 @@ a:hover {
 
 .btn:hover {
   transform: translateY(-1px);
+  text-decoration: none;
 }
 
 .btn:active {
@@ -204,6 +262,7 @@ a:hover {
   background-color: var(--primary-blue-hover);
   border-color: var(--primary-blue-hover);
   box-shadow: var(--shadow-lg);
+  color: white;
 }
 
 .btn--secondary {
@@ -215,6 +274,7 @@ a:hover {
 .btn--secondary:hover {
   background-color: var(--bg-primary);
   border-color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .btn--ghost {
@@ -225,6 +285,7 @@ a:hover {
 
 .btn--ghost:hover {
   background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .btn--danger {
@@ -237,6 +298,7 @@ a:hover {
   background-color: #B91C1C;
   border-color: #B91C1C;
   box-shadow: var(--shadow-lg);
+  color: white;
 }
 
 .btn--small {
@@ -369,9 +431,12 @@ textarea {
 }
 
 .message--error {
-  border-left-color: var(--danger);
-  background-color: var(--danger-bg);
-  color: var(--danger);
+  border: 1px solid #FECACA;
+  border-left: 4px solid var(--danger);
+  background-color: #FEF2F2;
+  color: #B91C1C;
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .message--warning {
@@ -391,6 +456,7 @@ textarea {
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -462,6 +528,7 @@ textarea {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -746,4 +813,22 @@ textarea {
     padding: var(--spacing-2);
     font-size: 0.75rem;
   }
+}
+
+/* ====== BRAND LOGO HOVER OVERRIDES ====== */
+.brand-logo:hover,
+.auth-branding-logo:hover,
+.dashboard-brand:hover {
+  text-decoration: none;
+}
+
+/* ====== MICRO-ANIMATIONS ====== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.8s ease-in-out;
 }

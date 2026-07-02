@@ -10,7 +10,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <style>
-        .profile-main { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+        .profile-main { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+        .profile-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 40px 40px 36px;
+        }
 
         .section-label {
             font-size: 0.75rem;
@@ -68,15 +76,23 @@
         .stack-inline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
         @media (max-width: 640px) {
-            .profile-main { padding: 24px 16px; }
+            .profile-main { padding: 16px 12px; }
+            .profile-card { padding: 24px 20px; border-radius: 12px; }
+        }
+
+        .profile-page-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
     </style>
 </head>
 <body>
+    <div class="profile-page-wrapper">
 
     <!-- Navigation -->
     <nav style="background-color: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50;">
-        <a href="{% url 'dashboard' %}" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+        <a href="{% url 'dashboard' %}" class="brand-logo" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
             <div style="width:32px;height:32px;background-color:var(--primary-blue);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">S</div>
             <span style="font-weight:700;color:var(--text-primary);">Syntra</span>
         </a>
@@ -84,6 +100,7 @@
     </nav>
 
     <main class="profile-main">
+        <div class="profile-card">
 
         {% include 'includes/_messages.html' %}
 
@@ -253,7 +270,9 @@
 
         {% endif %}
 
+        </div><!-- /.profile-card -->
     </main>
+    </div><!-- /.profile-page-wrapper -->
 
     <script src="{% static 'js/api_client.js' %}"></script>
     <script>

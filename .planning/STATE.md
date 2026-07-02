@@ -100,6 +100,9 @@ Recent decisions affecting current work:
 | 260521-s5c | Remove Celery configuration, dependencies, and code, and run seating allocation synchronously | 2026-05-21 | 89b3dd4 | [260521-s5c-remove-celery-configuration-dependencies](./quick/260521-s5c-remove-celery-configuration-dependencies/) |
 | 260522-a3f | Implement Scan Categories Management section on the Organizer Detail page | 2026-05-22 | pending | [260522-a3f-implement-scan-categories-management](./quick/260522-a3f-implement-scan-categories-management/) |
 | 260522-b4c | Fix team member count displaying 0 on participant QR page and enable team leader scanning | 2026-05-22 | pending | [260522-b4c-fix-member-count-and-leader-scanning](./quick/260522-b4c-fix-member-count-and-leader-scanning/) |
+| 260620-d8e | Remove button hover underline and fix hover text visibility | 2026-06-20 | pending | [260620-d8e-remove-button-hover-underline](./quick/260620-d8e-remove-button-hover-underline/) |
+| 260620-e2b | Center login form in rounded card and fit on screen without scrolling | 2026-06-20 | pending | [260620-e2b-login-page-layout](./quick/260620-e2b-login-page-layout/) |
+| 260620-f7a | Highlight invalid credentials error banner and add card-shake animation | 2026-06-20 | pending | [260620-f7a-login-error-highlighting](./quick/260620-f7a-login-error-highlighting/) |
 
 
 ## Deferred Items

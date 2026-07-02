@@ -5,594 +5,536 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Syntra | Run Hackathons Without Chaos</title>
-  <!-- Fonts: preconnect for faster DNS + TLS handshake -->
+  <meta name="description" content="Syntra is a premium hackathon management platform. Plan, launch, and monitor every moving part from one intelligent command layer.">
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
-  <!-- Compiled Tailwind — served by Whitenoise with long-lived cache headers -->
-  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=2">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+  <link rel="stylesheet" href="{% static 'css/home-light.css' %}">
   <script src="{% static 'js/home.js' %}" defer></script>
 </head>
-<body class="bg-slate-950 text-slate-200 selection:bg-teal-500/30">
-  <div id="cursor-glow"></div>
-  <canvas id="particle-canvas"></canvas>
-  <div class="grid-bg"></div>
+<body>
 
-  <!-- Notification Toast -->
-  <div id="notification-toast" class="notification-toast glass rounded-xl p-4 max-w-sm">
-    <div class="flex items-start gap-3">
-      <div class="pulse-dot h-2 w-2 rounded-full bg-teal-400 mt-2"></div>
-      <div>
-        <p class="text-sm font-medium text-white">New hackathon starting!</p>
-        <p class="text-xs text-slate-300 mt-1">AI Buildstorm begins in 2 hours</p>
-      </div>
-      <button onclick="this.closest('.notification-toast').classList.remove('show')" class="text-slate-400 hover:text-white ml-auto text-lg leading-none">&times;</button>
-    </div>
-  </div>
-
-  <!-- Mobile Menu -->
-  <div id="mobile-menu" class="mobile-menu">
-    <div class="flex h-full flex-col">
-      <div class="flex items-center justify-between p-6">
-        <span class="font-tech text-lg tracking-[0.18em] text-white">Syntra</span>
-        <button id="mobile-menu-close" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-slate-300">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  <!-- ========== MOBILE MENU ========== -->
+  <div id="mobile-menu" class="mobile-menu-overlay">
+    <div class="mobile-menu-panel">
+      <div class="mobile-menu-header">
+        <div class="brand-logo">
+          <div class="brand-icon">S</div>
+          <span class="brand-name">Syntra</span>
+        </div>
+        <button id="mobile-menu-close" class="icon-btn" aria-label="Close menu">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         </button>
       </div>
-      <nav class="flex flex-col gap-6 px-6">
-        <a class="text-lg text-slate-300 hover:text-teal-300 transition-colors" href="#features">Features</a>
-        <a class="text-lg text-slate-300 hover:text-teal-300 transition-colors" href="#how-it-works">How It Works</a>
-        <a class="text-lg text-slate-300 hover:text-teal-300 transition-colors" href="#hackathons">Hackathons</a>
-        <div class="mt-4 flex flex-col gap-3">
-          <a href="{% url 'login' %}" class="inline-flex justify-center rounded-xl px-5 py-3 text-sm font-semibold border border-slate-600/60 bg-slate-900/40 text-slate-300 hover:border-teal-400/50 hover:text-teal-300 transition-all">Get Started</a>
-          <a href="{% url 'login' %}" class="btn-primary inline-flex rounded-xl px-5 py-3 text-sm font-semibold justify-center">Create Hackathon</a>
-        </div>
+      <nav class="mobile-nav">
+        <a href="#features" class="mobile-nav-link">Features</a>
+        <a href="#how-it-works" class="mobile-nav-link">How It Works</a>
+        <a href="#hackathons" class="mobile-nav-link">Hackathons</a>
       </nav>
+      <div class="mobile-nav-actions">
+        <a href="{% url 'login' %}" class="btn btn--secondary btn--block">Get Started</a>
+        <a href="{% url 'login' %}" class="btn btn--primary btn--block">Create Hackathon</a>
+      </div>
     </div>
   </div>
 
-  <header id="site-header" class="fixed top-3 left-1/2 z-50 w-[95%] max-w-7xl -translate-x-1/2 rounded-2xl border border-slate-700/50 bg-slate-950/35 transition-all duration-300">
-    <div class="flex h-16 items-center justify-between px-4 sm:px-6">
-      <a href="#" class="flex items-center gap-2">
-        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-teal-300/40 bg-teal-400/15 text-sm font-bold text-teal-200">HH</span>
-        <span class="font-tech text-sm tracking-[0.18em] text-white">Syntra</span>
+  <!-- ========== NAVBAR ========== -->
+  <header id="site-header" class="site-header">
+    <div class="header-inner">
+      <!-- Brand -->
+      <a href="#" class="brand-logo">
+        <div class="brand-icon">S</div>
+        <span class="brand-name">Syntra</span>
       </a>
 
-      <nav class="hidden items-center gap-7 text-sm text-slate-300 md:flex">
-        <a class="nav-link hover:text-teal-300 transition-colors" href="#features">Features</a>
-        <a class="nav-link hover:text-teal-300 transition-colors" href="#how-it-works">How It Works</a>
-        <a class="nav-link hover:text-teal-300 transition-colors" href="#hackathons">Hackathons</a>
+      <!-- Desktop Nav -->
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#hackathons" class="nav-link">Hackathons</a>
       </nav>
 
-      <div class="flex items-center gap-3">
-        <a href="{% url 'login' %}" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-slate-300 border border-slate-600/60 bg-slate-900/40 hover:border-teal-400/50 hover:text-teal-300 transition-all">Get Started</a>
-        <a href="{% url 'login' %}" class="btn-primary hidden sm:inline-flex rounded-lg px-4 py-2 text-sm font-medium">Create Hackathon</a>
-        <button id="mobile-menu-btn" class="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/60 text-slate-300 hover:border-teal-400/50 transition-colors">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <a href="{% url 'login' %}" class="btn btn--secondary btn--small header-btn-secondary">Get Started</a>
+        <a href="{% url 'login' %}" class="btn btn--primary btn--small">Create Hackathon</a>
+        <button id="mobile-menu-btn" class="icon-btn mobile-toggle" aria-label="Open menu">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="mx-auto w-[94%] max-w-7xl pt-28 sm:pt-32">
-    <section class="relative grid items-center gap-10 py-10 lg:grid-cols-[1fr_1fr] lg:py-14">
-      <div class="hero-noise"></div>
-      <div>
-        <p class="mb-3 inline-flex items-center gap-2 rounded-full border border-rose-300/35 bg-rose-400/10 px-3 py-1 text-xs tracking-[0.14em] text-rose-200 font-tech"><span class="pulse-dot h-1.5 w-1.5 rounded-full bg-rose-400"></span> Premium Event Operations</p>
-        <h1 class="max-w-xl text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-          Run Hackathons <span class="bg-gradient-to-r from-teal-400 via-yellow-400 to-rose-400 bg-clip-text text-transparent">Without Chaos</span>
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="page-main">
+
+    <!-- ===== HERO ===== -->
+    <section class="hero-section">
+      <!-- Left: Copy -->
+      <div class="hero-copy">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Premium Event Operations
+        </div>
+
+        <h1 class="hero-headline">
+          Run Hackathons
+          <span class="headline-accent">Without Chaos</span>
         </h1>
-        <p class="mt-5 max-w-lg text-base leading-relaxed text-textSoft">
+
+        <p class="hero-subtitle">
           Plan, launch, and monitor every moving part from one intelligent command layer.
         </p>
-        <div class="mt-6 flex items-center gap-6 text-sm text-slate-400">
-          <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400"></span><span class="stats-counter font-tech" data-target="2400">0</span>+ Events</div>
-          <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-teal-400"></span><span class="stats-counter font-tech" data-target="50000">0</span>+ Hackers</div>
-          <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-rose-400"></span><span class="font-tech">99.9%</span> Uptime</div>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-dot stat-dot--emerald"></span>
+            <span class="stats-counter" data-target="2400">0</span>+ Events
+          </div>
+          <div class="stat-item">
+            <span class="stat-dot stat-dot--blue"></span>
+            <span class="stats-counter" data-target="50000">0</span>+ Hackers
+          </div>
+          <div class="stat-item">
+            <span class="stat-dot stat-dot--rose"></span>
+            99.9% Uptime
+          </div>
         </div>
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a href="{% url 'login' %}" class="btn-primary rounded-xl px-5 py-3 text-sm font-semibold">Create Hackathon</a>
-          <a href="{% url 'login' %}" class="btn-ghost rounded-xl px-5 py-3 text-sm font-semibold">Join Hackathon</a>
+
+        <div class="hero-actions">
+          <a href="{% url 'login' %}" class="btn btn--primary btn--large">Create Hackathon</a>
+          <a href="{% url 'login' %}" class="btn btn--secondary btn--large">Join Hackathon</a>
         </div>
       </div>
 
-      <div class="hero-visual relative h-[340px] sm:h-[390px]">
-        <div class="hero-orb"></div>
-        <div class="hero-motion absolute left-2 right-2 top-8 h-[280px] sm:left-8 sm:right-8 sm:h-[300px]">
-        <div id="hero-stack" class="hero-stack absolute inset-0">
-          <div class="hero-layer one p-4">
-            <div class="glass h-full rounded-xl p-4">
-              <div class="mb-3 flex items-center justify-between text-xs text-slate-300">
-                <span class="font-tech tracking-widest">Live Dashboard</span>
-                <span class="text-teal-300 font-tech">24 Teams Active</span>
-              </div>
-              <div class="grid h-[190px] gap-3 sm:grid-cols-2">
-                <div class="rounded-lg border border-teal-300/25 bg-teal-400/10 p-3">
-                  <p class="text-xs text-slate-300">Submissions</p>
-                  <p class="mt-1 text-2xl font-bold text-white font-tech">381</p>
-                </div>
-                <div class="rounded-lg border border-yellow-300/25 bg-yellow-400/10 p-3">
-                  <p class="text-xs text-slate-300">Mentor Queue</p>
-                  <p class="mt-1 text-2xl font-bold text-white font-tech">07</p>
-                </div>
-                <div class="rounded-lg border border-slate-600/70 bg-slate-900/60 p-3 sm:col-span-2">
-                  <p class="text-xs text-slate-300">Infra Health</p>
-                  <div class="mt-2 h-2 rounded-full bg-slate-700"><div class="h-full w-[84%] rounded-full bg-gradient-to-r from-teal-400 via-yellow-400 to-rose-400"></div></div>
-                </div>
-              </div>
+      <!-- Right: Dashboard Mockup -->
+      <div class="hero-visual">
+        <div class="dashboard-mockup card card--elevated">
+          <!-- Mockup Header -->
+          <div class="mockup-header">
+            <div class="mockup-dots">
+              <span class="mockup-dot mockup-dot--red"></span>
+              <span class="mockup-dot mockup-dot--yellow"></span>
+              <span class="mockup-dot mockup-dot--green"></span>
             </div>
-            <div class="hero-chip one font-tech">Latency 42ms</div>
-            <div class="hero-chip two font-tech">Autoscale On</div>
+            <span class="mockup-title">Live Dashboard</span>
+            <span class="mockup-status">
+              <span class="status-indicator"></span>
+              24 Teams Active
+            </span>
           </div>
-          <div class="hero-layer two"></div>
-          <div class="hero-layer three"></div>
+
+          <!-- Metric Cards -->
+          <div class="mockup-metrics">
+            <div class="metric-card metric-card--blue">
+              <p class="metric-label">Submissions</p>
+              <p class="metric-value">381</p>
+            </div>
+            <div class="metric-card metric-card--emerald">
+              <p class="metric-label">Mentor Queue</p>
+              <p class="metric-value">07</p>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="mockup-progress">
+            <div class="progress-label">
+              <span>Infra Health</span>
+              <span class="progress-pct">84%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width: 84%"></div>
+            </div>
+          </div>
+
+          <!-- Chip Row -->
+          <div class="mockup-chips">
+            <span class="chip chip--green">&#10003; Latency 42ms</span>
+            <span class="chip chip--blue">&#8593; Autoscale On</span>
+          </div>
         </div>
+
+        <!-- Floating label -->
+        <div class="hero-float-badge">Real-time ops panel</div>
+      </div>
+    </section>
+
+    <!-- ===== HACKATHONS ===== -->
+    <section id="hackathons" class="hackathons-section">
+      <div class="section-header">
+        <h2 class="section-title">Upcoming Hackathons</h2>
+        <span class="section-label">Live &amp; Upcoming Events</span>
+      </div>
+
+      <div class="hackathons-grid">
+        <!-- Left: marquee scrolling up -->
+        <div class="hack-rail marquee-mask">
+          <div class="marquee-track">
+            <article class="card hack-card">
+              <p class="hack-name">AI Buildstorm</p>
+              <p class="hack-date">Apr 12 &ndash; Apr 15</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">Code For Cities</p>
+              <p class="hack-date">May 02 &ndash; May 04</p>
+              <div class="hack-footer">
+                <span class="badge badge--warning">Offline</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">FinTech Forge</p>
+              <p class="hack-date">May 20 &ndash; May 22</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">BioHack Arena</p>
+              <p class="hack-date">Jun 08 &ndash; Jun 09</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">Cloud Circuit</p>
+              <p class="hack-date">Jun 20 &ndash; Jun 23</p>
+              <div class="hack-footer">
+                <span class="badge badge--warning">Offline</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <!-- Duplicate for seamless loop -->
+            <article class="card hack-card">
+              <p class="hack-name">AI Buildstorm</p>
+              <p class="hack-date">Apr 12 &ndash; Apr 15</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">Code For Cities</p>
+              <p class="hack-date">May 02 &ndash; May 04</p>
+              <div class="hack-footer">
+                <span class="badge badge--warning">Offline</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">FinTech Forge</p>
+              <p class="hack-date">May 20 &ndash; May 22</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">BioHack Arena</p>
+              <p class="hack-date">Jun 08 &ndash; Jun 09</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">Cloud Circuit</p>
+              <p class="hack-date">Jun 20 &ndash; Jun 23</p>
+              <div class="hack-footer">
+                <span class="badge badge--warning">Offline</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Center: CTA (Primary Focal Point) -->
+        <div class="hack-cta-col">
+          <div class="hack-cta card card--elevated">
+            <p class="cta-eyebrow">Host Faster</p>
+            <h2 class="cta-headline">Ready to host your hackathon?</h2>
+            <p class="cta-sub">Get your event live in minutes with Syntra&rsquo;s full management suite.</p>
+            <a href="{% url 'login' %}" class="btn btn--primary btn--large" id="cta-create-now">Create Now</a>
+            <a href="{% url 'login' %}" class="btn btn--ghost" id="cta-browse">Browse Events</a>
+          </div>
+        </div>
+
+        <!-- Right: marquee scrolling down -->
+        <div class="hack-rail marquee-mask">
+          <div class="marquee-track reverse">
+            <article class="card hack-card">
+              <p class="hack-name">DesignOps Jam</p>
+              <p class="hack-date">Jul 03 &ndash; Jul 05</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">RoboRush</p>
+              <p class="hack-date">Jul 18 &ndash; Jul 20</p>
+              <div class="hack-footer">
+                <span class="badge badge--warning">Offline</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">DataStorm</p>
+              <p class="hack-date">Aug 01 &ndash; Aug 03</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">CyberForge</p>
+              <p class="hack-date">Aug 22 &ndash; Aug 24</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">GreenGrid</p>
+              <p class="hack-date">Sep 12 &ndash; Sep 14</p>
+              <div class="hack-footer">
+                <span class="badge badge--primary">Hybrid</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <!-- Duplicate for seamless loop -->
+            <article class="card hack-card">
+              <p class="hack-name">DesignOps Jam</p>
+              <p class="hack-date">Jul 03 &ndash; Jul 05</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">RoboRush</p>
+              <p class="hack-date">Jul 18 &ndash; Jul 20</p>
+              <div class="hack-footer">
+                <span class="badge badge--warning">Offline</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">DataStorm</p>
+              <p class="hack-date">Aug 01 &ndash; Aug 03</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">CyberForge</p>
+              <p class="hack-date">Aug 22 &ndash; Aug 24</p>
+              <div class="hack-footer">
+                <span class="badge badge--success">Online</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+            <article class="card hack-card">
+              <p class="hack-name">GreenGrid</p>
+              <p class="hack-date">Sep 12 &ndash; Sep 14</p>
+              <div class="hack-footer">
+                <span class="badge badge--primary">Hybrid</span>
+                <a href="{% url 'login' %}" class="hack-join-link">Join &rarr;</a>
+              </div>
+            </article>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="hackathons" class="relative py-10 sm:py-14">
-      <div class="relative overflow-hidden rounded-3xl border border-slate-700/50 bg-slate-950/35 px-3 py-12 sm:px-6">
-        <div class="absolute inset-0 z-10 hidden items-center justify-between gap-4 md:flex">
-          <div class="side-rail marquee-mask w-[48%] overflow-hidden pl-2">
-            <div class="marquee-track">
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">AI Buildstorm</p>
-                <p class="mt-2 text-xs text-textSoft">Apr 12 - Apr 15</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">Code For Cities</p>
-                <p class="mt-2 text-xs text-textSoft">May 02 - May 04</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-1 text-[11px] text-yellow-200">Offline</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">FinTech Forge</p>
-                <p class="mt-2 text-xs text-textSoft">May 20 - May 22</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">AI Buildstorm</p>
-                <p class="mt-2 text-xs text-textSoft">Apr 12 - Apr 15</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">Code For Cities</p>
-                <p class="mt-2 text-xs text-textSoft">May 02 - May 04</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-1 text-[11px] text-yellow-200">Offline</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">FinTech Forge</p>
-                <p class="mt-2 text-xs text-textSoft">May 20 - May 22</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-            </div>
-          </div>
-
-          <div class="side-rail marquee-mask w-[48%] overflow-hidden pr-2">
-            <div class="marquee-track reverse">
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">BioHack Arena</p>
-                <p class="mt-2 text-xs text-textSoft">Jun 08 - Jun 09</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">Cloud Circuit</p>
-                <p class="mt-2 text-xs text-textSoft">Jun 20 - Jun 23</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-1 text-[11px] text-yellow-200">Offline</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">DesignOps Jam</p>
-                <p class="mt-2 text-xs text-textSoft">Jul 03 - Jul 05</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">BioHack Arena</p>
-                <p class="mt-2 text-xs text-textSoft">Jun 08 - Jun 09</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">Cloud Circuit</p>
-                <p class="mt-2 text-xs text-textSoft">Jun 20 - Jun 23</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-1 text-[11px] text-yellow-200">Offline</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-              <article class="hack-card glass hover-lift w-64 rounded-2xl p-4">
-                <p class="text-sm font-semibold text-white">DesignOps Jam</p>
-                <p class="mt-2 text-xs text-textSoft">Jul 03 - Jul 05</p>
-                <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-              </article>
-            </div>
-          </div>
-        </div>
-
-        <div class="mobile-scroll md:hidden">
-          <div class="mobile-rails">
-            <article class="hack-card glass rounded-2xl p-4">
-              <p class="text-sm font-semibold text-white">AI Buildstorm</p>
-              <p class="mt-2 text-xs text-textSoft">Apr 12 - Apr 15</p>
-              <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-            </article>
-            <article class="hack-card glass rounded-2xl p-4">
-              <p class="text-sm font-semibold text-white">Cloud Circuit</p>
-              <p class="mt-2 text-xs text-textSoft">Jun 20 - Jun 23</p>
-              <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-1 text-[11px] text-yellow-200">Offline</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-            </article>
-            <article class="hack-card glass rounded-2xl p-4">
-              <p class="text-sm font-semibold text-white">DesignOps Jam</p>
-              <p class="mt-2 text-xs text-textSoft">Jul 03 - Jul 05</p>
-              <div class="mt-3 flex items-center justify-between"><span class="rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-1 text-[11px] text-teal-200">Online</span><a class="text-xs text-rose-300 hover:text-rose-200" href="#">Join</a></div>
-            </article>
-          </div>
-        </div>
-
-        <div class="relative z-30 mx-auto mt-8 w-full max-w-lg md:mt-24">
-          <div class="glass glow-ring rounded-3xl px-6 py-8 text-center">
-            <p class="mb-3 text-xs uppercase tracking-[0.2em] text-rose-300 font-tech">Host Faster</p>
-            <h2 class="text-2xl font-bold text-white sm:text-3xl">Ready to host your hackathon?</h2>
-            <a href="{% url 'login' %}" class="btn-primary mt-5 inline-flex rounded-xl px-5 py-3 text-sm font-semibold">Create Now</a>
-          </div>
-        </div>
+    <!-- ===== HOW IT WORKS ===== -->
+    <section id="how-it-works" class="how-section">
+      <div class="section-header section-header--center">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">From fragmented chaos to a unified command layer.</p>
       </div>
-    </section>
 
-    <section id="how-it-works" class="py-12 sm:py-14">
-      <div class="grid gap-5 lg:grid-cols-2">
-        <article class="glass problem-grid hover-lift rounded-3xl p-6 sm:p-8" style="border-color: rgba(239,68,68,0.3); background: linear-gradient(160deg, rgba(239,68,68,0.07), rgba(11,18,32,0.88)); box-shadow: 0 0 0 1px rgba(239,68,68,0.15), 0 20px 50px rgba(2,6,23,0.5), inset 0 1px 0 rgba(239,68,68,0.1);">
-          <p class="text-xs uppercase tracking-[0.2em] text-rose-300 font-tech">Problem</p>
-          <h3 class="mt-2 text-2xl font-bold text-white">Tab chaos. Tool chaos. Team chaos.</h3>
-          <ul class="mt-5 space-y-3 text-sm text-slate-300">
-            <li class="rounded-xl border border-rose-300/25 bg-rose-500/10 px-4 py-3">Registrations lost across forms</li>
-            <li class="rounded-xl border border-rose-300/25 bg-rose-500/10 px-4 py-3">Mentor routing handled manually</li>
-            <li class="rounded-xl border border-rose-300/25 bg-rose-500/10 px-4 py-3">Judging updates buried in chat</li>
-            <li class="rounded-xl border border-rose-300/25 bg-rose-500/10 px-4 py-3">Deadline and infra sync always late</li>
+      <div class="how-grid">
+        <!-- Problem Card -->
+        <article class="how-card how-card--problem">
+          <div class="how-card-eyebrow how-card-eyebrow--danger">Problem</div>
+          <h3 class="how-card-title">Tab chaos. Tool chaos. Team chaos.</h3>
+          <ul class="problem-list">
+            <li class="problem-item">Registrations lost across forms</li>
+            <li class="problem-item">Mentor routing handled manually</li>
+            <li class="problem-item">Judging updates buried in chat</li>
+            <li class="problem-item">Deadline and infra sync always late</li>
           </ul>
         </article>
 
-        <article class="glass solution-grid hover-lift rounded-3xl p-6 sm:p-8" style="border-color: rgba(45,212,191,0.3); background: linear-gradient(160deg, rgba(45,212,191,0.07), rgba(11,18,32,0.88)); box-shadow: 0 0 0 1px rgba(45,212,191,0.15), 0 20px 50px rgba(2,6,23,0.5), inset 0 1px 0 rgba(45,212,191,0.1);">
-          <p class="text-xs uppercase tracking-[0.2em] text-teal-200 font-tech">Solution</p>
-          <h3 class="mt-2 text-2xl font-bold text-white">One clean control layer for every stage.</h3>
-          <div class="mt-5 grid gap-3 sm:grid-cols-2 text-sm text-slate-200">
-            <div class="rounded-xl border border-teal-300/25 bg-teal-400/10 px-4 py-3">Unified event timeline</div>
-            <div class="rounded-xl border border-teal-300/25 bg-teal-400/10 px-4 py-3">Smart mentor distribution</div>
-            <div class="rounded-xl border border-teal-300/25 bg-teal-400/10 px-4 py-3">Automated scoring flows</div>
-            <div class="rounded-xl border border-teal-300/25 bg-teal-400/10 px-4 py-3">Live operational alerts</div>
+        <!-- Solution Card -->
+        <article class="how-card how-card--solution">
+          <div class="how-card-eyebrow how-card-eyebrow--success">Solution</div>
+          <h3 class="how-card-title">One clean control layer for every stage.</h3>
+          <div class="solution-grid">
+            <div class="solution-item">Unified event timeline</div>
+            <div class="solution-item">Smart mentor distribution</div>
+            <div class="solution-item">Automated scoring flows</div>
+            <div class="solution-item">Live operational alerts</div>
           </div>
         </article>
       </div>
     </section>
 
-    <!-- Hackathon Timeline -->
-    <section class="py-12 sm:py-14">
-      <div class="mb-8 flex items-end justify-between">
-        <h2 class="text-3xl font-bold text-white font-tech tracking-wide">Event Timeline</h2>
-        <p class="text-xs uppercase tracking-[0.18em] text-yellow-300 font-tech">Registered Hackathons</p>
-      </div>
-      <div class="relative">
-        <!-- vertical line desktop -->
-        <div class="timeline-line hidden md:block"></div>
-        <div class="space-y-6 md:space-y-0">
-
-          <!-- AI Buildstorm -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="glass hover-lift rounded-2xl p-5 md:text-right scroll-reveal" style="border-color:rgba(45,212,191,0.25);">
-              <p class="font-tech text-xs text-teal-300 tracking-widest mb-1">APR 12 â€“ APR 15</p>
-              <h3 class="text-base font-bold text-white">AI Buildstorm</h3>
-              <p class="text-xs text-slate-400 mt-1">Build AI-powered tools in 72 hours. Open to all skill levels.</p>
-              <span class="mt-3 inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Online</span>
-            </div>
-            <div class="hidden md:flex items-center justify-start pl-6">
-              <div class="timeline-dot text-teal-400"></div>
-            </div>
-          </div>
-
-          <!-- Code For Cities -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="hidden md:flex items-center justify-end pr-6">
-              <div class="timeline-dot text-yellow-400"></div>
-            </div>
-            <div class="glass hover-lift rounded-2xl p-5 scroll-reveal" style="border-color:rgba(234,179,8,0.25);">
-              <p class="font-tech text-xs text-yellow-300 tracking-widest mb-1">MAY 02 â€“ MAY 04</p>
-              <h3 class="text-base font-bold text-white">Code For Cities</h3>
-              <p class="text-xs text-slate-400 mt-1">Civic tech hackathon solving urban infrastructure challenges.</p>
-              <span class="mt-3 inline-block rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-0.5 text-[11px] text-yellow-200">Offline</span>
-            </div>
-          </div>
-
-          <!-- FinTech Forge -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="glass hover-lift rounded-2xl p-5 md:text-right scroll-reveal" style="border-color:rgba(45,212,191,0.25);">
-              <p class="font-tech text-xs text-teal-300 tracking-widest mb-1">MAY 20 â€“ MAY 22</p>
-              <h3 class="text-base font-bold text-white">FinTech Forge</h3>
-              <p class="text-xs text-slate-400 mt-1">Reimagine financial systems with cutting-edge fintech solutions.</p>
-              <span class="mt-3 inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Online</span>
-            </div>
-            <div class="hidden md:flex items-center justify-start pl-6">
-              <div class="timeline-dot text-teal-400"></div>
-            </div>
-          </div>
-
-          <!-- BioHack Arena -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="hidden md:flex items-center justify-end pr-6">
-              <div class="timeline-dot text-rose-400"></div>
-            </div>
-            <div class="glass hover-lift rounded-2xl p-5 scroll-reveal" style="border-color:rgba(251,113,133,0.25);">
-              <p class="font-tech text-xs text-rose-300 tracking-widest mb-1">JUN 08 â€“ JUN 09</p>
-              <h3 class="text-base font-bold text-white">BioHack Arena</h3>
-              <p class="text-xs text-slate-400 mt-1">Biotech meets software â€” hack solutions for health and life sciences.</p>
-              <span class="mt-3 inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Online</span>
-            </div>
-          </div>
-
-          <!-- Cloud Circuit -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="glass hover-lift rounded-2xl p-5 md:text-right scroll-reveal" style="border-color:rgba(234,179,8,0.25);">
-              <p class="font-tech text-xs text-yellow-300 tracking-widest mb-1">JUN 20 â€“ JUN 23</p>
-              <h3 class="text-base font-bold text-white">Cloud Circuit</h3>
-              <p class="text-xs text-slate-400 mt-1">Cloud-native infrastructure challenges across major providers.</p>
-              <span class="mt-3 inline-block rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-0.5 text-[11px] text-yellow-200">Offline</span>
-            </div>
-            <div class="hidden md:flex items-center justify-start pl-6">
-              <div class="timeline-dot text-yellow-400"></div>
-            </div>
-          </div>
-
-          <!-- DesignOps Jam -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="hidden md:flex items-center justify-end pr-6">
-              <div class="timeline-dot text-rose-400"></div>
-            </div>
-            <div class="glass hover-lift rounded-2xl p-5 scroll-reveal" style="border-color:rgba(251,113,133,0.25);">
-              <p class="font-tech text-xs text-rose-300 tracking-widest mb-1">JUL 03 â€“ JUL 05</p>
-              <h3 class="text-base font-bold text-white">DesignOps Jam</h3>
-              <p class="text-xs text-slate-400 mt-1">Design systems, UX tooling, and product ops â€” built in a weekend.</p>
-              <span class="mt-3 inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Online</span>
-            </div>
-          </div>
-
-          <!-- RoboRush -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="glass hover-lift rounded-2xl p-5 md:text-right scroll-reveal" style="border-color:rgba(45,212,191,0.25);">
-              <p class="font-tech text-xs text-teal-300 tracking-widest mb-1">JUL 18 â€“ JUL 20</p>
-              <h3 class="text-base font-bold text-white">RoboRush</h3>
-              <p class="text-xs text-slate-400 mt-1">Robotics and embedded systems challenge â€” build, wire, and deploy in 48 hours.</p>
-              <div class="md:flex md:justify-end mt-3 gap-2 flex">
-                <span class="inline-block rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-0.5 text-[11px] text-yellow-200">Offline</span>
-                <span class="inline-block rounded-full border border-rose-300/35 bg-rose-400/10 px-2 py-0.5 text-[11px] text-rose-200">Hardware</span>
-              </div>
-            </div>
-            <div class="hidden md:flex items-center justify-start pl-6">
-              <div class="timeline-dot text-teal-400"></div>
-            </div>
-          </div>
-
-          <!-- DataStorm -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="hidden md:flex items-center justify-end pr-6">
-              <div class="timeline-dot text-yellow-400"></div>
-            </div>
-            <div class="glass hover-lift rounded-2xl p-5 scroll-reveal" style="border-color:rgba(234,179,8,0.25);">
-              <p class="font-tech text-xs text-yellow-300 tracking-widest mb-1">AUG 01 â€“ AUG 03</p>
-              <h3 class="text-base font-bold text-white">DataStorm</h3>
-              <p class="text-xs text-slate-400 mt-1">ML pipelines, data viz, and analytics â€” compete across 5 open datasets.</p>
-              <div class="flex gap-2 mt-3">
-                <span class="inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Online</span>
-                <span class="inline-block rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-0.5 text-[11px] text-yellow-200">Data / ML</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- CyberForge -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 md:mb-10 items-center">
-            <div class="glass hover-lift rounded-2xl p-5 md:text-right scroll-reveal" style="border-color:rgba(251,113,133,0.25);">
-              <p class="font-tech text-xs text-rose-300 tracking-widest mb-1">AUG 22 â€“ AUG 24</p>
-              <h3 class="text-base font-bold text-white">CyberForge</h3>
-              <p class="text-xs text-slate-400 mt-1">CTF-style security hackathon â€” exploit, patch, and defend live systems.</p>
-              <div class="md:flex md:justify-end mt-3 gap-2 flex">
-                <span class="inline-block rounded-full border border-rose-300/35 bg-rose-400/10 px-2 py-0.5 text-[11px] text-rose-200">Online</span>
-                <span class="inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Security</span>
-              </div>
-            </div>
-            <div class="hidden md:flex items-center justify-start pl-6">
-              <div class="timeline-dot text-rose-400"></div>
-            </div>
-          </div>
-
-          <!-- GreenGrid -->
-          <div class="md:grid md:grid-cols-2 md:gap-8 items-center">
-            <div class="hidden md:flex items-center justify-end pr-6">
-              <div class="timeline-dot text-teal-400"></div>
-            </div>
-            <div class="glass hover-lift rounded-2xl p-5 scroll-reveal" style="border-color:rgba(45,212,191,0.25);">
-              <p class="font-tech text-xs text-teal-300 tracking-widest mb-1">SEP 12 â€“ SEP 14</p>
-              <h3 class="text-base font-bold text-white">GreenGrid</h3>
-              <p class="text-xs text-slate-400 mt-1">Climate tech and sustainability â€” build tools that reduce carbon, waste, or energy use.</p>
-              <div class="flex gap-2 mt-3">
-                <span class="inline-block rounded-full border border-teal-300/35 bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">Hybrid</span>
-                <span class="inline-block rounded-full border border-yellow-300/35 bg-yellow-400/10 px-2 py-0.5 text-[11px] text-yellow-200">Climate</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <section id="features" class="py-12 sm:py-14">      <div class="mb-6 flex items-end justify-between">
-        <h2 class="text-3xl font-bold text-white font-tech tracking-wide">Features</h2>
-        <p class="text-xs uppercase tracking-[0.18em] text-yellow-300 font-tech">Compact Dynamic Grid</p>
-      </div>
-      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20 group-hover:scale-110 group-hover:bg-teal-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Smart Registration Pipeline</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Frictionless onboarding with intelligent field mapping.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 group-hover:scale-110 group-hover:bg-yellow-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Live Team Matchmaking</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Connect solo hackers based on complementary skills.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:scale-110 group-hover:bg-rose-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Mentor Queue AI Routing</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Domain-expert mentors matched to blocked teams instantly.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Automated Judging Matrix</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Fair scoring syncing judges into unified leaderboards.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 group-hover:scale-110 group-hover:bg-orange-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Sponsor Challenge Console</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Dedicated pipelines for partner APIs and sponsor prizes.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-pink-500/10 text-pink-400 border border-pink-500/20 group-hover:scale-110 group-hover:bg-pink-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Real-Time Alert Streams</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Push alerts across dashboards, emails, and discord hooks.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20 group-hover:scale-110 group-hover:bg-teal-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Submission Health Monitor</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Automated repo parsing for valid commits and deploys.</p>
-        </article>
-        <article class="feature-card premium-border glass hover-lift rounded-2xl p-6 group cursor-default">
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
-          <h3 class="text-sm font-bold text-white">Ops Analytics Snapshot</h3>
-          <p class="mt-2 text-xs text-slate-400 leading-relaxed">Live macro metrics for ultimate event visibility.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="py-12 sm:py-14">
-      <div class="mb-6 flex items-end justify-between">
-        <h2 class="text-3xl font-bold text-white font-tech tracking-wide">Loved By Organizers</h2>
-        <p class="text-xs uppercase tracking-[0.18em] text-rose-300 font-tech">Dual Motion Testimonials</p>
+    <!-- ===== FEATURES ===== -->
+    <section id="features" class="features-section">
+      <div class="section-header">
+        <h2 class="section-title">Features</h2>
+        <span class="section-label">Built for every role</span>
       </div>
 
-      <div class="space-y-4">
-        <div class="marquee-mask overflow-hidden rounded-2xl">
-          <div class="marquee-track">
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Cut our ops workload in half by day one."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-teal-500/30 border border-teal-400/40 flex items-center justify-center text-[10px] text-teal-300 font-bold">AK</span><span class="text-xs text-slate-400">Arjun Kapoor Â· Lead Organizer, HackIndia 2025</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"The cleanest judging flow we have ever run."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-yellow-500/30 border border-yellow-400/40 flex items-center justify-center text-[10px] text-yellow-300 font-bold">SL</span><span class="text-xs text-slate-400">Sofia Lin Â· CTO, DevSprint Foundation</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Mentor assignment now feels automatic."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center text-[10px] text-rose-300 font-bold">MR</span><span class="text-xs text-slate-400">Marcus Reid Â· Program Director, BuildWeek</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Participants stayed aligned the entire weekend."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-teal-500/30 border border-teal-400/40 flex items-center justify-center text-[10px] text-teal-300 font-bold">PV</span><span class="text-xs text-slate-400">Priya Varma Â· Head of Events, TechSurge</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Cut our ops workload in half by day one."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-teal-500/30 border border-teal-400/40 flex items-center justify-center text-[10px] text-teal-300 font-bold">AK</span><span class="text-xs text-slate-400">Arjun Kapoor Â· Lead Organizer, HackIndia 2025</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"The cleanest judging flow we have ever run."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-yellow-500/30 border border-yellow-400/40 flex items-center justify-center text-[10px] text-yellow-300 font-bold">SL</span><span class="text-xs text-slate-400">Sofia Lin Â· CTO, DevSprint Foundation</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Mentor assignment now feels automatic."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center text-[10px] text-rose-300 font-bold">MR</span><span class="text-xs text-slate-400">Marcus Reid Â· Program Director, BuildWeek</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Participants stayed aligned the entire weekend."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-teal-500/30 border border-teal-400/40 flex items-center justify-center text-[10px] text-teal-300 font-bold">PV</span><span class="text-xs text-slate-400">Priya Varma Â· Head of Events, TechSurge</span></div>
-            </article>
+      <div class="features-grid">
+        <article class="feature-card card" id="feat-registration">
+          <div class="feature-icon feature-icon--blue">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
           </div>
-        </div>
+          <h3 class="feature-title">Smart Registration Pipeline</h3>
+          <p class="feature-desc">Frictionless onboarding with intelligent field mapping.</p>
+        </article>
 
-        <div class="marquee-mask overflow-hidden rounded-2xl">
-          <div class="marquee-track reverse">
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"From kickoff to finals, everything felt deliberate."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-yellow-500/30 border border-yellow-400/40 flex items-center justify-center text-[10px] text-yellow-300 font-bold">JO</span><span class="text-xs text-slate-400">James Osei Â· Co-founder, HackAccra</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Our sponsor tracks finally had clear visibility."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-teal-500/30 border border-teal-400/40 flex items-center justify-center text-[10px] text-teal-300 font-bold">NW</span><span class="text-xs text-slate-400">Nina Walsh Â· Partnerships Lead, CodeFest EU</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"No frantic spreadsheets, no missed deadlines."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center text-[10px] text-rose-300 font-bold">DM</span><span class="text-xs text-slate-400">Dev Mehta Â· Operations, Hack the North</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Syntra made our event feel enterprise-grade."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-yellow-500/30 border border-yellow-400/40 flex items-center justify-center text-[10px] text-yellow-300 font-bold">LC</span><span class="text-xs text-slate-400">Lena Chen Â· Director, Global Hack League</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"From kickoff to finals, everything felt deliberate."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-yellow-500/30 border border-yellow-400/40 flex items-center justify-center text-[10px] text-yellow-300 font-bold">JO</span><span class="text-xs text-slate-400">James Osei Â· Co-founder, HackAccra</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Our sponsor tracks finally had clear visibility."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-teal-500/30 border border-teal-400/40 flex items-center justify-center text-[10px] text-teal-300 font-bold">NW</span><span class="text-xs text-slate-400">Nina Walsh Â· Partnerships Lead, CodeFest EU</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"No frantic spreadsheets, no missed deadlines."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center text-[10px] text-rose-300 font-bold">DM</span><span class="text-xs text-slate-400">Dev Mehta Â· Operations, Hack the North</span></div>
-            </article>
-            <article class="glass w-80 rounded-xl p-4 text-sm text-slate-200 flex flex-col gap-2">
-              <p>"Syntra made our event feel enterprise-grade."</p>
-              <div class="flex items-center gap-2 mt-1"><span class="h-6 w-6 rounded-full bg-yellow-500/30 border border-yellow-400/40 flex items-center justify-center text-[10px] text-yellow-300 font-bold">LC</span><span class="text-xs text-slate-400">Lena Chen Â· Director, Global Hack League</span></div>
-            </article>
+        <article class="feature-card card" id="feat-matchmaking">
+          <div class="feature-icon feature-icon--yellow">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
           </div>
-        </div>
+          <h3 class="feature-title">Live Team Matchmaking</h3>
+          <p class="feature-desc">Connect solo hackers based on complementary skills.</p>
+        </article>
+
+        <article class="feature-card card" id="feat-mentor">
+          <div class="feature-icon feature-icon--rose">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Mentor Queue AI Routing</h3>
+          <p class="feature-desc">Domain-expert mentors matched to blocked teams instantly.</p>
+        </article>
+
+        <article class="feature-card card" id="feat-judging">
+          <div class="feature-icon feature-icon--emerald">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Automated Judging Matrix</h3>
+          <p class="feature-desc">Fair scoring syncing judges into unified leaderboards.</p>
+        </article>
+
+        <article class="feature-card card" id="feat-sponsor">
+          <div class="feature-icon feature-icon--orange">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Sponsor Challenge Console</h3>
+          <p class="feature-desc">Dedicated pipelines for partner APIs and sponsor prizes.</p>
+        </article>
+
+        <article class="feature-card card" id="feat-alerts">
+          <div class="feature-icon feature-icon--pink">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Real-Time Alert Streams</h3>
+          <p class="feature-desc">Push alerts across dashboards, emails, and Discord hooks.</p>
+        </article>
+
+        <article class="feature-card card" id="feat-health">
+          <div class="feature-icon feature-icon--teal">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Submission Health Monitor</h3>
+          <p class="feature-desc">Automated repo parsing for valid commits and deploys.</p>
+        </article>
+
+        <article class="feature-card card" id="feat-analytics">
+          <div class="feature-icon feature-icon--indigo">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Ops Analytics Snapshot</h3>
+          <p class="feature-desc">Live macro metrics for ultimate event visibility.</p>
+        </article>
       </div>
     </section>
   </main>
 
-  <footer class="mx-auto mt-8 w-[94%] max-w-7xl pb-10">
-    <div class="glass rounded-3xl px-6 py-8 sm:px-8 relative overflow-hidden">
-      <!-- color accent bar at top -->
-      <div class="absolute top-0 left-0 right-0 h-[2px] rounded-t-3xl bg-gradient-to-r from-teal-400 via-yellow-400 to-rose-400"></div>
-      <!-- subtle corner glow blobs -->
-      <div class="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-teal-500/10 blur-2xl"></div>
-      <div class="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-rose-500/10 blur-2xl"></div>
+  <!-- ========== FOOTER ========== -->
+  <footer class="site-footer">
+    <div class="footer-card card">
+      <!-- Accent bar -->
+      <div class="footer-accent-bar"></div>
 
-      <div class="grid gap-8 md:grid-cols-3">
-        <div>
-          <p class="font-tech text-sm tracking-[0.18em] bg-gradient-to-r from-teal-400 to-yellow-400 bg-clip-text text-transparent">Syntra</p>
-          <h3 class="mt-3 text-xl font-bold text-white">About Syntra</h3>
-          <p class="mt-3 max-w-sm text-sm text-textSoft">Syntra is a premium management platform for running high-intensity hackathons with clarity, speed, and control.</p>
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="brand-logo footer-brand">
+            <div class="brand-icon">S</div>
+            <span class="brand-name">Syntra</span>
+          </div>
+          <p class="footer-about">
+            A premium management platform for running high-intensity hackathons with clarity, speed, and control.
+          </p>
         </div>
-        <div>
-          <h4 class="text-sm font-semibold text-white font-tech tracking-wider">Links</h4>
-          <ul class="mt-3 space-y-2 text-sm text-slate-300">
-            <li><a class="hover:text-teal-300 transition-colors" href="#features">Features</a></li>
-            <li><a class="hover:text-yellow-300 transition-colors" href="#hackathons">Hackathons</a></li>
-            <li><a class="hover:text-rose-300 transition-colors" href="#">Contact</a></li>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Links</h4>
+          <ul class="footer-links">
+            <li><a href="#features" class="footer-link">Features</a></li>
+            <li><a href="#hackathons" class="footer-link">Hackathons</a></li>
+            <li><a href="#how-it-works" class="footer-link">How It Works</a></li>
+            <li><a href="#" class="footer-link">Contact</a></li>
           </ul>
         </div>
-        <div>
-          <h4 class="text-sm font-semibold text-white font-tech tracking-wider">Social</h4>
-          <div class="mt-3 flex gap-3">
-            <a class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-teal-500/30 bg-teal-500/10 text-xs text-teal-300 hover:border-teal-300 hover:bg-teal-400/20 transition-all" href="#">X</a>
-            <a class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-yellow-500/30 bg-yellow-500/10 text-xs text-yellow-300 hover:border-yellow-300 hover:bg-yellow-400/20 transition-all" href="#">in</a>
-            <a class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10 text-xs text-rose-300 hover:border-rose-300 hover:bg-rose-400/20 transition-all" href="#">gh</a>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Social</h4>
+          <div class="footer-socials">
+            <a href="#" class="social-btn social-btn--blue" aria-label="X / Twitter">X</a>
+            <a href="#" class="social-btn social-btn--blue" aria-label="LinkedIn">in</a>
+            <a href="#" class="social-btn social-btn--blue" aria-label="GitHub">gh</a>
           </div>
         </div>
       </div>
-      <div class="mt-8 border-t border-slate-700/60 pt-4 flex items-center justify-between text-xs text-slate-400">
+
+      <div class="footer-bottom">
         <span>Syntra 2026. Built for world-class hackathons.</span>
-        <span class="hidden sm:flex items-center gap-1.5">
-          <span class="h-1.5 w-1.5 rounded-full bg-teal-400"></span>
-          <span class="h-1.5 w-1.5 rounded-full bg-yellow-400"></span>
-          <span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
+        <span class="footer-dots">
+          <span class="footer-dot footer-dot--blue"></span>
+          <span class="footer-dot footer-dot--teal"></span>
+          <span class="footer-dot footer-dot--rose"></span>
         </span>
       </div>
     </div>
   </footer>
 
-  </body>
+</body>
 </html>
-
-

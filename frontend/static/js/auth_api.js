@@ -1,11 +1,31 @@
 function showApiMessage(message, isError) {
     const box = document.getElementById('api-message');
-    if (!box) {
-        return;
-    }
-    box.style.display = 'block';
-    box.className = isError ? 'auth-msg auth-msg-error' : 'auth-msg auth-msg-success';
+    if (!box) return;
+
     box.textContent = message;
+    box.className = isError ? 'message message--error' : 'message message--success';
+
+    if (message) {
+        // Expand smoothly
+        box.style.maxHeight = '80px';
+        box.style.paddingTop = '';
+        box.style.paddingBottom = '';
+        box.style.marginBottom = '12px';
+        box.style.border = '';
+    } else {
+        // Collapse
+        box.style.maxHeight = '0';
+        box.style.paddingTop = '0';
+        box.style.paddingBottom = '0';
+        box.style.marginBottom = '0';
+        box.style.border = 'none';
+    }
+
+    if (isError) {
+        box.classList.remove('shake');
+        void box.offsetWidth;
+        box.classList.add('shake');
+    }
 }
 
 function parseError(payload) {

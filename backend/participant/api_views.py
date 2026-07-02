@@ -379,31 +379,10 @@ class ParticipantProfileUpdateAPIView(generics.UpdateAPIView):
         return profile
 
     def update(self, request, *args, **kwargs):
-        # Load current profile to detect visibility changes
-        profile = self.get_object()
-        old_visibility = profile.visibility
-
-        # Team leaders cannot make themselves visible in the recruiting pool
-        is_leader = Team.objects.filter(leader=request.user).exists()
-        visibility_requested = request.data.get('visibility')
-        if is_leader and visibility_requested is True:
+        # Prevent manual changes to visibility
+        if 'visibility' in request.data:
             return Response(
-                {"detail": "Team leaders cannot enable recruiting visibility."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"detail": "Recruiting visibility is managed automatically and cannot be changed manually."},
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        # Perform the update
-        response = super().update(request, *args, **kwargs)
-
-        # If the user turned visibility OFF, remove any pending invites for them.
-        # This ensures disabling recruiting immediately withdraws outstanding invites.
-        try:
-            profile.refresh_from_db()
-            if old_visibility and not profile.visibility:
-                from .models import TeamRequest
-                TeamRequest.objects.filter(receiver=request.user, status='pending').delete()
-        except Exception:
-            # Non-fatal; don't block the update response on cleanup failures.
-            pass
-
-        return response
+        return super().update(request, *args, **kwargs)

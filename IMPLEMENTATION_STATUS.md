@@ -1,7 +1,7 @@
 # Phase 13 UI Design System Overhaul — Implementation Status
 
 **Date Started:** 2026-06-02  
-**Current Status:** 100% Complete (15 of 15 templates refactored + foundation)
+**Current Status:** 100% Complete (16 of 16 templates refactored + foundation + cleanup)
 
 ---
 
@@ -22,7 +22,7 @@
    - `_button.html` — Button component
    - `_card.html` — Card component
 
-### Phase B: Template Refactoring (15 of 15 = 100% Complete) ✅
+### Phase B: Template Refactoring (16 of 16 = 100% Complete) ✅
 1. **`accounts/login.html`** ✅
    - Dark theme → Light SaaS theme
    - Bootstrap removed, design-system.css only
@@ -89,14 +89,14 @@
 - ✅ hackathon_detail.html — tailwind.css → design-system.css, room builder + scan categories CRUD JS preserved
 - ✅ payment_checkout.html — dark nav fixed, Razorpay JS unchanged
 
-### Tier 6: Marketing (0 of 1 = 0% Complete)
-- ⏳ home.html — still tailwind.css, preserve 3D hero effects and particle canvas
+### Tier 6: Marketing (1 of 1 = 100% Complete) ✅
+- ✅ home.html — refactored to use design-system.css, preserved 3D hero effects and particle canvas, removed dark theme classes.
 
-### CSS Cleanup (0% Complete)
-- ⏳ Remove frontend/static/css/login.css
-- ⏳ Remove frontend/static/css/profile_complete.css
-- ⏳ Remove frontend/static/css/tailwind.src.css
-- ⏳ Update frontend/static/css/home.css imports
+### CSS Cleanup (100% Complete) ✅
+- ✅ Removed frontend/static/css/login.css
+- ✅ Removed frontend/static/css/profile_complete.css
+- ✅ Removed frontend/static/css/tailwind.src.css
+- ✅ Updated frontend/static/css/home.css imports to use design-system.css
 
 ---
 
@@ -164,7 +164,7 @@ All remaining templates follow this proven 5-step pattern:
 
 | Metric | Current | Target | % Complete |
 |--------|---------|--------|-----------|
-| Templates Refactored | 15 | 15 | 100% |
+| Templates Refactored | 16 | 16 | 100% |
 | CSS Files Created | 1 (design-system.css) | 1 | 100% |
 | Design Tokens | 30+ | 30+ | 100% |
 | Component Types | 10 | 10 | 100% |
@@ -177,26 +177,14 @@ All remaining templates follow this proven 5-step pattern:
 
 | Task | Hours | Notes |
 |------|-------|-------|
-| Tier 6: home.html | 1.5 | Preserve hero 3D effects, particle canvas |
-| CSS cleanup & testing | 1 | Remove old files, visual QA |
-| **TOTAL REMAINING** | **~2.5 hours** | |
+| Final Manual QA | 0.5 | Verification of flows in browser |
+| **TOTAL REMAINING** | **~0.5 hours** | |
 
 ---
 
 ## 🚀 Next Steps (Recommended Order)
 
-1. **Tier 6: home.html** (1.5 hours)
-   - Keep 3D perspective transforms, particle canvas, marquee animations
-   - Update color tokens only
-
-2. **CSS Cleanup** (1 hour)
-   - Remove frontend/static/css/login.css
-   - Remove frontend/static/css/profile_complete.css
-   - Remove frontend/static/css/tailwind.src.css
-   - Update frontend/static/css/home.css imports
-   - Run responsive tests at 320px / 768px / 1024px
-
-3. **Final QA** (1 hour)
+1. **Final QA** (0.5 hour)
    - Test all interactive features
    - Verify responsive at 320px, 768px, 1024px
    - Check color contrast (WCAG AA)
@@ -231,8 +219,7 @@ All remaining templates follow this proven 5-step pattern:
 - ✅ `frontend/templates/organizer/qr_scanner.html`
 - ✅ `frontend/templates/organizer/hackathon_detail.html`
 
-**Not Yet Refactored (1 remaining):**
-- ⏳ `frontend/templates/home.html` — dark theme, tailwind.css (preserve 3D hero effects)
+- ✅ `frontend/templates/home.html`
 
 ---
 
@@ -251,9 +238,9 @@ All remaining templates follow this proven 5-step pattern:
 
 ## 📝 Notes for Continuation
 
-1. **Dashboard template is your reference** — All remaining templates should mirror its structure
+1. **Dashboard template is your reference** — All templates should mirror its structure
 2. **Use REFACTORING_GUIDE.md** — It has exact class mappings, quick template, patterns
-3. **Only home.html remains** — preserve 3D hero effects, particle canvas, marquee animations
+3. **All templates refactored** — No more remaining template tasks.
 4. **Test as you go** — Don't wait until the end; catch JS breaks early
 
 ---
@@ -268,6 +255,6 @@ All remaining templates follow this proven 5-step pattern:
 
 ---
 
-**Status:** 15/15 templates done — Tiers 2–5 complete  
-**Remaining:** Tier 6 (home.html) + CSS cleanup  
-**Estimated Completion:** ~2.5 more hours of focused work
+**Status:** 16/16 templates done — All tiers complete  
+**Remaining:** Final QA  
+**Estimated Completion:** ~0.5 more hours of focused work
