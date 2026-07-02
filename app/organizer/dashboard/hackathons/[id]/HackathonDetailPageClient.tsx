@@ -14,6 +14,7 @@ import {
   toggleScanCategoryStatus,
   deleteScanCategory,
 } from "@/app/actions/scancategories";
+import EvaluationTab from "./EvaluationTab";
 import {
   Calendar,
   Users,
@@ -149,7 +150,7 @@ export default function HackathonDetailPageClient({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"overview" | "teams">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "teams" | "evaluation">("overview");
 
   // Teams tab states
   const [teamSearch, setTeamSearch] = useState("");
@@ -510,6 +511,16 @@ export default function HackathonDetailPageClient({
               {totalTeams}
             </span>
           )}
+        </button>
+        <button
+          onClick={() => setActiveTab("evaluation")}
+          className={`px-5 py-2 rounded-md text-xs font-medium transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+            activeTab === "evaluation"
+              ? "bg-canvas text-ink apple-shadow-overlay"
+              : "text-ink-muted hover:text-ink"
+          }`}
+        >
+          Faculty & Evaluation
         </button>
       </div>
 
@@ -1433,6 +1444,11 @@ export default function HackathonDetailPageClient({
             </form>
           </div>
         </div>
+      )}
+
+      {/* ───── EVALUATION TAB ───── */}
+      {activeTab === "evaluation" && (
+        <EvaluationTab hackathonId={hackathon.id} />
       )}
     </div>
   );

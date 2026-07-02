@@ -46,6 +46,11 @@ export const { auth, signIn, signOut, handlers, unstable_update } = NextAuth({
             where: { user_id: dbUser.id },
           });
           profileId = profile?.id ?? null;
+        } else if (dbUser.role === "faculty") {
+          const profile = await prisma.faculty_profile.findUnique({
+            where: { user_id: dbUser.id },
+          });
+          profileId = profile?.id ?? null;
         }
 
         return {
@@ -78,6 +83,7 @@ export const { auth, signIn, signOut, handlers, unstable_update } = NextAuth({
               is_profile_complete: true,
               participant_participantprofile: { select: { id: true } },
               organizer_organizerprofile: { select: { id: true } },
+              faculty_profile: { select: { id: true } },
             },
           });
           if (dbUser) {
@@ -89,6 +95,8 @@ export const { auth, signIn, signOut, handlers, unstable_update } = NextAuth({
                 ? dbUser.participant_participantprofile?.id
                 : dbUser.role === "organizer"
                 ? dbUser.organizer_organizerprofile?.id
+                : dbUser.role === "faculty"
+                ? dbUser.faculty_profile?.id
                 : null;
           }
         }
