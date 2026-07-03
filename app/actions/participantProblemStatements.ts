@@ -25,6 +25,14 @@ export async function getProblemStatements(hackathonId: number) {
     throw new Error("hackathon_id is required");
   }
 
+  const hackathon = await prisma.organizer_hackathon.findUnique({
+    where: { id: hackathonId },
+    select: { release_problems: true },
+  });
+  if (!hackathon?.release_problems) {
+    return [];
+  }
+
   const problemStatements = await prisma.organizer_problemstatement.findMany({
     where: {
       hackathon_id: hackathonId,
@@ -88,6 +96,15 @@ export async function selectProblemStatement(
     throw new Error(
       "Problem statement is already locked in and cannot be changed."
     );
+  }
+
+  // Check if problem statements are released for the hackathon
+  const hackathon = await prisma.organizer_hackathon.findUnique({
+    where: { id: team.hackathon_id },
+    select: { release_problems: true },
+  });
+  if (!hackathon?.release_problems) {
+    throw new Error("Problem statements are not released yet for this hackathon.");
   }
 
   // Verify the PS exists, belongs to this hackathon, and is active

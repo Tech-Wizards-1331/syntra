@@ -52,6 +52,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
       max_team_size: true,
       min_team_size: true,
       seating_allocation: true,
+      release_problems: true,
     },
   });
 
@@ -169,13 +170,15 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
   }
 
   // Fetch problem statements with capacity (mirrors Django's _get_problem_statements)
-  const problemStatements = await prisma.organizer_problemstatement.findMany({
-    where: {
-      hackathon_id: hackathonId,
-      is_active: true,
-    },
-    orderBy: { created_at: "desc" },
-  });
+  const problemStatements = hackathon.release_problems
+    ? await prisma.organizer_problemstatement.findMany({
+        where: {
+          hackathon_id: hackathonId,
+          is_active: true,
+        },
+        orderBy: { created_at: "desc" },
+      })
+    : [];
 
   // Compute current_teams_count for each PS
   const psWithCounts = await Promise.all(
@@ -206,6 +209,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     status: hackathon.status,
     max_team_size: hackathon.max_team_size,
     min_team_size: hackathon.min_team_size,
+    release_problems: hackathon.release_problems,
   };
 
   // Check if leader email is present in team members

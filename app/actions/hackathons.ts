@@ -522,3 +522,34 @@ export async function deleteHackathon(id: number) {
 
   return { success: true };
 }
+
+/**
+ * Toggles the release status of problem statements for a hackathon.
+ */
+export async function toggleProblemStatementsRelease(hackathonId: number, release: boolean) {
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "organizer") {
+    throw new Error("Unauthorized or invalid role");
+  }
+
+  const hackathon = await prisma.organizer_hackathon.findUnique({
+    where: { id: hackathonId },
+    include: { organizer_organizerprofile: true },
+  });
+
+  if (!hackathon) {
+    throw new Error("Hackathon not found");
+  }
+
+  if (hackathon.organizer_organizerprofile.user_id !== Number(session.user.id)) {
+    throw new Error("Access denied: You do not own this hackathon");
+  }
+
+  await prisma.organizer_hackathon.update({
+    where: { id: hackathonId },
+    data: { release_problems: release },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  return { success: true };
+}

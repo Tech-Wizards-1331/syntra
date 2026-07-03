@@ -70,7 +70,7 @@ export async function searchParticipantsForInvite(
     whereClause.participant_participantprofile_skills = {
       some: {
         participant_skill: {
-          name: { contains: skillQuery.trim() },
+          name: { contains: skillQuery.trim(), mode: 'insensitive' },
         },
       },
     };

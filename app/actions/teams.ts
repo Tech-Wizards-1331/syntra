@@ -211,7 +211,7 @@ export async function addTeamMember(
 
   const currentSlots = leaderInMembers ? members.length : 1 + members.length;
   if (currentSlots >= hackathon.max_team_size) {
-    throw new Error("Team is at maximum capacity");
+    throw new Error("Your team is already full.");
   }
 
   // Check email uniqueness within this hackathon
@@ -662,11 +662,21 @@ export async function joinTeamByToken(inviteToken: string) {
     throw new Error("You are already in a team for this hackathon.");
   }
 
-  // Check team capacity
-  const memberCount = await prisma.participant_teammember.count({
+  // Check team capacity dynamically accounting for leader presence
+  const leaderUser = await prisma.accounts_user.findUnique({
+    where: { id: team.leader_id },
+    select: { email: true },
+  });
+  if (!leaderUser) throw new Error("Leader user not found");
+
+  const currentMembersCount = await prisma.participant_teammember.count({
     where: { team_id: team.id },
   });
-  if (memberCount >= team.organizer_hackathon.max_team_size) {
+  const leaderExistsInDb = await prisma.participant_teammember.count({
+    where: { team_id: team.id, email: { equals: leaderUser.email, mode: "insensitive" } },
+  }) > 0;
+  const finalSlots = leaderExistsInDb ? currentMembersCount : 1 + currentMembersCount;
+  if (finalSlots >= team.organizer_hackathon.max_team_size) {
     throw new Error("This team is already full.");
   }
 
@@ -721,7 +731,11 @@ export async function joinTeamByToken(inviteToken: string) {
   const newMemberCount = await prisma.participant_teammember.count({
     where: { team_id: team.id },
   });
-  if (newMemberCount >= team.organizer_hackathon.max_team_size) {
+  const newLeaderExistsInDb = await prisma.participant_teammember.count({
+    where: { team_id: team.id, email: { equals: leaderUser.email, mode: "insensitive" } },
+  }) > 0;
+  const newFinalSlots = newLeaderExistsInDb ? newMemberCount : 1 + newMemberCount;
+  if (newFinalSlots >= team.organizer_hackathon.max_team_size) {
     await prisma.participant_teamrequest.deleteMany({
       where: { team_id: team.id, status: "pending" },
     });
