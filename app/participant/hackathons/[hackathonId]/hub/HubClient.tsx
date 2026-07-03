@@ -34,6 +34,7 @@ interface HackathonData {
   status: string;
   max_team_size: number;
   min_team_size: number;
+  release_problems: boolean;
 }
 
 interface TeamMemberData {
@@ -318,7 +319,11 @@ export default function HubClient({
         )}
 
         {/* PS Grid */}
-        {problemStatements.length === 0 ? (
+        {!hackathon.release_problems && !team.selected_problem_statement ? (
+          <p className="text-xs text-ink-muted text-center py-8 italic bg-canvas-parchment/20 border border-dashed border-black/[0.08] rounded-md">
+            Problem statements will be released soon.
+          </p>
+        ) : problemStatements.length === 0 ? (
           <p className="text-xs text-ink-muted text-center py-8 italic bg-canvas-parchment/20 border border-dashed border-black/[0.08] rounded-md">
             No problem statements available yet for this hackathon.
           </p>

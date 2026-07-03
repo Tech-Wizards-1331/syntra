@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getCloudinarySignature } from "@/app/actions/hackathons";
+import { getCloudinarySignature, toggleProblemStatementsRelease } from "@/app/actions/hackathons";
 import {
   createProblemStatement,
   deleteProblemStatement,
@@ -116,6 +116,7 @@ interface HackathonDetailPageClientProps {
     fee_type: string | null;
     fee_amount: number | null;
     status: string;
+    release_problems: boolean;
     room_configuration: string | null;
     seating_allocation: string | null;
     organizer_problemstatement: ProblemStatement[];
@@ -430,6 +431,20 @@ export default function HackathonDetailPageClient({
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to toggle problem statement status.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Toggle problem statements release status to participants
+  const handleToggleRelease = async () => {
+    setActionLoading("toggle-release");
+    setErrorMsg(null);
+    try {
+      await toggleProblemStatementsRelease(hackathon.id, !hackathon.release_problems);
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to toggle problem statements release status.");
     } finally {
       setActionLoading(null);
     }
@@ -1069,18 +1084,39 @@ export default function HackathonDetailPageClient({
 
         {/* Problem Statements Panel */}
         <div className="p-8 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="text-lg font-semibold text-ink tracking-tight flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
               Problem Statements
             </h3>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-3.5 py-2 rounded-pill bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center gap-1.5 text-xs cursor-pointer apple-press-effect"
-            >
-              <Plus className="w-4 h-4" />
-              Add Problem
-            </button>
+            <div className="flex flex-wrap items-center gap-4.5 self-start sm:self-center">
+              {/* Release Toggle Switch */}
+              <div className="flex items-center gap-2.5 bg-canvas-parchment/60 border border-black/[0.04] px-3.5 py-2 rounded-md">
+                <span className="text-[11px] font-semibold text-ink-muted">Release to Participants</span>
+                <button
+                  onClick={handleToggleRelease}
+                  disabled={actionLoading !== null}
+                  className={`relative inline-flex h-5.5 w-10 items-center rounded-full transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                    hackathon.release_problems ? "bg-primary" : "bg-black/[0.12]"
+                  }`}
+                  aria-pressed={hackathon.release_problems}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                      hackathon.release_problems ? "translate-x-5" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-3.5 py-2 rounded-pill bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center gap-1.5 text-xs cursor-pointer apple-press-effect"
+              >
+                <Plus className="w-4 h-4" />
+                Add Problem
+              </button>
+            </div>
           </div>
 
           {hackathon.organizer_problemstatement.length === 0 ? (

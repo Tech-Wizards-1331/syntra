@@ -442,9 +442,16 @@ export async function getTeamsForAllocation(hackathonId: number): Promise<TeamAl
 
   for (const team of teams) {
     const members: string[] = [];
-    if (team.accounts_user) {
+    const leaderEmail = team.accounts_user?.email?.toLowerCase();
+    const hasLeaderInMembers = team.participant_teammember.some(
+      (m) => m.email?.toLowerCase() === leaderEmail
+    );
+
+    // Only add leader separately if they are not already in the team members list
+    if (team.accounts_user && !hasLeaderInMembers) {
       members.push(team.accounts_user.email);
     }
+
     for (const m of team.participant_teammember) {
       members.push(m.name || m.email);
     }

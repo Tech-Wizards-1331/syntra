@@ -305,7 +305,7 @@ describe("addTeamMember", () => {
         role: "Frontend",
         skills: ["React"],
       })
-    ).rejects.toThrow("Team is at maximum capacity");
+    ).rejects.toThrow("Your team is already full.");
   });
 
   it("blocks if the email is already registered in this hackathon", async () => {
