@@ -12,6 +12,7 @@ import { v2 as cloudinary } from "cloudinary";
 // Mock auth
 vi.mock("@/auth", () => ({
   auth: vi.fn(),
+  unstable_update: vi.fn(),
 }));
 
 // Mock prisma

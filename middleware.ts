@@ -19,6 +19,7 @@ export default auth((req) => {
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
   const isOrganizerRoute = nextUrl.pathname.startsWith("/organizer");
   const isParticipantRoute = nextUrl.pathname.startsWith("/participant");
+  const isFacultyRoute = nextUrl.pathname.startsWith("/faculty");
 
   // 1. If user is on an auth page (/login or /register) and is already logged in,
   // redirect them to their respective dashboard.
@@ -29,6 +30,9 @@ export default auth((req) => {
     if (userRole === "organizer") {
       return Response.redirect(new URL("/organizer/dashboard", nextUrl));
     }
+    if (userRole === "faculty") {
+      return Response.redirect(new URL("/faculty/dashboard", nextUrl));
+    }
     if (userRole === "admin" || userRole === "superuser") {
       return Response.redirect(new URL("/admin/dashboard", nextUrl));
     }
@@ -37,7 +41,7 @@ export default auth((req) => {
   }
 
   // 2. If user is accessing protected routes and is NOT logged in, redirect to login
-  if ((isAdminRoute || isOrganizerRoute || isParticipantRoute) && !isLoggedIn) {
+  if ((isAdminRoute || isOrganizerRoute || isParticipantRoute || isFacultyRoute) && !isLoggedIn) {
     let from = nextUrl.pathname;
     if (nextUrl.search) {
       from += nextUrl.search;
@@ -53,12 +57,28 @@ export default auth((req) => {
       if (userRole === "organizer") {
         return Response.redirect(new URL("/organizer/dashboard", nextUrl));
       }
+      if (userRole === "faculty") {
+        return Response.redirect(new URL("/faculty/dashboard", nextUrl));
+      }
       return Response.redirect(new URL("/participant/dashboard", nextUrl));
     }
 
     if (isOrganizerRoute && userRole !== "organizer") {
       if (userRole === "admin" || userRole === "superuser") {
         return Response.redirect(new URL("/admin/dashboard", nextUrl));
+      }
+      if (userRole === "faculty") {
+        return Response.redirect(new URL("/faculty/dashboard", nextUrl));
+      }
+      return Response.redirect(new URL("/participant/dashboard", nextUrl));
+    }
+
+    if (isFacultyRoute && userRole !== "faculty") {
+      if (userRole === "admin" || userRole === "superuser") {
+        return Response.redirect(new URL("/admin/dashboard", nextUrl));
+      }
+      if (userRole === "organizer") {
+        return Response.redirect(new URL("/organizer/dashboard", nextUrl));
       }
       return Response.redirect(new URL("/participant/dashboard", nextUrl));
     }
@@ -69,6 +89,9 @@ export default auth((req) => {
       }
       if (userRole === "organizer") {
         return Response.redirect(new URL("/organizer/dashboard", nextUrl));
+      }
+      if (userRole === "faculty") {
+        return Response.redirect(new URL("/faculty/dashboard", nextUrl));
       }
     }
 
@@ -91,5 +114,6 @@ export const config = {
     "/admin/:path*",
     "/organizer/:path*",
     "/participant/:path*",
+    "/faculty/:path*",
   ],
 };

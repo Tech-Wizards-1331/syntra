@@ -61,6 +61,8 @@ model accounts_user {
   participant_team               participant_team[]
   participant_teamrequest        participant_teamrequest[]
   socialaccount_socialaccount    socialaccount_socialaccount[]
+  faculty_profile                faculty_profile?
+  hackathon_faculty              hackathon_faculty[]
 }
 
 model accounts_user_groups {
@@ -267,6 +269,8 @@ model organizer_hackathon {
   organizer_problemstatement     organizer_problemstatement[]
   organizer_scancategory         organizer_scancategory[]
   participant_team               participant_team[]
+  evaluation_criterion           evaluation_criterion[]
+  hackathon_faculty              hackathon_faculty[]
 
   @@index([organizer_id], map: "organizer_hackathon_organizer_id_1ad8afb1")
   @@index([status], map: "organizer_hackathon_status_f6762e83")
@@ -420,6 +424,7 @@ model participant_team {
   organizer_hackathon           organizer_hackathon             @relation(fields: [hackathon_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   participant_teammember        participant_teammember[]
   participant_teamrequest       participant_teamrequest[]
+  evaluation_score              evaluation_score[]
 
   @@index([selected_problem_statement_id], map: "participant_team_selected_problem_statement_id_fcb5161f")
   @@index([leader_id], map: "participant_team_leader_id_b8efbfb0")
@@ -523,4 +528,66 @@ model socialaccount_socialtoken {
   @@unique([app_id, account_id], map: "socialaccount_socialtoken_app_id_account_id_fca4e0ac_uniq")
   @@index([app_id], map: "socialaccount_socialtoken_app_id_636a42d7")
   @@index([account_id], map: "socialaccount_socialtoken_account_id_951f210e")
+}
+
+// ─── Faculty & Evaluation Models ───────────────────────────────────
+
+model faculty_profile {
+  id            Int           @id @default(autoincrement())
+  department    String        @default("")
+  designation   String        @default("")
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  user_id       Int           @unique
+  accounts_user accounts_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model evaluation_criterion {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  description         String               @default("")
+  max_score           Int                  @default(10)
+  display_order       Int                  @default(0)
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt
+  hackathon_id        Int
+  organizer_hackathon organizer_hackathon  @relation(fields: [hackathon_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  evaluation_score    evaluation_score[]
+
+  @@unique([hackathon_id, name])
+  @@index([hackathon_id])
+}
+
+model hackathon_faculty {
+  id                  Int                 @id @default(autoincrement())
+  is_active           Boolean             @default(true)
+  assigned_at         DateTime            @default(now())
+  hackathon_id        Int
+  faculty_user_id     Int
+  organizer_hackathon organizer_hackathon @relation(fields: [hackathon_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  accounts_user       accounts_user       @relation(fields: [faculty_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  evaluation_score    evaluation_score[]
+
+  @@unique([hackathon_id, faculty_user_id])
+  @@index([hackathon_id])
+  @@index([faculty_user_id])
+}
+
+model evaluation_score {
+  id                   Int                  @id @default(autoincrement())
+  score                Int
+  comment              String               @default("")
+  created_at           DateTime             @default(now())
+  updated_at           DateTime             @updatedAt
+  criterion_id         Int
+  team_id              Int
+  hackathon_faculty_id Int
+  evaluation_criterion evaluation_criterion @relation(fields: [criterion_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  participant_team     participant_team     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hackathon_faculty    hackathon_faculty    @relation(fields: [hackathon_faculty_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([criterion_id, team_id, hackathon_faculty_id])
+  @@index([team_id])
+  @@index([criterion_id])
+  @@index([hackathon_faculty_id])
 }

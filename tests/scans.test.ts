@@ -12,11 +12,13 @@ vi.mock("@/auth", () => ({
 
 // Mock prisma
 vi.mock("@/lib/prisma", () => {
+  const mockScanRecord = {
+    findFirst: vi.fn(),
+    create: vi.fn(),
+  };
+
   const mockTx = {
-    organizer_scanrecord: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
-    },
+    organizer_scanrecord: mockScanRecord,
   };
 
   const mockPrisma = {
@@ -37,10 +39,7 @@ vi.mock("@/lib/prisma", () => {
     organizer_organizerprofile: {
       findUnique: vi.fn(),
     },
-    organizer_scanrecord: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
-    },
+    organizer_scanrecord: mockScanRecord,
     $transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
     _tx: mockTx,
   };

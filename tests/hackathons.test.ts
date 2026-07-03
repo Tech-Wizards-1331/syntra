@@ -31,6 +31,8 @@ vi.mock("@/auth", () => ({
 // Mock next/cache
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+  unstable_cache: vi.fn((fn) => fn),
+  revalidateTag: vi.fn(),
 }));
 
 // Mock prisma

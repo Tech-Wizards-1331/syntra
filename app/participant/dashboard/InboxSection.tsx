@@ -27,8 +27,7 @@ export default function InboxSection({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [visible, setVisible] = useState(initialVisibility);
-  const [togglingVisibility, setTogglingVisibility] = useState(false);
+  const visible = true;
   const [invites, setInvites] = useState<
     { id: number; teamName: string; hackathonName: string; createdAt: string }[]
   >([]);
@@ -90,19 +89,7 @@ export default function InboxSection({
     }
   };
 
-  const handleToggleVisibility = async () => {
-    const newVis = !visible;
-    setTogglingVisibility(true);
-    try {
-      await toggleRecruitingVisibility(newVis);
-      setVisible(newVis);
-      if (!newVis) {
-        setInvites([]); // Turning off clears pending invites (Django parity)
-      }
-    } catch { /* ignore */ } finally {
-      setTogglingVisibility(false);
-    }
-  };
+
 
   const handleAccept = async (id: number, teamName: string) => {
     showConfirm(
@@ -151,34 +138,12 @@ export default function InboxSection({
 
   return (
     <div>
-      {/* Header with toggle */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
           <Mail className="w-4 h-4 text-primary" />
           Inbox & Recruiting
         </h2>
-        <div className="flex items-center gap-3 bg-canvas-parchment border border-black/[0.06] rounded-md px-4 py-2.5">
-          <div>
-            <p className="text-[11px] font-semibold text-ink">Recruiting Profile</p>
-            <p className="text-[10px] text-ink-muted">
-              {hasTeam ? "Disabled (Already in a team)" : "Let teams find you"}
-            </p>
-          </div>
-          <button
-            onClick={handleToggleVisibility}
-            disabled={hasTeam || togglingVisibility}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
-              visible ? "bg-primary" : "bg-black/[0.12]"
-            }`}
-            aria-pressed={visible}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
-                visible ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-        </div>
       </div>
 
       {/* Content */}
