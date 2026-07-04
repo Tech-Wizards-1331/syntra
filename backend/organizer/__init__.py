@@ -1,1 +1,0 @@
-# Organizer app initialization
