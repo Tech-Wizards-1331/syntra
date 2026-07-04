@@ -3,8 +3,9 @@
 ## Summary
 Successfully removed all unused legacy Python and Django files from the codebase and updated Next.js-related configuration files to clean up paths and build environments.
 
-## Commit
-- Code Commit: `2fffe97`
+## Commits
+- Code Commit (Python cleanup): `2fffe97`
+- Code Commit (Vercel adjustment): `6f4feb3`
 
 ## Changes Made
 - Deleted the following unused directories:
@@ -15,7 +16,7 @@ Successfully removed all unused legacy Python and Django files from the codebase
   - `build:css`
   - `watch:css`
 - Updated `tailwind.config.js` to remove the path pointing to `./frontend/templates/**/*.html`.
-- Updated `render.yaml` to deploy the full-stack Next.js application using Node runtime instead of Python.
+- Deleted `render.yaml` completely since the application is deployed on Vercel instead of Render.com.
 
 ## Verification
 - Verified by running `npm run build` which compiled successfully with no errors.
