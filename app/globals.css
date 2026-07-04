@@ -4,6 +4,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Smooth Scrolling ───────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* ─── Apple Design Tokens ────────────────────────────────────────── */
 :root {
   --primary: #0066cc;
@@ -350,6 +366,5 @@ body {
     radial-gradient(at 80% 20%, rgba(240, 210, 255, 0.2) 0px, transparent 50%),
     radial-gradient(at 30% 60%, rgba(255, 220, 230, 0.2) 0px, transparent 60%),
     radial-gradient(at 90% 80%, rgba(210, 240, 255, 0.2) 0px, transparent 50%);
-  background-attachment: fixed;
   background-size: 100vw 100vh;
 }

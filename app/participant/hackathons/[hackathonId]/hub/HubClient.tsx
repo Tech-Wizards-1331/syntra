@@ -444,68 +444,85 @@ export default function HubClient({
             Seating Allocation
           </h3>
 
-          <div className="space-y-2.5">
-            {teamSeating.room ? (
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-ink-muted w-20">Room:</span>
+          <div className="space-y-3">
+            {/* Overall Allocation Summary */}
+            {Array.isArray(teamSeating.seats) && teamSeating.seats.length > 0 ? (
+              <div className="flex items-start gap-3 text-xs mb-4">
+                <span className="text-ink-muted w-20 shrink-0">Allocation:</span>
                 <span className="text-ink font-semibold">
-                  {String(teamSeating.room)}
+                  {teamSeating.seats
+                    .map((s: any) => `${s.room} — ${s.row} — Bench ${s.bench}`)
+                    .join(", ")}
                 </span>
               </div>
-            ) : null}
-            {teamSeating.bench ? (
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-ink-muted w-20">Bench:</span>
-                <span className="text-ink font-semibold">
-                  {String(teamSeating.bench)}
-                </span>
-              </div>
-            ) : null}
-            {teamSeating.row !== undefined ? (
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-ink-muted w-20">Row:</span>
-                <span className="text-ink font-semibold">
-                  {String(teamSeating.row)}
-                </span>
-              </div>
-            ) : null}
+            ) : (
+              <p className="text-xs text-ink-muted italic">No seating allocated yet.</p>
+            )}
 
-            {Array.isArray(teamSeating.members) ? (
+            {/* Individual Assignments mapping team members to their seat from teamSeating.seats */}
+            {Array.isArray(teamSeating.seats) && teamSeating.seats.length > 0 && (
               <div className="mt-4 pt-4 border-t border-black/[0.06]">
                 <h4 className="text-[10px] font-semibold text-ink-muted mb-2.5 uppercase tracking-wider">
                   Individual Assignments
                 </h4>
                 <div className="space-y-1.5">
-                  {(teamSeating.members as Array<Record<string, unknown>>).map(
-                    (m, idx) => (
+                  {team.members.map((member, idx) => {
+                    // Search for the member's seat assignment in the seats list
+                    let assignment: { room: string; row: string; bench: number; seat: number | null } | null = null;
+                    const emailLower = member.email?.toLowerCase();
+                    const nameLower = member.name?.toLowerCase();
+
+                    for (const s of teamSeating.seats as any[]) {
+                      if (!Array.isArray(s.members) || !Array.isArray(s.seats)) continue;
+                      for (let i = 0; i < s.members.length; i++) {
+                        const allocatedMemberStr = String(s.members[i]).toLowerCase();
+                        if (allocatedMemberStr === emailLower || allocatedMemberStr === nameLower) {
+                          assignment = {
+                            room: s.room,
+                            row: s.row,
+                            bench: s.bench,
+                            seat: s.seats[i] ?? null,
+                          };
+                          break;
+                        }
+                      }
+                      if (assignment) break;
+                    }
+
+                    return (
                       <div
-                        key={idx}
-                        className="flex items-center gap-3 text-xs p-2.5 rounded-md bg-canvas-parchment/30 border border-black/[0.04] text-ink-muted"
+                        key={member.id || idx}
+                        className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs p-2.5 rounded-md bg-canvas-parchment/30 border border-black/[0.04] text-ink-muted"
                       >
-                        <span className="text-ink font-semibold min-w-[120px]">
-                          {String(m.name || `Member ${idx + 1}`)}
+                        <span className="text-ink font-semibold w-full sm:w-auto sm:min-w-[120px]">
+                          {member.name}
                         </span>
-                        {m.seat ? (
-                          <span>
-                            Seat: {String(m.seat)}
-                          </span>
-                        ) : null}
-                        {m.row !== undefined ? (
-                          <span>
-                            Row: {String(m.row)}
-                          </span>
-                        ) : null}
-                        {m.bench ? (
-                          <span>
-                            Bench: {String(m.bench)}
-                          </span>
-                        ) : null}
+                        {assignment ? (
+                          <>
+                            <span className="px-2 py-0.5 rounded bg-primary/5 text-primary font-medium text-[10px]">
+                              Room: {assignment.room}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-primary/5 text-primary font-medium text-[10px]">
+                              Row: {assignment.row}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-primary/5 text-primary font-medium text-[10px]">
+                              Bench: {assignment.bench}
+                            </span>
+                            {assignment.seat !== null && (
+                              <span className="px-2 py-0.5 rounded bg-success/10 text-success font-semibold text-[10px]">
+                                Seat: {assignment.seat}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="italic text-ink-muted/70">Unassigned</span>
+                        )}
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       )}
