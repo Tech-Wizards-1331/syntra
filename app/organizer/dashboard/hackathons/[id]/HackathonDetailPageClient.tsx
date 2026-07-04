@@ -501,7 +501,7 @@ export default function HackathonDetailPageClient({
   return (
     <div className="flex flex-col gap-8">
       {/* Tab Bar */}
-      <div className="flex items-center gap-1 p-1 rounded-lg bg-canvas-pearl border border-black/[0.06] w-fit">
+      <div className="flex items-center gap-1 p-1 rounded-lg bg-canvas-pearl border border-black/[0.06] w-full sm:w-fit overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap shrink-0">
         <button
           onClick={() => setActiveTab("overview")}
           className={`px-5 py-2 rounded-md text-xs font-medium transition-all duration-200 cursor-pointer ${
@@ -649,7 +649,7 @@ export default function HackathonDetailPageClient({
                       </div>
 
                       {/* Problem Statement */}
-                      <div className="flex flex-col gap-0.5 min-w-0 sm:w-40">
+                      <div className="hidden sm:flex flex-col gap-0.5 min-w-0 sm:w-40">
                         <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Problem</span>
                         <span className="text-xs text-ink font-medium truncate">
                           {team.organizer_problemstatement?.title || "—"}
@@ -657,7 +657,7 @@ export default function HackathonDetailPageClient({
                       </div>
 
                       {/* Members Count */}
-                      <div className="flex flex-col gap-0.5 sm:w-24">
+                      <div className="hidden sm:flex flex-col gap-0.5 sm:w-24">
                         <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Members</span>
                         <div className="flex items-center gap-1.5">
                           <Users className="w-3.5 h-3.5 text-primary" />
@@ -666,7 +666,7 @@ export default function HackathonDetailPageClient({
                       </div>
 
                       {/* Seating */}
-                      <div className="flex flex-col gap-0.5 sm:w-44">
+                      <div className="hidden sm:flex flex-col gap-0.5 sm:w-44">
                         <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Seating</span>
                         <div className="flex items-center gap-1.5">
                           <MapPin className={`w-3.5 h-3.5 ${seatingText === "Unassigned" ? "text-ink-muted" : "text-primary"}`} />
@@ -677,13 +677,13 @@ export default function HackathonDetailPageClient({
                       </div>
 
                       {/* Food Tokens */}
-                      <div className="flex flex-col gap-0.5 sm:w-24">
+                      <div className="hidden sm:flex flex-col gap-0.5 sm:w-24">
                         <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Food</span>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 bg-canvas-pearl rounded-full border border-black/[0.04] overflow-hidden">
                             <div
-                              className="h-full bg-primary rounded-full transition-all duration-500"
-                              style={{ width: team.food_tokens_total > 0 ? `${Math.min(100, (team.food_tokens_used / team.food_tokens_total) * 100)}%` : "0%" }}
+                                className="h-full bg-primary rounded-full transition-all duration-500"
+                                style={{ width: team.food_tokens_total > 0 ? `${Math.min(100, (team.food_tokens_used / team.food_tokens_total) * 100)}%` : "0%" }}
                             />
                           </div>
                           <span className="text-[10px] text-ink-muted font-medium whitespace-nowrap">{team.food_tokens_used}/{team.food_tokens_total}</span>
@@ -697,6 +697,38 @@ export default function HackathonDetailPageClient({
                     {/* Expanded Detail Panel */}
                     {isExpanded && (
                       <div className="px-5 pb-5 border-t border-black/[0.06] animate-fade-in">
+                        {/* Mobile Quick Summary Grid (Visible only on mobile screens) */}
+                        <div className="grid grid-cols-2 gap-4 py-4 border-b border-black/[0.06] sm:hidden">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Problem</span>
+                            <span className="text-xs text-ink font-medium truncate">
+                              {team.organizer_problemstatement?.title || "—"}
+                            </span>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Members</span>
+                            <div className="flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-primary" />
+                              <span className="text-xs text-ink font-medium">{team.participant_teammember.length}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Seating</span>
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className={`w-3.5 h-3.5 ${seatingText === "Unassigned" ? "text-ink-muted" : "text-primary"}`} />
+                              <span className={`text-xs font-medium truncate ${seatingText === "Unassigned" ? "text-ink-muted italic" : "text-ink"}`}>
+                                {seatingText}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[9px] uppercase tracking-widest font-semibold text-ink-muted">Food Tokens</span>
+                            <span className="text-xs text-ink font-medium">
+                              {team.food_tokens_used} / {team.food_tokens_total} used
+                            </span>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5">
                           {/* Members List */}
                           <div className="flex flex-col gap-3">

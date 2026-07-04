@@ -854,7 +854,7 @@ export default function TeamDashboardClient({
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-ink-muted">
                           <span className="flex items-center gap-1">
-                            <Mail className="w-3 h-3 text-ink-muted/50" /> {member.email}
+                            <Mail className="w-3 h-3 text-ink-muted/50" /> <span className="break-all">{member.email}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <GraduationCap className="w-3 h-3 text-ink-muted/50" /> {member.college || "No College"} (Sem {member.semester || "?"})
@@ -889,7 +889,7 @@ export default function TeamDashboardClient({
 
                     {/* Member Controls (Draft leader only, and cannot delete self) */}
                     {isLeader && !team.is_registered && (
-                      <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="flex gap-1 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
                         <button
                           onClick={() => handleEditClick(member)}
                           className="p-2 rounded-md text-ink-muted hover:text-ink hover:bg-canvas-parchment transition cursor-pointer"
@@ -1106,11 +1106,11 @@ export default function TeamDashboardClient({
               <div className="grid grid-cols-1 gap-3.5">
                 <FormInput label="Name" required type="text" value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="e.g. John Doe" />
                 <FormInput label="Email Address" required type="email" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} placeholder="e.g. teammate@gmail.com" />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormInput label="College" required type="text" value={memberCollege} onChange={(e) => setMemberCollege(e.target.value)} />
                   <FormInput label="Degree" required type="text" value={memberDegree} onChange={(e) => setMemberDegree(e.target.value)} placeholder="e.g. B.Tech" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormInput label="Semester" required type="number" value={memberSemester} onChange={(e) => setMemberSemester(e.target.value)} />
                   <FormInput label="Role in Team" type="text" value={memberRole} onChange={(e) => setMemberRole(e.target.value)} placeholder="e.g. Frontend Developer" />
                 </div>
@@ -1176,11 +1176,11 @@ export default function TeamDashboardClient({
                     className="w-full px-4 py-2.5 rounded-md bg-canvas-parchment border border-black/[0.06] text-ink-muted text-sm cursor-not-allowed"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormInput label="College" required type="text" value={memberCollege} onChange={(e) => setMemberCollege(e.target.value)} />
                   <FormInput label="Degree" required type="text" value={memberDegree} onChange={(e) => setMemberDegree(e.target.value)} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormInput label="Semester" required type="number" value={memberSemester} onChange={(e) => setMemberSemester(e.target.value)} />
                   <FormInput label="Role in Team" type="text" value={memberRole} onChange={(e) => setMemberRole(e.target.value)} placeholder="e.g. Lead Developer" />
                 </div>

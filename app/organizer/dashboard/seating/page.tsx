@@ -85,13 +85,25 @@ function getMemberInitials(memberName: string): string {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function generateUUID(): string {
+  if (typeof window !== "undefined" && window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  // Math.random fallback (perfectly fine for client-side React keys)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 function newColumn(): ColumnConfig {
-  return { id: crypto.randomUUID(), bench_count: 3, capacity: 4 };
+  return { id: generateUUID(), bench_count: 3, capacity: 4 };
 }
 
 function newRoom(): RoomConfig {
   return {
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     room_no: "",
     type: "configured",
     columns: [newColumn(), newColumn()],
@@ -138,12 +150,12 @@ function parseJsonToRooms(json: string): { rooms: RoomConfig[]; maxTeams?: numbe
     const maxTeams = meta?.max_teams;
     const roomsFiltered = parsed.filter((el: any) => !(el.room_no === "METADATA" && el.type === "metadata"));
     const rooms: RoomConfig[] = roomsFiltered.map((r: any) => ({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       room_no: r.room_no || "",
       type: r.type === "open" ? "open" : "configured",
       columns: Array.isArray(r.columns)
         ? r.columns.map((c: any) => ({
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             bench_count: Number(c.bench_count) || 3,
             capacity: Number(c.capacity) || 4,
           }))
@@ -181,23 +193,31 @@ function NumberStepper({ label, value, min = 1, max = 99, onChange }: { label: s
 
 function ColumnRow({ col, index, onUpdate, onRemove, canRemove }: { col: ColumnConfig; index: number; onUpdate: (patch: Partial<ColumnConfig>) => void; onRemove: () => void; canRemove: boolean }) {
   return (
-    <div className="flex items-end gap-3 p-3 rounded-md bg-canvas-parchment border border-black/[0.04]">
-      <div className="pb-1.5 w-7 flex-shrink-0 text-center">
-        <span className="text-[10px] font-mono font-semibold text-ink-muted">C{index + 1}</span>
+    <div className="flex flex-col sm:flex-row sm:items-end gap-3 p-3 rounded-md bg-canvas-parchment border border-black/[0.04]">
+      {/* Header for column index and delete action on mobile, inline on desktop */}
+      <div className="flex items-center justify-between sm:justify-start gap-3 sm:pb-1.5 flex-shrink-0">
+        <span className="text-[10px] font-mono font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded sm:bg-transparent sm:px-0 sm:py-0 sm:text-ink-muted">
+          Column {index + 1}
+        </span>
+        {canRemove && (
+          <button type="button" onClick={onRemove} className="sm:hidden p-1.5 rounded-md text-danger hover:bg-danger-light transition" title="Remove column">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
+
       <div className="flex-1 grid grid-cols-2 gap-3">
         <NumberStepper label="Benches" value={col.bench_count} min={1} max={20} onChange={(v) => onUpdate({ bench_count: v })} />
         <NumberStepper label="Seats / Bench" value={col.capacity} min={1} max={10} onChange={(v) => onUpdate({ capacity: v })} />
       </div>
-      <div className="pb-0.5 flex-shrink-0">
-        {canRemove ? (
+
+      {canRemove && (
+        <div className="hidden sm:block pb-0.5 flex-shrink-0">
           <button type="button" onClick={onRemove} className="p-2 rounded-md text-ink-muted hover:text-danger hover:bg-danger-light transition" title="Remove column">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-        ) : (
-          <div className="w-8" />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -375,7 +395,7 @@ export default function SeatingAllocationPage() {
     <div className="min-h-screen bg-canvas-parchment text-ink flex flex-col font-sans relative selection:bg-primary selection:text-white">
       {/* Header */}
       <header className="relative w-full border-b border-black/[0.08] z-20 bg-canvas-parchment/80 backdrop-blur-md sticky top-0">
-        <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/organizer/dashboard" className="p-2 rounded-md bg-canvas border border-black/[0.08] hover:bg-canvas-pearl transition text-ink-muted hover:text-ink">
               <ChevronLeft className="w-4 h-4" />
@@ -427,10 +447,10 @@ export default function SeatingAllocationPage() {
       )}
 
       {/* Main Layout */}
-      <main className="relative flex-1 max-w-screen-xl mx-auto w-full px-6 py-8 z-10 flex gap-6">
+      <main className="relative flex-1 max-w-screen-xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 z-10 flex flex-col lg:flex-row gap-6">
 
         {/* LEFT: Room Builder */}
-        <aside className="w-[420px] flex-shrink-0 flex flex-col gap-4 self-start pb-4">
+        <aside className="w-full lg:w-[420px] flex-shrink-0 flex flex-col gap-4 self-start pb-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-ink">Room Configuration</h2>

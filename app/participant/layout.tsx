@@ -74,7 +74,7 @@ export default async function ParticipantLayout({
         />
 
         {/* Page Content Area wrapper */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0">
           {children}
         </div>
       </div>

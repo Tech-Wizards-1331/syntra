@@ -265,7 +265,7 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
       )}
 
       {/* Sub-section Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-lg bg-canvas border border-black/[0.06] w-fit">
+      <div className="flex items-center gap-1 p-1 rounded-lg bg-canvas border border-black/[0.06] w-full sm:w-fit overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap shrink-0">
         {[
           { key: "criteria" as const, label: "Evaluation Criteria", icon: ClipboardList },
           { key: "faculty" as const, label: "Assign Faculty", icon: GraduationCap },
@@ -574,7 +574,7 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
       {/* ═══ REPORT SECTION ═══ */}
       {activeSection === "report" && (
         <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-semibold tracking-tight">Evaluation Scores Report</h3>
               <p className="text-xs text-ink-muted mt-0.5">
@@ -614,16 +614,16 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-canvas-pearl border-b border-black/[0.06]">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Team</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Leader</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider min-w-[120px] whitespace-nowrap">Team</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider min-w-[120px] whitespace-nowrap">Leader</th>
                     {report.criteria.map((c) => (
-                      <th key={c.id} className="px-4 py-3 text-center text-[11px] font-semibold text-ink-muted uppercase tracking-wider">
+                      <th key={c.id} className="px-4 py-3 text-center text-[11px] font-semibold text-ink-muted uppercase tracking-wider min-w-[100px] whitespace-nowrap">
                         {c.name}
                         <br />
                         <span className="text-[9px] text-ink-muted font-normal">/{c.max_score}</span>
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-center text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-[11px] font-semibold text-primary uppercase tracking-wider min-w-[80px] whitespace-nowrap">
                       Total
                     </th>
                   </tr>
@@ -661,8 +661,8 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
 
                     return (
                       <tr key={team.id} className="border-b border-black/[0.04] hover:bg-canvas-pearl/50 transition">
-                        <td className="px-4 py-3 font-medium">{team.name}</td>
-                        <td className="px-4 py-3 text-ink-muted">{team.accounts_user.full_name}</td>
+                        <td className="px-4 py-3 font-medium min-w-[120px] whitespace-nowrap">{team.name}</td>
+                        <td className="px-4 py-3 text-ink-muted min-w-[120px] whitespace-nowrap">{team.accounts_user.full_name}</td>
                         {report.criteria.map((c) => {
                           const avg = criterionAvgs[c.id] ?? 0;
                           const pct = c.max_score > 0 ? avg / c.max_score : 0;
