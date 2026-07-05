@@ -82,60 +82,87 @@ export async function selectProblemStatement(
 ) {
   const { userId } = await requireParticipant();
 
-  // Verify team ownership
-  const team = await prisma.participant_team.findUnique({
-    where: { id: teamId },
-  });
-  if (!team) throw new Error("Team not found");
-  if (team.leader_id !== userId) {
-    throw new Error("Only the team leader can select a problem statement.");
+  const maxRetries = 5;
+  let delay = 100; // start with 100ms delay
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // Verify team ownership
+        const team = await tx.participant_team.findUnique({
+          where: { id: teamId },
+        });
+        if (!team) throw new Error("Team not found");
+        if (team.leader_id !== userId) {
+          throw new Error("Only the team leader can select a problem statement.");
+        }
+
+        // Selection is permanent (Django D-01)
+        if (team.selected_problem_statement_id !== null) {
+          throw new Error(
+            "Problem statement is already locked in and cannot be changed."
+          );
+        }
+
+        // Check if problem statements are released for the hackathon
+        const hackathon = await tx.organizer_hackathon.findUnique({
+          where: { id: team.hackathon_id },
+          select: { release_problems: true },
+        });
+        if (!hackathon?.release_problems) {
+          throw new Error("Problem statements are not released yet for this hackathon.");
+        }
+
+        // Verify the PS exists, belongs to this hackathon, and is active
+        const ps = await tx.organizer_problemstatement.findFirst({
+          where: {
+            id: problemStatementId,
+            hackathon_id: team.hackathon_id,
+            is_active: true,
+          },
+        });
+        if (!ps) {
+          throw new Error("Problem statement not found or inactive.");
+        }
+
+        // Check capacity (Django D-02 + D-03)
+        const currentCount = await tx.participant_team.count({
+          where: { selected_problem_statement_id: problemStatementId },
+        });
+        if (currentCount >= ps.max_teams_allowed) {
+          throw new Error(
+            "This problem statement has reached its capacity limit."
+          );
+        }
+
+        // Lock in the selection
+        return await tx.participant_team.update({
+          where: { id: teamId },
+          data: { selected_problem_statement_id: problemStatementId },
+        });
+      }, {
+        isolationLevel: "Serializable"
+      });
+
+      revalidatePath(`/participant/hackathons/${result.hackathon_id}/hub`);
+      revalidatePath("/participant/dashboard");
+      return { success: true, detail: "Problem statement selected successfully." };
+
+    } catch (error: any) {
+      const isSerializationFailure =
+        error.code === "P2034" ||
+        error.message?.includes("serialization") ||
+        error.message?.includes("deadlock");
+
+      if (isSerializationFailure && attempt < maxRetries) {
+        // Wait with a small random jitter before retrying
+        await new Promise((resolve) => setTimeout(resolve, delay + Math.random() * 100));
+        delay *= 1.5; // Exponential backoff
+        continue;
+      }
+      throw error;
+    }
   }
-
-  // Selection is permanent (Django D-01)
-  if (team.selected_problem_statement_id !== null) {
-    throw new Error(
-      "Problem statement is already locked in and cannot be changed."
-    );
-  }
-
-  // Check if problem statements are released for the hackathon
-  const hackathon = await prisma.organizer_hackathon.findUnique({
-    where: { id: team.hackathon_id },
-    select: { release_problems: true },
-  });
-  if (!hackathon?.release_problems) {
-    throw new Error("Problem statements are not released yet for this hackathon.");
-  }
-
-  // Verify the PS exists, belongs to this hackathon, and is active
-  const ps = await prisma.organizer_problemstatement.findFirst({
-    where: {
-      id: problemStatementId,
-      hackathon_id: team.hackathon_id,
-      is_active: true,
-    },
-  });
-  if (!ps) {
-    throw new Error("Problem statement not found or inactive.");
-  }
-
-  // Check capacity (Django D-02 + D-03)
-  const currentCount = await prisma.participant_team.count({
-    where: { selected_problem_statement_id: problemStatementId },
-  });
-  if (currentCount >= ps.max_teams_allowed) {
-    throw new Error(
-      "This problem statement has reached its capacity limit."
-    );
-  }
-
-  // Lock in the selection
-  await prisma.participant_team.update({
-    where: { id: teamId },
-    data: { selected_problem_statement_id: problemStatementId },
-  });
-
-  revalidatePath(`/participant/hackathons/${team.hackathon_id}/hub`);
-  revalidatePath("/participant/dashboard");
-  return { success: true, detail: "Problem statement selected successfully." };
+  throw new Error("Failed to select problem statement due to high concurrent traffic. Please try again.");
 }
+
