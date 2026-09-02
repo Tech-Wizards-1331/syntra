@@ -94,10 +94,10 @@ export const { auth, signIn, signOut, handlers, unstable_update } = NextAuth({
               dbUser.role === "participant"
                 ? dbUser.participant_participantprofile?.id
                 : dbUser.role === "organizer"
-                ? dbUser.organizer_organizerprofile?.id
-                : dbUser.role === "faculty"
-                ? dbUser.faculty_profile?.id
-                : null;
+                  ? dbUser.organizer_organizerprofile?.id
+                  : dbUser.role === "faculty"
+                    ? dbUser.faculty_profile?.id
+                    : null;
           }
         }
       }

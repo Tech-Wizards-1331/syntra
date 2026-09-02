@@ -6,10 +6,13 @@ let transporter: nodemailer.Transporter | null = null;
 function getTransporter() {
   if (transporter) return transporter;
 
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD;
+  const user = process.env.SMTP_USER || process.env.EMAIL_HOST_USER;
+  const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_HOST_PASSWORD;
+  const host = process.env.SMTP_HOST || (user?.includes("@gmail.com") ? "smtp.gmail.com" : "");
+  const rawPort = process.env.SMTP_PORT;
+  const isGmail = host.includes("gmail.com") || (user?.includes("@gmail.com") ?? false);
+  const port = rawPort ? Number(rawPort) : (isGmail ? 465 : 587);
+  const secure = port === 465;
 
   if (!host || !user || !pass) {
     console.warn("⚠️ SMTP credentials not fully configured in environment variables. Email notifications will be printed to console instead.");
@@ -19,11 +22,15 @@ function getTransporter() {
   transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // true for 465, false for other ports
+    secure,
     auth: {
       user,
       pass,
     },
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    connectionTimeout: 10000,
   });
 
   return transporter;
