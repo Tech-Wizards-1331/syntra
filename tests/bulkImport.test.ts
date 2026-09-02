@@ -165,23 +165,27 @@ describe("bulkImportTeams", () => {
     );
   });
 
-  it("skips duplicate team names and reports errors", async () => {
+  it("allows duplicate team names in the same hackathon", async () => {
     (prisma.participant_team.findMany as any).mockResolvedValue([
       { name: "Alpha Innovators", leader_id: 100 },
     ]);
+    (prisma.accounts_user.findUnique as any).mockResolvedValue(null);
+    (prisma.accounts_user.create as any).mockResolvedValue({ id: 201 });
+    (prisma.participant_participantprofile.create as any).mockResolvedValue({ id: 201 });
+    (prisma.participant_team.create as any).mockResolvedValue({ id: 501, name: "Alpha Innovators" });
+    (prisma.participant_teammember.create as any).mockResolvedValue({ id: 601 });
 
     const sampleTeams: BulkTeamInput[] = [
       {
-        teamName: "Alpha Innovators", // duplicate
+        teamName: "Alpha Innovators", // same name allowed
         leaderName: "Leader Name",
-        leaderEmail: "leader@college.edu",
+        leaderEmail: "another.leader@college.edu",
         members: [],
       },
     ];
 
     const result = await bulkImportTeams(1, sampleTeams);
-    expect(result.importedCount).toBe(0);
-    expect(result.skippedCount).toBe(1);
-    expect(result.errors[0]).toContain("already registered in this hackathon");
+    expect(result.importedCount).toBe(1);
+    expect(result.skippedCount).toBe(0);
   });
 });

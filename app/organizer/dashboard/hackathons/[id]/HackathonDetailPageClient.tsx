@@ -759,7 +759,11 @@ export default function HackathonDetailPageClient({
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="text-xs font-semibold text-ink truncate">{member.name}</p>
-                                        <p className="text-[10px] text-ink-muted truncate">{member.email}</p>
+                                        {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                                          <p className="text-[10px] text-ink-muted truncate">{member.email}</p>
+                                        ) : member.email && !member.email.startsWith("mem_") ? (
+                                          <p className="text-[10px] text-ink-muted truncate">Enroll: {member.email}</p>
+                                        ) : null}
                                       </div>
                                     </div>
                                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 ml-9 text-[10px] text-ink-muted">
