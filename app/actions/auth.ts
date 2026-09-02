@@ -130,3 +130,51 @@ export async function registerWithCredentials(prevState: any, formData: FormData
 export async function loginWithProvider(provider: "google" | "github") {
   await signIn(provider, { redirectTo: "/participant/dashboard" });
 }
+
+const resetPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+export async function resetPassword(prevState: any, formData: FormData) {
+  const email = formData.get("email") as string;
+  const newPassword = formData.get("newPassword") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  const result = resetPasswordSchema.safeParse({ email, newPassword, confirmPassword });
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
+  }
+
+  const cleanEmail = email.toLowerCase();
+
+  try {
+    const user = await prisma.accounts_user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      return { error: "No account found with this email address." };
+    }
+
+    const hashedPassword = hashPassword(newPassword);
+
+    await prisma.accounts_user.update({
+      where: { email: cleanEmail },
+      data: {
+        password: hashedPassword,
+        updated_at: new Date(),
+      },
+    });
+
+    return { success: "Password updated successfully! You can now sign in with your new password." };
+  } catch (err: any) {
+    console.error("Reset password error:", err);
+    return { error: "Failed to reset password. Please try again." };
+  }
+}
+
