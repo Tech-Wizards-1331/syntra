@@ -321,16 +321,13 @@ export default function BulkUploadModal({
               ? parseInt(mSemRaw.replace(/[^0-9]/g, ""), 10) || leaderSemester
               : leaderSemester;
 
-            // If member email is provided use it, otherwise generate a unique fallback based on enrollment or name
-            let memberEmail = mEmailRaw;
-            if (!memberEmail || !memberEmail.includes("@")) {
-              if (mEnroll) {
-                memberEmail = `${mEnroll.toLowerCase().replace(/[^a-z0-9]/g, "")}@student.syntra`;
-              } else {
-                const nameKey = cleanMName.toLowerCase().replace(/[^a-z0-9]/g, "");
-                memberEmail = `${nameKey}_${rowNum}_${m}@student.syntra`;
-              }
-            }
+            // If member email is provided use it, otherwise use enrollment number or empty
+            const memberEmail =
+              mEmailRaw && mEmailRaw.includes("@")
+                ? mEmailRaw.trim()
+                : mEnroll
+                ? mEnroll.trim()
+                : "";
 
             const mDegreeParts: string[] = [];
             if (mEnroll) mDegreeParts.push(`Enroll: ${mEnroll}`);

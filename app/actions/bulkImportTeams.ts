@@ -130,11 +130,7 @@ export async function bulkImportTeams(
       continue;
     }
 
-    // 2. Check duplicate team name in this hackathon
-    if (existingTeamNames.has(teamName.toLowerCase())) {
-      errors.push(`Row ${teamNum} (${teamName}): Team name "${teamName}" is already registered in this hackathon.`);
-      continue;
-    }
+    // 2. Duplicate team names are allowed per organizer preference
 
     // 3. Check if leader email is already registered in this hackathon
     if (registeredEmailsInHackathon.has(leaderEmail)) {
@@ -146,32 +142,40 @@ export async function bulkImportTeams(
     const validMembers: BulkMemberInput[] = [];
     let memberError = false;
 
-    for (const m of rawTeam.members || []) {
+    for (let mIdx = 0; mIdx < (rawTeam.members || []).length; mIdx++) {
+      const m = rawTeam.members[mIdx];
       const mName = (m.name || "").trim();
-      const mEmail = (m.email || "").trim().toLowerCase();
-      if (!mName && !mEmail) continue; // skip empty member slot
+      const rawMEmail = (m.email || "").trim().toLowerCase();
+      if (!mName && !rawMEmail) continue; // skip empty member slot
 
-      if (!mName || !mEmail || !mEmail.includes("@")) {
-        errors.push(`Row ${teamNum} (${teamName}): Member "${mName || 'Unnamed'}" has an invalid email (${mEmail}).`);
+      if (!mName) {
+        errors.push(`Row ${teamNum} (${teamName}): Member slot ${mIdx + 2} has missing name.`);
         memberError = true;
         break;
       }
 
-      if (mEmail === leaderEmail) {
-        errors.push(`Row ${teamNum} (${teamName}): Member email "${mEmail}" is the same as leader email.`);
-        memberError = true;
-        break;
-      }
+      let memberEmail = "";
+      if (rawMEmail && rawMEmail.includes("@")) {
+        if (rawMEmail === leaderEmail) {
+          errors.push(`Row ${teamNum} (${teamName}): Member email "${rawMEmail}" is the same as leader email.`);
+          memberError = true;
+          break;
+        }
 
-      if (registeredEmailsInHackathon.has(mEmail)) {
-        errors.push(`Row ${teamNum} (${teamName}): Member email "${mEmail}" is already participating in this hackathon.`);
-        memberError = true;
-        break;
+        if (registeredEmailsInHackathon.has(rawMEmail)) {
+          errors.push(`Row ${teamNum} (${teamName}): Member email "${rawMEmail}" is already participating in this hackathon.`);
+          memberError = true;
+          break;
+        }
+        memberEmail = rawMEmail;
+      } else {
+        // No email provided: satisfy DB NOT NULL & UNIQUE([team_id, email]) using enrollment or fallback identifier
+        memberEmail = rawMEmail || `mem_${mIdx + 2}_${Date.now() % 100000}_${Math.floor(Math.random() * 1000)}`;
       }
 
       validMembers.push({
         name: mName,
-        email: mEmail,
+        email: memberEmail,
         college: (m.college || college).trim(),
         semester: typeof m.semester === "number" ? m.semester : semester,
         degree: (m.degree || degree).trim(),
