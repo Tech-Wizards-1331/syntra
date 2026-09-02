@@ -7,6 +7,8 @@ import {
   createHackathon,
   updateHackathon,
   deleteHackathon,
+  toggleHackathonRegistration,
+  toggleRequireGithubLink,
 } from "@/app/actions/hackathons";
 import {
   createProblemStatement,
@@ -389,5 +391,102 @@ describe("Scan Categories Actions", () => {
     await expect(createScanCategory(5, "Check-in")).rejects.toThrow(
       "Scan category with name \"Check-in\" already exists for this hackathon"
     );
+  });
+});
+
+describe("Live Event Controls Actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should close registration by setting status to active", async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: "10", role: "organizer" },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.findUnique).mockResolvedValueOnce({
+      id: 5,
+      status: "registration",
+      organizer_organizerprofile: { user_id: 10 },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.update).mockResolvedValueOnce({
+      id: 5,
+      status: "active",
+    } as any);
+
+    const res = await toggleHackathonRegistration(5, false);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe("active");
+    expect(prisma.organizer_hackathon.update).toHaveBeenCalledWith({
+      where: { id: 5 },
+      data: { status: "active" },
+    });
+  });
+
+  it("should reopen registration by setting status to registration", async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: "10", role: "organizer" },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.findUnique).mockResolvedValueOnce({
+      id: 5,
+      status: "active",
+      organizer_organizerprofile: { user_id: 10 },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.update).mockResolvedValueOnce({
+      id: 5,
+      status: "registration",
+    } as any);
+
+    const res = await toggleHackathonRegistration(5, true);
+    expect(res.success).toBe(true);
+    expect(res.status).toBe("registration");
+    expect(prisma.organizer_hackathon.update).toHaveBeenCalledWith({
+      where: { id: 5 },
+      data: { status: "registration" },
+    });
+  });
+
+  it("should block toggling registration on completed hackathon", async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: "10", role: "organizer" },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.findUnique).mockResolvedValueOnce({
+      id: 5,
+      status: "completed",
+      organizer_organizerprofile: { user_id: 10 },
+    } as any);
+
+    await expect(toggleHackathonRegistration(5, true)).rejects.toThrow(
+      "Cannot modify registration status for a completed hackathon"
+    );
+  });
+
+  it("should toggle require_github_link", async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: "10", role: "organizer" },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.findUnique).mockResolvedValueOnce({
+      id: 5,
+      require_github_link: false,
+      organizer_organizerprofile: { user_id: 10 },
+    } as any);
+
+    vi.mocked(prisma.organizer_hackathon.update).mockResolvedValueOnce({
+      id: 5,
+      require_github_link: true,
+    } as any);
+
+    const res = await toggleRequireGithubLink(5, true);
+    expect(res.success).toBe(true);
+    expect(res.require_github_link).toBe(true);
+    expect(prisma.organizer_hackathon.update).toHaveBeenCalledWith({
+      where: { id: 5 },
+      data: { require_github_link: true },
+    });
   });
 });

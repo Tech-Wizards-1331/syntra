@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useActionState } from "react";
+import React, { useActionState, useState } from "react";
 import Link from "next/link";
-import { loginWithCredentials, loginWithProvider } from "@/app/actions/auth";
-import { Github, Lock, Mail, Loader2, ArrowRight, ChevronRight } from "lucide-react";
+import { loginWithCredentials, loginWithProvider, resetPassword } from "@/app/actions/auth";
+import { Github, Lock, Mail, Loader2, ArrowRight, ChevronRight, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginWithCredentials, null);
+  const [resetState, resetAction, isResetPending] = useActionState(resetPassword, null);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (resetState?.success) {
+      setIsForgotModalOpen(false);
+    }
+  }, [resetState]);
 
   return (
     <div className="min-h-screen bg-canvas-parchment text-ink flex flex-col font-sans antialiased selection:bg-primary selection:text-white">
@@ -48,12 +56,21 @@ export default function LoginPage() {
               <p className="text-sm text-ink-muted">Sign in to manage your Syntra experience</p>
             </div>
 
+            {/* Success Message from Password Reset */}
+            {resetState?.success && !isForgotModalOpen && (
+              <div className="p-4 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                <span>{resetState.success}</span>
+              </div>
+            )}
+
             {/* Error Message */}
             {state?.error && (
               <div className="p-4 rounded-md bg-danger-light border border-danger/15 text-danger text-xs font-medium leading-relaxed">
                 {state.error}
               </div>
             )}
+
 
             {/* Form */}
             <form action={formAction} className="flex flex-col gap-4">
@@ -73,9 +90,18 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="password" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5" /> Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" /> Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(true)}
+                    className="text-[11px] text-primary hover:underline font-medium transition cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <input
                   id="password"
                   name="password"
@@ -152,6 +178,113 @@ export default function LoginPage() {
         </div>
       </main>
 
+      {/* ─── Forgot Password Modal ─── */}
+      {isForgotModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-canvas border border-black/[0.08] w-full max-w-md rounded-xl p-6 shadow-2xl flex flex-col gap-5 relative">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-ink">Reset Password</h3>
+                <p className="text-xs text-ink-muted mt-0.5">Enter your email address and choose a new password.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsForgotModalOpen(false)}
+                className="p-1 rounded-full text-ink-muted hover:text-ink hover:bg-black/5 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {resetState?.error && (
+              <div className="p-3.5 rounded-md bg-danger-light border border-danger/15 text-danger text-xs font-medium leading-relaxed flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{resetState.error}</span>
+              </div>
+            )}
+
+            {resetState?.success && (
+              <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                <span>{resetState.success}</span>
+              </div>
+            )}
+
+            <form action={resetAction} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="reset-email" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5" /> Email Address
+                </label>
+                <input
+                  id="reset-email"
+                  name="email"
+                  type="email"
+                  placeholder="name@college.edu"
+                  required
+                  disabled={isResetPending}
+                  className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="reset-newPassword" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5" /> New Password
+                </label>
+                <input
+                  id="reset-newPassword"
+                  name="newPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  disabled={isResetPending}
+                  className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="reset-confirmPassword" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5" /> Confirm New Password
+                </label>
+                <input
+                  id="reset-confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  disabled={isResetPending}
+                  className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(false)}
+                  disabled={isResetPending}
+                  className="px-4 py-2 rounded-pill bg-canvas-pearl border border-black/[0.08] text-ink font-medium text-xs hover:bg-black/5 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResetPending}
+                  className="px-4 py-2 rounded-pill bg-primary text-white font-medium text-xs hover:bg-primary-focus flex items-center gap-2 transition apple-press-effect disabled:opacity-50 cursor-pointer"
+                >
+                  {isResetPending ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Resetting...
+                    </>
+                  ) : (
+                    "Reset Password"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="bg-canvas-parchment text-ink-muted border-t border-black/[0.08] py-8 px-6 text-[12px] font-normal">
         <div className="max-w-7xl w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -166,3 +299,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

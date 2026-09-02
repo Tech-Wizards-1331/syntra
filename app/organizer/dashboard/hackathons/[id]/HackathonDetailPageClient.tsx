@@ -3,7 +3,12 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getCloudinarySignature, toggleProblemStatementsRelease } from "@/app/actions/hackathons";
+import {
+  getCloudinarySignature,
+  toggleProblemStatementsRelease,
+  toggleHackathonRegistration,
+  toggleRequireGithubLink,
+} from "@/app/actions/hackathons";
 import {
   createProblemStatement,
   deleteProblemStatement,
@@ -40,6 +45,7 @@ import {
   MapPin,
   Hash,
   Lock,
+  GitBranch,
 } from "lucide-react";
 
 interface ProblemStatement {
@@ -452,6 +458,36 @@ export default function HackathonDetailPageClient({
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to toggle problem statements release status.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Toggle registration open / closed status
+  const handleToggleRegistration = async () => {
+    const isCurrentlyOpen = ["registration", "registration_open", "published"].includes(hackathon.status);
+    setActionLoading("toggle-registration");
+    setErrorMsg(null);
+    try {
+      await toggleHackathonRegistration(hackathon.id, !isCurrentlyOpen);
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to toggle registration status.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Toggle GitHub link requirement for participants
+  const handleToggleGithubLink = async () => {
+    const currentStatus = hackathon.require_github_link ?? false;
+    setActionLoading("toggle-github");
+    setErrorMsg(null);
+    try {
+      await toggleRequireGithubLink(hackathon.id, !currentStatus);
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to toggle GitHub link requirement.");
     } finally {
       setActionLoading(null);
     }
@@ -1150,6 +1186,115 @@ export default function HackathonDetailPageClient({
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Event Controls Panel */}
+        <div className="p-8 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-6">
+          <div>
+            <h3 className="text-lg font-semibold text-ink tracking-tight flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Live Event Controls
+            </h3>
+            <p className="text-xs text-ink-muted mt-1">
+              Control team registrations, problem statement releases, and project submission phases in real-time.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Control 1: Registration Status Toggle */}
+            <div className="p-4 rounded-xl bg-canvas-parchment/60 border border-black/[0.05] flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-ink">Team Registration</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      ["registration", "registration_open", "published"].includes(hackathon.status)
+                        ? "bg-success-light text-success-dark border border-success/20"
+                        : "bg-black/[0.06] text-ink-muted border border-black/[0.04]"
+                    }`}
+                  >
+                    {["registration", "registration_open", "published"].includes(hackathon.status)
+                      ? "Open for Signups"
+                      : "Registration Closed"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-ink-muted leading-relaxed">
+                  {["registration", "registration_open", "published"].includes(hackathon.status)
+                    ? "Participants can create teams and register for this hackathon."
+                    : "Registration is closed. No new teams or participants can register."}
+                </p>
+              </div>
+
+              <button
+                onClick={handleToggleRegistration}
+                disabled={actionLoading !== null || hackathon.status === "completed"}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                  ["registration", "registration_open", "published"].includes(hackathon.status)
+                    ? "bg-primary"
+                    : "bg-black/[0.16]"
+                }`}
+                title={
+                  hackathon.status === "completed"
+                    ? "Cannot change registration for a completed hackathon"
+                    : "Toggle registration status"
+                }
+              >
+                {actionLoading === "toggle-registration" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto text-white" />
+                ) : (
+                  <span
+                    className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                      ["registration", "registration_open", "published"].includes(hackathon.status)
+                        ? "translate-x-5.5"
+                        : "translate-x-1"
+                    }`}
+                  />
+                )}
+              </button>
+            </div>
+
+            {/* Control 2: GitHub Repository Submissions */}
+            <div className="p-4 rounded-xl bg-canvas-parchment/60 border border-black/[0.05] flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-ink">GitHub Project Submissions</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      hackathon.require_github_link
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-black/[0.06] text-ink-muted border border-black/[0.04]"
+                    }`}
+                  >
+                    {hackathon.require_github_link ? "Submissions Open" : "Submissions Closed"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-ink-muted leading-relaxed">
+                  {hackathon.require_github_link
+                    ? "Teams can submit and edit their project GitHub repository in their Team Hub."
+                    : "Project submissions are disabled. Participants cannot submit GitHub links yet."}
+                </p>
+              </div>
+
+              <button
+                onClick={handleToggleGithubLink}
+                disabled={actionLoading !== null}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                  hackathon.require_github_link ? "bg-primary" : "bg-black/[0.16]"
+                }`}
+                title="Toggle GitHub link requirement"
+              >
+                {actionLoading === "toggle-github" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto text-white" />
+                ) : (
+                  <span
+                    className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                      hackathon.require_github_link ? "translate-x-5.5" : "translate-x-1"
+                    }`}
+                  />
+                )}
+              </button>
             </div>
           </div>
         </div>
