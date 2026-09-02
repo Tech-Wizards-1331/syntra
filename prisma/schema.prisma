@@ -266,6 +266,7 @@ model organizer_hackathon {
   is_paid                        Boolean
   release_problems               Boolean                          @default(false)
   allow_scan                     Boolean                          @default(true)
+  require_github_link            Boolean                          @default(false)
   organizer_organizerprofile     organizer_organizerprofile       @relation(fields: [organizer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizer_hackathoncoordinator organizer_hackathoncoordinator[]
   organizer_problemstatement     organizer_problemstatement[]
@@ -420,6 +421,7 @@ model participant_team {
   is_qr_active                  Boolean
   qr_token                      String?                         @unique(map: "sqlite_autoindex_participant_team_1")
   invite_token                  String?                         @unique(map: "participant_team_invite_token_uniq")
+  github_link                   String?
   participant_payment           participant_payment[]
   organizer_problemstatement    organizer_problemstatement?     @relation(fields: [selected_problem_statement_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   accounts_user                 accounts_user                   @relation(fields: [leader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

@@ -259,6 +259,7 @@ export async function createHackathon(data: {
   fee_amount?: number | null;
   status: string;
   allow_scan?: boolean;
+  require_github_link?: boolean;
 }) {
   const session = await auth();
   if (!session || !session.user || session.user.role !== "organizer") {
@@ -295,6 +296,7 @@ export async function createHackathon(data: {
       fee_type: data.is_paid ? data.fee_type : null,
       fee_amount: data.is_paid ? (data.fee_amount as any) : null,
       allow_scan: data.allow_scan !== undefined ? data.allow_scan : true,
+      require_github_link: data.require_github_link !== undefined ? data.require_github_link : false,
       organizer_id: profile.id,
       room_configuration: roomConfigJson,
       created_at: new Date(),
@@ -330,6 +332,7 @@ export async function updateHackathon(
     fee_amount?: number | null;
     status: string;
     allow_scan?: boolean;
+    require_github_link?: boolean;
   }
 ) {
   const session = await auth();
@@ -434,6 +437,7 @@ export async function updateHackathon(
       fee_type: data.is_paid ? data.fee_type : null,
       fee_amount: data.is_paid ? (data.fee_amount as any) : null,
       ...(data.allow_scan !== undefined && { allow_scan: data.allow_scan }),
+      ...(data.require_github_link !== undefined && { require_github_link: data.require_github_link }),
       room_configuration: updatedConfigJson,
       updated_at: new Date(),
     },

@@ -54,6 +54,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
       seating_allocation: true,
       release_problems: true,
       allow_scan: true,
+      require_github_link: true,
     },
   });
 
@@ -212,6 +213,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     min_team_size: hackathon.min_team_size,
     release_problems: hackathon.release_problems,
     allow_scan: hackathon.allow_scan,
+    require_github_link: hackathon.require_github_link,
   };
 
   // Check if leader email is present in team members
@@ -254,6 +256,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     is_registered: team.is_registered,
     qr_token: team.qr_token,
     invite_token: team.invite_token,
+    github_link: team.github_link,
     selected_problem_statement: team.organizer_problemstatement
       ? {
           id: team.organizer_problemstatement.id,

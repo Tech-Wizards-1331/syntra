@@ -76,6 +76,7 @@ interface TeamData {
   food_tokens_total: number;
   food_tokens_used: number;
   created_at: Date;
+  github_link?: string | null;
   selected_problem_statement_id: number | null;
   accounts_user: {
     id: number;
@@ -119,6 +120,7 @@ interface HackathonDetailPageClientProps {
     status: string;
     release_problems: boolean;
     allow_scan: boolean;
+    require_github_link?: boolean;
     room_configuration: string | null;
     seating_allocation: string | null;
     organizer_problemstatement: ProblemStatement[];
@@ -730,6 +732,28 @@ export default function HackathonDetailPageClient({
                             </span>
                           </div>
                         </div>
+
+                        {/* GitHub Repo section if enabled */}
+                        {hackathon.require_github_link && (
+                          <div className="mt-4 p-3 rounded-md bg-canvas-parchment/60 border border-black/[0.06] flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="font-semibold text-ink">GitHub Repository:</span>
+                              {team.github_link ? (
+                                <a
+                                  href={team.github_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline font-medium flex items-center gap-1.5"
+                                >
+                                  {team.github_link}
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              ) : (
+                                <span className="text-ink-muted italic">Not submitted yet</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5">
                           {/* Members List */}

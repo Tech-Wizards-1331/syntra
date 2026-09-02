@@ -10,7 +10,8 @@ import {
   AlertCircle, 
   Save, 
   Sparkles,
-  Scan
+  Scan,
+  GitBranch
 } from "lucide-react";
 
 export default function NewHackathonPage() {
@@ -31,6 +32,7 @@ export default function NewHackathonPage() {
     fee_type: "team",
     fee_amount: "",
     allow_scan: true,
+    require_github_link: false,
     status: "draft",
   });
 
@@ -343,6 +345,26 @@ export default function NewHackathonPage() {
                 </label>
                 <p className="text-xs text-ink-muted leading-relaxed">
                   If enabled, organizers can scan participant QR passes and participants can view their check-in pass. If disabled, the scan and check-in pass buttons will remain visible but unclickable.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 py-1 border-t border-black/[0.06] pt-4">
+              <input
+                id="require_github_link"
+                name="require_github_link"
+                type="checkbox"
+                checked={formData.require_github_link}
+                onChange={handleChange}
+                className="w-4 h-4 mt-0.5 rounded border-black/[0.15] bg-canvas-pearl text-primary focus:ring-primary accent-primary cursor-pointer"
+              />
+              <div className="flex flex-col gap-0.5">
+                <label htmlFor="require_github_link" className="text-sm font-semibold text-ink cursor-pointer select-none flex items-center gap-1.5">
+                  <GitBranch className="w-4 h-4 text-primary" />
+                  Require / Enable GitHub Link Submission
+                </label>
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  If enabled, participants will be prompted to submit their GitHub repository link in the Hackathon Hub. Organizers and evaluating faculty members will be able to view each team's repository link.
                 </p>
               </div>
             </div>
