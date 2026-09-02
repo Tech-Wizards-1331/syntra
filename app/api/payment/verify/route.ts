@@ -33,7 +33,11 @@ export async function POST(req: NextRequest) {
     const payment = await prisma.participant_payment.findUnique({
       where: { id: paymentIdNum },
       include: {
-        participant_team: true,
+        participant_team: {
+          include: {
+            organizer_hackathon: { select: { allow_scan: true } },
+          },
+        },
       },
     });
 
@@ -105,13 +109,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const shouldGenerateQr = payment.participant_team.organizer_hackathon.allow_scan !== false;
+
     // Update team registration with QR token
     await prisma.participant_team.update({
       where: { id: payment.team_id },
       data: {
         is_registered: true,
-        qr_token: randomUUID(),
-        is_qr_active: true,
+        qr_token: shouldGenerateQr ? randomUUID() : null,
+        is_qr_active: shouldGenerateQr,
         updated_at: new Date(),
       },
     });

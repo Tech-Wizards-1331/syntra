@@ -525,7 +525,8 @@ export async function submitTeamRegistration(teamId: number) {
     }
   }
 
-  const qrToken = randomUUID();
+  const shouldGenerateQr = hackathon.allow_scan !== false;
+  const qrToken = shouldGenerateQr ? randomUUID() : null;
 
   // If the leader is not in members, create a teammember record for them (Django parity)
   if (!leaderInMembers && leaderProfile) {
@@ -556,7 +557,7 @@ export async function submitTeamRegistration(teamId: number) {
     data: {
       is_registered: true,
       qr_token: qrToken,
-      is_qr_active: true,
+      is_qr_active: shouldGenerateQr,
     },
   });
 

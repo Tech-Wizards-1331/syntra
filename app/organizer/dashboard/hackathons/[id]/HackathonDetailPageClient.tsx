@@ -15,6 +15,7 @@ import {
   deleteScanCategory,
 } from "@/app/actions/scancategories";
 import EvaluationTab from "./EvaluationTab";
+import BulkUploadModal from "./BulkUploadModal";
 import {
   Calendar,
   Users,
@@ -23,6 +24,7 @@ import {
   Plus,
   ExternalLink,
   FileText,
+  FileSpreadsheet,
   Check,
   Loader2,
   X,
@@ -37,6 +39,7 @@ import {
   ChevronDown,
   MapPin,
   Hash,
+  Lock,
 } from "lucide-react";
 
 interface ProblemStatement {
@@ -117,6 +120,7 @@ interface HackathonDetailPageClientProps {
     fee_amount: number | null;
     status: string;
     release_problems: boolean;
+    allow_scan: boolean;
     room_configuration: string | null;
     seating_allocation: string | null;
     organizer_problemstatement: ProblemStatement[];
@@ -158,6 +162,7 @@ export default function HackathonDetailPageClient({
   const [teamStatusFilter, setTeamStatusFilter] = useState<"all" | "registered" | "draft">("all");
   const [teamPsFilter, setTeamPsFilter] = useState<number | "all">("all");
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   // Scan Category states
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -601,6 +606,13 @@ export default function HackathonDetailPageClient({
                 <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
               </div>
             )}
+            <button
+              onClick={() => setIsBulkUploadOpen(true)}
+              className="px-4 py-2.5 rounded-md bg-primary text-white hover:bg-primary-hover transition text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-sm"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Import Teams (Excel)
+            </button>
           </div>
 
           {/* Teams List */}
@@ -1263,87 +1275,108 @@ export default function HackathonDetailPageClient({
 
         {/* Scan Categories Panel */}
         <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-5">
-          <h3 className="text-[11px] font-semibold text-primary uppercase tracking-wider">
-            Scan Categories
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+              Scan Categories
+            </h3>
+            {hackathon.allow_scan === false && (
+              <span className="px-2 py-0.5 rounded-pill text-[10px] font-semibold bg-canvas-parchment border border-black/[0.08] text-ink-muted">
+                Scan Disabled
+              </span>
+            )}
+          </div>
 
-          <form onSubmit={handleCreateCategory} className="flex gap-2">
-            <input
-              type="text"
-              required
-              placeholder="e.g. Lunch Day 1"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              className={inputClass}
-            />
-            <button
-              type="submit"
-              disabled={actionLoading !== null}
-              className="p-2.5 rounded-md bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40"
-            >
-              {actionLoading === "create-category" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-            </button>
-          </form>
-
-          {hackathon.organizer_scancategory.length === 0 ? (
-            <p className="text-xs text-ink-muted italic text-center py-4">
-              No scan categories defined.
-            </p>
+          {hackathon.allow_scan === false ? (
+            <div className="p-5 rounded-md bg-canvas-parchment/60 border border-black/[0.08] flex flex-col items-center justify-center text-center gap-2 py-6">
+              <div className="w-10 h-10 rounded-full bg-canvas-pearl border border-black/[0.08] flex items-center justify-center text-ink-muted">
+                <Lock className="w-5 h-5 opacity-40" />
+              </div>
+              <p className="text-xs font-semibold text-ink">Scan Feature Disabled</p>
+              <p className="text-[11px] text-ink-muted max-w-xs leading-relaxed">
+                Scan categories and QR check-in features are disabled for this hackathon by the organizer.
+              </p>
+            </div>
           ) : (
-            <div className="flex flex-col gap-2.5">
-              {hackathon.organizer_scancategory.map((cat) => (
-                <div
-                  key={cat.id}
-                  className={`p-3 rounded-md bg-canvas-parchment border border-black/[0.04] flex items-center justify-between gap-3 text-xs ${
-                    cat.is_active ? "" : "opacity-50"
-                  }`}
+            <>
+              <form onSubmit={handleCreateCategory} className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Lunch Day 1"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className={inputClass}
+                />
+                <button
+                  type="submit"
+                  disabled={actionLoading !== null}
+                  className="p-2.5 rounded-md bg-primary text-white font-normal hover:bg-primary-focus transition flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40"
                 >
-                  <div className="flex-1 flex flex-col gap-0.5">
-                    <span className="font-semibold text-ink leading-normal break-all">
-                      {cat.name}
-                    </span>
-                    <span className="text-[9px] text-ink-muted">
-                      Order: {cat.display_order}
-                    </span>
-                  </div>
+                  {actionLoading === "create-category" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                </button>
+              </form>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleCategory(cat.id, cat.is_active)}
-                      disabled={actionLoading !== null}
-                      title={cat.is_active ? "Disable QR scan" : "Enable QR scan"}
-                      className={`p-1.5 rounded border transition cursor-pointer ${
-                        cat.is_active
-                          ? "border-success/25 bg-success-light text-success"
-                          : "border-black/[0.08] bg-canvas text-ink-muted"
+              {hackathon.organizer_scancategory.length === 0 ? (
+                <p className="text-xs text-ink-muted italic text-center py-4">
+                  No scan categories defined.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {hackathon.organizer_scancategory.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className={`p-3 rounded-md bg-canvas-parchment border border-black/[0.04] flex items-center justify-between gap-3 text-xs ${
+                        cat.is_active ? "" : "opacity-50"
                       }`}
                     >
-                      {actionLoading === `toggle-cat-${cat.id}` ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Check className="w-3 h-3" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(cat.id)}
-                      disabled={actionLoading !== null}
-                      title="Delete category"
-                      className="p-1.5 rounded border border-black/[0.08] bg-canvas text-ink-muted hover:text-danger transition cursor-pointer"
-                    >
-                      {actionLoading === `delete-cat-${cat.id}` ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3 h-3" />
-                      )}
-                    </button>
-                  </div>
+                      <div className="flex-1 flex flex-col gap-0.5">
+                        <span className="font-semibold text-ink leading-normal break-all">
+                          {cat.name}
+                        </span>
+                        <span className="text-[9px] text-ink-muted">
+                          Order: {cat.display_order}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleCategory(cat.id, cat.is_active)}
+                          disabled={actionLoading !== null}
+                          title={cat.is_active ? "Disable QR scan" : "Enable QR scan"}
+                          className={`p-1.5 rounded border transition cursor-pointer ${
+                            cat.is_active
+                              ? "border-success/25 bg-success-light text-success"
+                              : "border-black/[0.08] bg-canvas text-ink-muted"
+                          }`}
+                        >
+                          {actionLoading === `toggle-cat-${cat.id}` ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Check className="w-3 h-3" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          disabled={actionLoading !== null}
+                          title="Delete category"
+                          className="p-1.5 rounded border border-black/[0.08] bg-canvas text-ink-muted hover:text-danger transition cursor-pointer"
+                        >
+                          {actionLoading === `delete-cat-${cat.id}` ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3 h-3" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1518,6 +1551,19 @@ export default function HackathonDetailPageClient({
       {activeTab === "evaluation" && (
         <EvaluationTab hackathonId={hackathon.id} />
       )}
+
+      {/* ───── BULK UPLOAD EXCEL MODAL ───── */}
+      <BulkUploadModal
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        hackathonId={hackathon.id}
+        hackathonName={hackathon.name}
+        minTeamSize={hackathon.min_team_size}
+        maxTeamSize={hackathon.max_team_size}
+        onImportComplete={() => {
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
