@@ -15,6 +15,8 @@ import {
   MessageSquare,
   ClipboardList,
   Search,
+  GitBranch,
+  ExternalLink,
 } from "lucide-react";
 
 interface Criterion {
@@ -45,6 +47,7 @@ interface Team {
   accounts_user: { full_name: string; email: string };
   participant_teammember: TeamMember[];
   organizer_problemstatement: { id: number; title: string } | null;
+  github_link?: string | null;
   evaluation_score: EvaluationScore[];
 }
 
@@ -52,6 +55,7 @@ interface HackathonData {
   id: number;
   name: string;
   status: string;
+  require_github_link?: boolean;
   evaluation_criterion: Criterion[];
   participant_team: Team[];
 }
@@ -326,6 +330,29 @@ export default function FacultyEvaluationClient({
                           </span>
                         ))}
                       </div>
+
+                      {/* GitHub Link if enabled by organizer */}
+                      {hackathon.require_github_link && (
+                        <div className="p-3 rounded-lg bg-canvas-pearl border border-black/[0.06] text-xs flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="w-4 h-4 text-primary shrink-0" />
+                            <span className="font-semibold text-ink">GitHub Repository:</span>
+                            {team.github_link ? (
+                              <a
+                                href={team.github_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline font-medium flex items-center gap-1"
+                              >
+                                {team.github_link}
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                              </a>
+                            ) : (
+                              <span className="text-ink-muted italic">Not submitted</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Scoring Grid */}
                       <div className="grid gap-4">

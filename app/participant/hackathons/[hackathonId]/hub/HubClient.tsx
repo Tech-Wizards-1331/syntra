@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -19,8 +19,12 @@ import {
   X,
   Sparkles,
   ExternalLink,
+  GitBranch,
+  Save,
+  Edit2
 } from "lucide-react";
 import { selectProblemStatement } from "@/app/actions/participantProblemStatements";
+import { updateTeamGithubLink } from "@/app/actions/teams";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -36,6 +40,7 @@ interface HackathonData {
   min_team_size: number;
   release_problems: boolean;
   allow_scan?: boolean;
+  require_github_link?: boolean;
 }
 
 interface TeamMemberData {
@@ -61,6 +66,7 @@ interface TeamData {
     description: string;
     pdf_file: string | null;
   } | null;
+  github_link?: string | null;
   members: TeamMemberData[];
 }
 
@@ -99,6 +105,20 @@ export default function HubClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showAllMembers, setShowAllMembers] = useState(false);
+
+  // GitHub Link State
+  const [githubUrl, setGithubUrl] = useState(team.github_link || "");
+  const [isEditingGithub, setIsEditingGithub] = useState(!team.github_link);
+  const [githubError, setGithubError] = useState<string | null>(null);
+  const [githubSuccess, setGithubSuccess] = useState<string | null>(null);
+  const [isGithubSaving, setIsGithubSaving] = useState(false);
+
+  useEffect(() => {
+    setGithubUrl(team.github_link || "");
+    if (team.github_link) {
+      setIsEditingGithub(false);
+    }
+  }, [team.github_link]);
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -441,6 +461,136 @@ export default function HubClient({
           </div>
         )}
       </div>
+
+      {/* ── GitHub Repository Link Section (Between Problem Statement & Seating) ── */}
+      {hackathon.require_github_link && (
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
+            <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+              <GitBranch className="w-4.5 h-4.5 text-primary" />
+              GitHub Repository Link
+            </h3>
+            {team.github_link && !isEditingGithub && (
+              <button
+                onClick={() => {
+                  setIsEditingGithub(true);
+                  setGithubError(null);
+                  setGithubSuccess(null);
+                }}
+                className="text-xs text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                Edit Link
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-ink-muted leading-relaxed">
+            The organizer requires a GitHub repository link for your project. Ensure your repository is public or accessible to the evaluation team.
+          </p>
+
+          {githubError && (
+            <div className="p-3 rounded-md bg-danger-light border border-danger/15 text-danger text-xs flex items-center gap-2">
+              <X className="w-4 h-4 shrink-0" />
+              <span>{githubError}</span>
+            </div>
+          )}
+
+          {githubSuccess && (
+            <div className="p-3 rounded-md bg-success-light border border-success/15 text-success text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{githubSuccess}</span>
+            </div>
+          )}
+
+          {!isEditingGithub && team.github_link ? (
+            <div className="flex items-center justify-between p-3 rounded-md bg-canvas-parchment/60 border border-black/[0.05]">
+              <div className="flex items-center gap-2 min-w-0">
+                <GitBranch className="w-4 h-4 text-primary shrink-0" />
+                <a
+                  href={team.github_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-primary hover:underline truncate flex items-center gap-1.5"
+                >
+                  {team.github_link}
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                </a>
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setGithubError(null);
+                setGithubSuccess(null);
+
+                let trimmed = githubUrl.trim();
+                if (!trimmed) {
+                  setGithubError("Please enter a GitHub repository link.");
+                  return;
+                }
+                if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+                  trimmed = "https://" + trimmed;
+                }
+                const githubRegex = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/;
+                if (!githubRegex.test(trimmed)) {
+                  setGithubError("Invalid link. URL must belong to GitHub (e.g. https://github.com/username/repository)");
+                  return;
+                }
+
+                setIsGithubSaving(true);
+                try {
+                  const res = await updateTeamGithubLink(team.id, trimmed);
+                  if (res.success) {
+                    setGithubSuccess("GitHub repository link saved successfully!");
+                    setIsEditingGithub(false);
+                    router.refresh();
+                  }
+                } catch (err: any) {
+                  setGithubError(err.message || "Failed to update GitHub link");
+                } finally {
+                  setIsGithubSaving(false);
+                }
+              }}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+            >
+              <div className="relative flex-1">
+                <input
+                  type="url"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder="https://github.com/username/repository"
+                  className="w-full p-2.5 rounded-md bg-canvas-parchment/60 border border-black/[0.08] text-xs text-ink focus:border-primary focus:outline-none transition"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={isGithubSaving}
+                  className="px-4 py-2.5 rounded-pill bg-primary hover:bg-primary-focus text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 apple-press-effect"
+                >
+                  {isGithubSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Save Link
+                </button>
+                {team.github_link && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGithubUrl(team.github_link || "");
+                      setIsEditingGithub(false);
+                      setGithubError(null);
+                    }}
+                    className="px-3 py-2.5 rounded-pill border border-black/[0.08] bg-canvas text-ink-muted hover:text-ink text-xs transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* ── Seating Allocation (White) ── */}
       {teamSeating && (

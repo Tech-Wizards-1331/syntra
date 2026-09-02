@@ -816,3 +816,59 @@ export async function getTeamSeating(hackathonId: number) {
 
   return null;
 }
+
+// ─── Update Team GitHub Link ────────────────────────────────────────
+
+export async function updateTeamGithubLink(teamId: number, githubLink: string) {
+  const { userId, email } = await requireParticipant();
+
+  const team = await prisma.participant_team.findUnique({
+    where: { id: teamId },
+    include: {
+      organizer_hackathon: {
+        select: { require_github_link: true, id: true },
+      },
+      participant_teammember: { select: { email: true } },
+    },
+  });
+
+  if (!team) throw new Error("Team not found");
+
+  const isLeader = team.leader_id === userId;
+  const isMember = team.participant_teammember.some(m => m.email.toLowerCase() === email.toLowerCase());
+
+  if (!isLeader && !isMember) {
+    throw new Error("Access denied: You are not a member of this team.");
+  }
+
+  if (!team.organizer_hackathon.require_github_link) {
+    throw new Error("GitHub link submission is not enabled for this hackathon.");
+  }
+
+  let trimmed = githubLink.trim();
+  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+    trimmed = "https://" + trimmed;
+  }
+
+  // Regex to verify that it's strictly a GitHub link (e.g. https://github.com/owner/repo)
+  const githubRegex = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/;
+  if (!githubRegex.test(trimmed)) {
+    throw new Error("Invalid GitHub link. Please provide a valid GitHub repository URL (e.g. https://github.com/username/repository).");
+  }
+
+  await prisma.participant_team.update({
+    where: { id: teamId },
+    data: {
+      github_link: trimmed,
+      updated_at: new Date(),
+    },
+  });
+
+  revalidatePath(`/participant/hackathons/${team.hackathon_id}/hub`);
+  revalidatePath("/participant/dashboard");
+  revalidatePath(`/organizer/dashboard/hackathons/${team.hackathon_id}`);
+  revalidatePath(`/faculty/hackathons/${team.hackathon_id}`);
+
+  return { success: true };
+}
+

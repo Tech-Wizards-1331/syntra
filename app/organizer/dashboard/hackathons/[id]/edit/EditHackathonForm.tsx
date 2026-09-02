@@ -8,7 +8,9 @@ import {
   AlertCircle, 
   Save, 
   Sparkles,
-  Lock
+  Lock,
+  Scan,
+  GitBranch
 } from "lucide-react";
 
 interface EditHackathonFormProps {
@@ -26,6 +28,8 @@ interface EditHackathonFormProps {
     fee_amount: number | null;
     status: string;
     room_configuration: string | null;
+    allow_scan?: boolean;
+    require_github_link?: boolean;
   };
 }
 
@@ -69,6 +73,8 @@ export default function EditHackathonForm({ hackathon }: EditHackathonFormProps)
     is_paid: hackathon.is_paid,
     fee_type: hackathon.fee_type || "team",
     fee_amount: hackathon.fee_amount !== null ? String(hackathon.fee_amount) : "",
+    allow_scan: hackathon.allow_scan !== undefined ? hackathon.allow_scan : true,
+    require_github_link: hackathon.require_github_link !== undefined ? hackathon.require_github_link : false,
     status: hackathon.status,
   });
 
@@ -374,6 +380,52 @@ export default function EditHackathonForm({ hackathon }: EditHackathonFormProps)
               </div>
             </div>
           )}
+        </div>
+
+        {/* Card: Features & Modules */}
+        <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-5">
+          <h3 className="text-[11px] font-semibold text-primary uppercase tracking-wider flex items-center gap-2">
+            <Scan className="w-4 h-4" /> Feature & Module Settings
+          </h3>
+
+          <div className="flex items-start gap-3 py-1">
+            <input
+              id="allow_scan"
+              name="allow_scan"
+              type="checkbox"
+              checked={formData.allow_scan}
+              onChange={handleChange}
+              className="w-4 h-4 mt-0.5 rounded border-black/[0.15] bg-canvas-pearl text-primary focus:ring-primary accent-primary cursor-pointer"
+            />
+            <div className="flex flex-col gap-0.5">
+              <label htmlFor="allow_scan" className="text-sm font-semibold text-ink cursor-pointer select-none">
+                Enable Scan Feature & Participant Check-In Pass
+              </label>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                If enabled, organizers can scan participant QR passes and participants can view their check-in pass.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 py-1 border-t border-black/[0.06] pt-4">
+            <input
+              id="require_github_link"
+              name="require_github_link"
+              type="checkbox"
+              checked={formData.require_github_link}
+              onChange={handleChange}
+              className="w-4 h-4 mt-0.5 rounded border-black/[0.15] bg-canvas-pearl text-primary focus:ring-primary accent-primary cursor-pointer"
+            />
+            <div className="flex flex-col gap-0.5">
+              <label htmlFor="require_github_link" className="text-sm font-semibold text-ink cursor-pointer select-none flex items-center gap-1.5">
+                <GitBranch className="w-4 h-4 text-primary" />
+                Require / Enable GitHub Link Submission
+              </label>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                If enabled, participants will be prompted to submit their GitHub repository link in the Hackathon Hub. Organizers and evaluating faculty members will be able to view each team's repository link.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Action button */}
