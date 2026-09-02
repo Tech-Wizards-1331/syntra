@@ -265,6 +265,7 @@ model organizer_hackathon {
   fee_type                       String?
   is_paid                        Boolean
   release_problems               Boolean                          @default(false)
+  allow_scan                     Boolean                          @default(true)
   organizer_organizerprofile     organizer_organizerprofile       @relation(fields: [organizer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizer_hackathoncoordinator organizer_hackathoncoordinator[]
   organizer_problemstatement     organizer_problemstatement[]

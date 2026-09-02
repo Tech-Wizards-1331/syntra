@@ -63,12 +63,15 @@ export async function scanQrToken(qrToken: string, scanCategoryId: number) {
           },
         },
       },
-      organizer_hackathon: { select: { id: true, name: true } },
+      organizer_hackathon: { select: { id: true, name: true, allow_scan: true } },
     },
   });
 
   if (!team) throw new Error("Invalid QR code: team not found");
   if (!team.is_qr_active) throw new Error("QR code is deactivated for this team");
+  if (team.organizer_hackathon.allow_scan === false) {
+    throw new Error("QR scanning is disabled for this hackathon by the organizer");
+  }
 
   // Verify the scan category belongs to this hackathon
   const category = await prisma.organizer_scancategory.findUnique({
@@ -109,10 +112,13 @@ export async function submitMemberScans(
 
   const team = await prisma.participant_team.findUnique({
     where: { qr_token: qrToken.trim() },
-    include: { participant_teammember: true },
+    include: { participant_teammember: true, organizer_hackathon: { select: { allow_scan: true } } },
   });
   if (!team) throw new Error("Invalid QR code");
   if (!team.is_qr_active) throw new Error("QR code is deactivated for this team");
+  if (team.organizer_hackathon.allow_scan === false) {
+    throw new Error("QR scanning is disabled for this hackathon by the organizer");
+  }
 
   // Verify authorization
   const scannedById = await requireScanAuth(team.hackathon_id);

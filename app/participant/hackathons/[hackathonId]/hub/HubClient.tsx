@@ -35,6 +35,7 @@ interface HackathonData {
   max_team_size: number;
   min_team_size: number;
   release_problems: boolean;
+  allow_scan?: boolean;
 }
 
 interface TeamMemberData {
@@ -262,7 +263,7 @@ export default function HubClient({
           </button>
         )}
 
-        {/* Team Pass QR link */}
+        {/* Team Pass link */}
         {team.is_registered && team.qr_token && (
           <div className="mt-4 pt-4 border-t border-black/[0.06] flex">
             <Link
@@ -270,7 +271,12 @@ export default function HubClient({
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition apple-press-effect"
             >
               <QrCode className="w-4 h-4 text-ink-muted" />
-              <span>View Team Pass & QR Code</span>
+              <span>View Team Pass & Details</span>
+              {hackathon.allow_scan === false && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-canvas-parchment border border-black/[0.08] text-ink-muted">
+                  QR Disabled
+                </span>
+              )}
               <ExternalLink className="w-3 h-3 text-ink-muted" />
             </Link>
           </div>

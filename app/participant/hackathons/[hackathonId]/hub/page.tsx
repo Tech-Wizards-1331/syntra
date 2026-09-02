@@ -53,6 +53,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
       min_team_size: true,
       seating_allocation: true,
       release_problems: true,
+      allow_scan: true,
     },
   });
 
@@ -210,6 +211,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     max_team_size: hackathon.max_team_size,
     min_team_size: hackathon.min_team_size,
     release_problems: hackathon.release_problems,
+    allow_scan: hackathon.allow_scan,
   };
 
   // Check if leader email is present in team members
