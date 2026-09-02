@@ -8,7 +8,9 @@ import {
   toggleProblemStatementsRelease,
   toggleHackathonRegistration,
   toggleRequireGithubLink,
+  deleteHackathon,
 } from "@/app/actions/hackathons";
+import { deleteTeamByOrganizer } from "@/app/actions/teams";
 import {
   createProblemStatement,
   deleteProblemStatement,
@@ -171,6 +173,10 @@ export default function HackathonDetailPageClient({
   const [teamPsFilter, setTeamPsFilter] = useState<number | "all">("all");
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+
+  // Deletion modals state
+  const [isDeleteHackathonModalOpen, setIsDeleteHackathonModalOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<{ id: number; name: string } | null>(null);
 
   // Scan Category states
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -539,6 +545,36 @@ export default function HackathonDetailPageClient({
     }
   };
 
+  // Delete Hackathon handler
+  const handleDeleteHackathon = async () => {
+    setActionLoading("delete-hackathon");
+    setErrorMsg(null);
+    try {
+      await deleteHackathon(hackathon.id);
+      router.push("/organizer/dashboard");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to delete hackathon.");
+      setActionLoading(null);
+      setIsDeleteHackathonModalOpen(false);
+    }
+  };
+
+  // Delete Team handler
+  const handleConfirmDeleteTeam = async () => {
+    if (!teamToDelete) return;
+    setActionLoading(`delete-team-${teamToDelete.id}`);
+    setErrorMsg(null);
+    try {
+      await deleteTeamByOrganizer(teamToDelete.id);
+      setTeamToDelete(null);
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to delete team.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const inputClass = "w-full p-2.5 rounded-md bg-canvas-pearl border border-black/[0.08] focus:border-primary focus:outline-none text-xs text-ink";
 
   return (
@@ -738,6 +774,18 @@ export default function HackathonDetailPageClient({
                           </div>
                           <span className="text-[10px] text-ink-muted font-medium whitespace-nowrap">{team.food_tokens_used}/{team.food_tokens_total}</span>
                         </div>
+                      </div>
+
+                      {/* Delete Team Quick Button */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTeamToDelete({ id: team.id, name: team.name });
+                        }}
+                        title={`Delete team ${team.name}`}
+                        className="p-1.5 rounded-md hover:bg-danger-light text-ink-muted hover:text-danger transition cursor-pointer shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </div>
 
                       {/* Expand chevron */}
@@ -1059,6 +1107,18 @@ export default function HackathonDetailPageClient({
                             </div>
                           </div>
                         </div>
+
+                        {/* Delete Team Button in Expanded View */}
+                        <div className="flex justify-end pt-3 mt-3 border-t border-black/[0.06]">
+                          <button
+                            onClick={() => setTeamToDelete({ id: team.id, name: team.name })}
+                            disabled={actionLoading !== null}
+                            className="px-3 py-1.5 rounded-md border border-danger/20 hover:bg-danger-light text-danger transition text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete Team
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1102,13 +1162,22 @@ export default function HackathonDetailPageClient({
                 Created on {new Date(hackathon.start_date).toLocaleDateString()}
               </p>
             </div>
-            <Link
-              href={`/organizer/dashboard/hackathons/${hackathon.id}/edit`}
-              className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink-muted hover:text-ink transition flex items-center gap-2 text-xs font-normal self-start"
-            >
-              <Edit className="w-4 h-4" />
-              Edit details
-            </Link>
+            <div className="flex items-center gap-2 self-start flex-wrap">
+              <Link
+                href={`/organizer/dashboard/hackathons/${hackathon.id}/edit`}
+                className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink-muted hover:text-ink transition flex items-center gap-2 text-xs font-normal"
+              >
+                <Edit className="w-4 h-4" />
+                Edit details
+              </Link>
+              <button
+                onClick={() => setIsDeleteHackathonModalOpen(true)}
+                className="px-3.5 py-2 rounded-md bg-danger-light border border-danger/20 hover:bg-danger/15 text-danger transition flex items-center gap-1.5 text-xs font-medium cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Hackathon
+              </button>
+            </div>
           </div>
 
           {hackathon.description && (
@@ -1420,6 +1489,27 @@ export default function HackathonDetailPageClient({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Danger Zone */}
+        <div className="p-6 rounded-lg bg-danger-light/30 border border-danger/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-sm font-semibold text-danger flex items-center gap-2">
+              <Trash2 className="w-4 h-4" />
+              Delete this Hackathon
+            </h4>
+            <p className="text-xs text-ink-muted mt-1 leading-relaxed max-w-xl">
+              Permanently remove this hackathon, including all registered teams, members, scan data, and problem statements. This action cannot be undone.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsDeleteHackathonModalOpen(true)}
+            disabled={actionLoading === "delete-hackathon"}
+            className="px-4 py-2 rounded-md bg-danger text-white hover:bg-danger/90 text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Hackathon
+          </button>
         </div>
       </div>
 
@@ -1737,6 +1827,98 @@ export default function HackathonDetailPageClient({
           router.refresh();
         }}
       />
+
+      {/* ───── DELETE HACKATHON CONFIRMATION MODAL ───── */}
+      {isDeleteHackathonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-canvas border border-black/[0.08] apple-shadow-overlay rounded-xl max-w-md w-full p-6 flex flex-col gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-danger-light border border-danger/15 flex items-center justify-center text-danger shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="text-base font-semibold text-ink">Delete Hackathon?</h4>
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  Are you sure you want to delete <strong className="text-ink">{hackathon.name}</strong>? All registered teams, members, problem statements, and attendance records will be permanently removed. This cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-black/[0.06]">
+              <button
+                onClick={() => setIsDeleteHackathonModalOpen(false)}
+                disabled={actionLoading === "delete-hackathon"}
+                className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-xs font-medium text-ink transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteHackathon}
+                disabled={actionLoading === "delete-hackathon"}
+                className="px-4 py-2 rounded-md bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {actionLoading === "delete-hackathon" ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Yes, Delete Hackathon
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ───── DELETE TEAM CONFIRMATION MODAL ───── */}
+      {teamToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-canvas border border-black/[0.08] apple-shadow-overlay rounded-xl max-w-md w-full p-6 flex flex-col gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-danger-light border border-danger/15 flex items-center justify-center text-danger shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="text-base font-semibold text-ink">Delete Team?</h4>
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  Are you sure you want to remove team <strong className="text-ink">{teamToDelete.name}</strong> from this hackathon? All member details, food tokens, and seating will be deleted.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-black/[0.06]">
+              <button
+                onClick={() => setTeamToDelete(null)}
+                disabled={actionLoading?.startsWith("delete-team-")}
+                className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-xs font-medium text-ink transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteTeam}
+                disabled={actionLoading?.startsWith("delete-team-")}
+                className="px-4 py-2 rounded-md bg-danger hover:bg-danger/90 text-xs font-semibold text-white transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {actionLoading?.startsWith("delete-team-") ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Yes, Delete Team
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

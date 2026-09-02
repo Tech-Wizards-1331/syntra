@@ -472,22 +472,58 @@ export async function deleteHackathon(id: number) {
     throw new Error("Access denied: You do not own this hackathon");
   }
 
-  // Deletion Safety check: Block if registered teams exist
-  const teamCount = await prisma.participant_team.count({
+  // 1. Cascade delete teams and their related records
+  const teams = await prisma.participant_team.findMany({
     where: { hackathon_id: id },
+    select: { id: true },
   });
+  const teamIds = teams.map((t) => t.id);
 
-  if (teamCount > 0) {
-    throw new Error("Cannot delete hackathon because it has active team registrations.");
+  if (teamIds.length > 0) {
+    const members = await prisma.participant_teammember.findMany({
+      where: { team_id: { in: teamIds } },
+      select: { id: true },
+    });
+    const memberIds = members.map((m) => m.id);
+
+    await prisma.evaluation_score.deleteMany({
+      where: { team_id: { in: teamIds } },
+    });
+
+    if (memberIds.length > 0) {
+      await prisma.participant_teammember_skills.deleteMany({
+        where: { teammember_id: { in: memberIds } },
+      });
+
+      await prisma.organizer_scanrecord.deleteMany({
+        where: { team_member_id: { in: memberIds } },
+      });
+    }
+
+    await prisma.participant_teammember.deleteMany({
+      where: { team_id: { in: teamIds } },
+    });
+
+    await prisma.participant_teamrequest.deleteMany({
+      where: { team_id: { in: teamIds } },
+    });
+
+    await prisma.participant_payment.deleteMany({
+      where: { team_id: { in: teamIds } },
+    });
+
+    await prisma.participant_team.deleteMany({
+      where: { id: { in: teamIds } },
+    });
   }
 
-  // Fetch related problem statements to extract Cloudinary PDFs for deletion
+  // 2. Fetch related problem statements to extract Cloudinary PDFs for deletion
   const problemStatements = await prisma.organizer_problemstatement.findMany({
     where: { hackathon_id: id },
     select: { pdf_file: true },
   });
 
-  // Delete scan records associated with scan categories of this hackathon
+  // 3. Delete scan records associated with scan categories of this hackathon
   await prisma.organizer_scanrecord.deleteMany({
     where: {
       organizer_scancategory: {
@@ -496,27 +532,44 @@ export async function deleteHackathon(id: number) {
     },
   });
 
-  // Delete scan categories
+  // 4. Delete scan categories
   await prisma.organizer_scancategory.deleteMany({
     where: { hackathon_id: id },
   });
 
-  // Delete problem statements
+  // 5. Delete problem statements
   await prisma.organizer_problemstatement.deleteMany({
     where: { hackathon_id: id },
   });
 
-  // Delete hackathon coordinators
+  // 6. Delete evaluation criteria & faculty assignments
+  await prisma.evaluation_score.deleteMany({
+    where: {
+      evaluation_criterion: {
+        hackathon_id: id,
+      },
+    },
+  });
+
+  await prisma.evaluation_criterion.deleteMany({
+    where: { hackathon_id: id },
+  });
+
+  await prisma.hackathon_faculty.deleteMany({
+    where: { hackathon_id: id },
+  });
+
+  // 7. Delete hackathon coordinators
   await prisma.organizer_hackathoncoordinator.deleteMany({
     where: { hackathon_id: id },
   });
 
-  // Finally delete hackathon
+  // 8. Finally delete hackathon
   await prisma.organizer_hackathon.delete({
     where: { id },
   });
 
-  // Clean up PDF assets from Cloudinary asynchronously
+  // 9. Clean up PDF assets from Cloudinary asynchronously
   for (const ps of problemStatements) {
     if (ps.pdf_file) {
       deleteFromCloudinary(ps.pdf_file).catch((err) => {

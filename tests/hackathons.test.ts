@@ -75,7 +75,31 @@ vi.mock("@/lib/prisma", () => {
       deleteMany: vi.fn(),
     },
     participant_team: {
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
       count: vi.fn(),
+    },
+    participant_teammember: {
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    participant_teammember_skills: {
+      deleteMany: vi.fn(),
+    },
+    participant_teamrequest: {
+      deleteMany: vi.fn(),
+    },
+    participant_payment: {
+      deleteMany: vi.fn(),
+    },
+    evaluation_score: {
+      deleteMany: vi.fn(),
+    },
+    evaluation_criterion: {
+      deleteMany: vi.fn(),
+    },
+    hackathon_faculty: {
+      deleteMany: vi.fn(),
     },
     $transaction: vi.fn((callback) => callback(mockPrisma)),
   };
@@ -305,7 +329,7 @@ describe("Hackathon Actions", () => {
   });
 
   describe("deleteHackathon", () => {
-    it("should block delete if registered teams exist", async () => {
+    it("should cascade delete hackathon and all associated teams and data", async () => {
       vi.mocked(auth).mockResolvedValueOnce({
         user: { id: "10", role: "organizer" },
       } as any);
@@ -315,9 +339,37 @@ describe("Hackathon Actions", () => {
         organizer_organizerprofile: { user_id: 10 },
       } as any);
 
-      vi.mocked(prisma.participant_team.count).mockResolvedValueOnce(3); // 3 teams
+      vi.mocked(prisma.participant_team.findMany).mockResolvedValueOnce([
+        { id: 101 },
+      ] as any);
 
-      await expect(deleteHackathon(5)).rejects.toThrow("Cannot delete hackathon because it has active team registrations.");
+      vi.mocked(prisma.participant_teammember.findMany).mockResolvedValueOnce([
+        { id: 201 },
+      ] as any);
+
+      vi.mocked(prisma.organizer_problemstatement.findMany).mockResolvedValueOnce([]);
+
+      const res = await deleteHackathon(5);
+      expect(res.success).toBe(true);
+      expect(prisma.participant_team.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: [101] } },
+      });
+      expect(prisma.organizer_hackathon.delete).toHaveBeenCalledWith({
+        where: { id: 5 },
+      });
+    });
+
+    it("should block delete if user does not own the hackathon", async () => {
+      vi.mocked(auth).mockResolvedValueOnce({
+        user: { id: "99", role: "organizer" },
+      } as any);
+
+      vi.mocked(prisma.organizer_hackathon.findUnique).mockResolvedValueOnce({
+        id: 5,
+        organizer_organizerprofile: { user_id: 10 },
+      } as any);
+
+      await expect(deleteHackathon(5)).rejects.toThrow("Access denied: You do not own this hackathon");
     });
   });
 });

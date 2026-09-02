@@ -6,6 +6,7 @@ import {
   removeTeamMember,
   searchUsersToRegister,
   submitTeamRegistration,
+  deleteTeamByOrganizer,
 } from "@/app/actions/teams";
 
 // Mock auth
@@ -32,6 +33,8 @@ vi.mock("@/lib/prisma", () => {
     update: vi.fn(),
     count: vi.fn(),
     create: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
   };
   const mockTeamMember = {
     count: vi.fn(),
@@ -39,6 +42,7 @@ vi.mock("@/lib/prisma", () => {
     findUnique: vi.fn(),
     findMany: vi.fn(),
     delete: vi.fn(),
+    deleteMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
   };
@@ -54,6 +58,10 @@ vi.mock("@/lib/prisma", () => {
     update: vi.fn(),
     updateMany: vi.fn(),
     create: vi.fn(),
+    deleteMany: vi.fn(),
+  };
+  const mockPayment = {
+    deleteMany: vi.fn(),
   };
   const mockScanRecord = {
     deleteMany: vi.fn(),
@@ -90,6 +98,8 @@ vi.mock("@/lib/prisma", () => {
       update: vi.fn(),
     },
     participant_teamrequest: mockTeamRequest,
+    participant_payment: mockPayment,
+    organizer_scanrecord: mockScanRecord,
     organizer_hackathon: {
       findUnique: vi.fn(),
     },
@@ -633,6 +643,51 @@ describe("submitTeamRegistration", () => {
 
     await expect(submitTeamRegistration(100)).rejects.toThrow(
       "This hackathon has reached its maximum allowed team registrations."
+    );
+  });
+});
+
+describe("deleteTeamByOrganizer", () => {
+  it("successfully deletes team and associated records when organizer owns the hackathon", async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: "10", role: "organizer" },
+    } as any);
+
+    mockPrisma.participant_team.findUnique.mockResolvedValueOnce({
+      id: 100,
+      hackathon_id: 10,
+      organizer_hackathon: {
+        organizer_organizerprofile: { user_id: 10 },
+      },
+    });
+
+    mockPrisma.participant_teammember.findMany.mockResolvedValueOnce([
+      { id: 201 },
+      { id: 202 },
+    ]);
+
+    const result = await deleteTeamByOrganizer(100);
+    expect(result.success).toBe(true);
+    expect(mockPrisma.participant_team.delete).toHaveBeenCalledWith({
+      where: { id: 100 },
+    });
+  });
+
+  it("blocks if user is not the organizer owner", async () => {
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: "99", role: "organizer" },
+    } as any);
+
+    mockPrisma.participant_team.findUnique.mockResolvedValueOnce({
+      id: 100,
+      hackathon_id: 10,
+      organizer_hackathon: {
+        organizer_organizerprofile: { user_id: 10 },
+      },
+    });
+
+    await expect(deleteTeamByOrganizer(100)).rejects.toThrow(
+      "Access denied: You do not own the hackathon for this team"
     );
   });
 });
