@@ -88,6 +88,7 @@ export async function bulkImportTeams(
   const cleanDefaultPassword = defaultPassword.trim() || "Syntra@2026";
   const errors: string[] = [];
   const importedTeams: { teamName: string; leaderEmail: string; membersCount: number }[] = [];
+  const emailPromises: Promise<any>[] = [];
   const now = new Date();
 
   // Fetch existing teams for this hackathon to prevent duplicates
@@ -322,21 +323,28 @@ export async function bulkImportTeams(
         membersCount: totalTeamSize,
       });
 
-      // 9. Send welcome & credentials email (non-blocking)
-      sendBulkRegistrationWelcomeEmail({
-        receiverEmail: leaderEmail,
-        receiverName: leaderName,
-        teamName,
-        hackathonName: hackathon.name,
-        temporaryPassword: cleanDefaultPassword,
-        isNewAccount: isNewUser,
-      }).catch((emailErr) => {
-        console.error(`Failed to send welcome email to ${leaderEmail}:`, emailErr);
-      });
+      // 9. Send welcome & credentials email (collected to await concurrently before lambda exit)
+      emailPromises.push(
+        sendBulkRegistrationWelcomeEmail({
+          receiverEmail: leaderEmail,
+          receiverName: leaderName,
+          teamName,
+          hackathonName: hackathon.name,
+          temporaryPassword: cleanDefaultPassword,
+          isNewAccount: isNewUser,
+        }).catch((emailErr) => {
+          console.error(`Failed to send welcome email to ${leaderEmail}:`, emailErr);
+        })
+      );
     } catch (teamErr: any) {
       console.error(`Error importing team ${teamName}:`, teamErr);
       errors.push(`Row ${teamNum} (${teamName}): Failed to create team in database (${teamErr.message || "DB error"}).`);
     }
+  }
+
+  // Await all outbound emails before returning so serverless runtimes (Vercel) don't freeze/drop them
+  if (emailPromises.length > 0) {
+    await Promise.allSettled(emailPromises);
   }
 
   revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
