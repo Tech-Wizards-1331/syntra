@@ -239,15 +239,21 @@ export async function bulkImportTeams(
             updated_at: now,
           },
         });
-      } else if (!leaderUser.password) {
-        // If user already existed (e.g. from Google OAuth) with empty password, assign default password
+      } else {
+        // If user already existed (e.g. re-importing after team deletion or previous import),
+        // update their password to cleanDefaultPassword so that the password in the database
+        // strictly matches the new password specified by the organizer and sent in the welcome email!
         const hashedPassword = hashPassword(cleanDefaultPassword);
         leaderUser = await prisma.accounts_user.update({
           where: { id: leaderUser.id },
-          data: { password: hashedPassword },
+          data: {
+            password: hashedPassword,
+            full_name: leaderName || leaderUser.full_name,
+            updated_at: now,
+          },
         });
         isNewUser = true;
-      } else {
+
         // Ensure user has participant profile
         const existingProfile = await prisma.participant_participantprofile.findUnique({
           where: { user_id: leaderUser.id },
