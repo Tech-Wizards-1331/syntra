@@ -618,6 +618,66 @@ export async function deleteTeam(teamId: number) {
   return { success: true };
 }
 
+export async function deleteTeamByOrganizer(teamId: number) {
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "organizer") {
+    throw new Error("Unauthorized or invalid role");
+  }
+
+  const team = await prisma.participant_team.findUnique({
+    where: { id: teamId },
+    include: {
+      organizer_hackathon: {
+        include: { organizer_organizerprofile: true },
+      },
+    },
+  });
+
+  if (!team) {
+    throw new Error("Team not found");
+  }
+
+  if (team.organizer_hackathon.organizer_organizerprofile.user_id !== Number(session.user.id)) {
+    throw new Error("Access denied: You do not own the hackathon for this team");
+  }
+
+  const members = await prisma.participant_teammember.findMany({
+    where: { team_id: teamId },
+    select: { id: true },
+  });
+  const memberIds = members.map((m) => m.id);
+
+  if (memberIds.length > 0) {
+    await prisma.participant_teammember_skills.deleteMany({
+      where: { teammember_id: { in: memberIds } },
+    });
+
+    await prisma.organizer_scanrecord.deleteMany({
+      where: { team_member_id: { in: memberIds } },
+    });
+  }
+
+  await prisma.participant_teammember.deleteMany({
+    where: { team_id: teamId },
+  });
+
+  await prisma.participant_teamrequest.deleteMany({
+    where: { team_id: teamId },
+  });
+
+  await prisma.participant_payment.deleteMany({
+    where: { team_id: teamId },
+  });
+
+  await prisma.participant_team.delete({
+    where: { id: teamId },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${team.hackathon_id}`);
+  revalidatePath("/participant/dashboard");
+  return { success: true };
+}
+
 // ─── Join Team by Invite Token ──────────────────────────────────────
 
 export async function joinTeamByToken(inviteToken: string) {
