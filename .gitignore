@@ -46,6 +46,8 @@ htmlcov/
 # ── Node (frontend) ──
 node_modules/
 npm-debug.log*
+*.tsbuildinfo
+
 
 # ── OS ──
 .DS_Store

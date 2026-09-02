@@ -15,6 +15,7 @@ import {
   deleteScanCategory,
 } from "@/app/actions/scancategories";
 import EvaluationTab from "./EvaluationTab";
+import BulkUploadModal from "./BulkUploadModal";
 import {
   Calendar,
   Users,
@@ -23,6 +24,7 @@ import {
   Plus,
   ExternalLink,
   FileText,
+  FileSpreadsheet,
   Check,
   Loader2,
   X,
@@ -162,6 +164,7 @@ export default function HackathonDetailPageClient({
   const [teamStatusFilter, setTeamStatusFilter] = useState<"all" | "registered" | "draft">("all");
   const [teamPsFilter, setTeamPsFilter] = useState<number | "all">("all");
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   // Scan Category states
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -605,6 +608,13 @@ export default function HackathonDetailPageClient({
                 <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
               </div>
             )}
+            <button
+              onClick={() => setIsBulkUploadOpen(true)}
+              className="px-4 py-2.5 rounded-md bg-primary text-white hover:bg-primary-hover transition text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-sm"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Import Teams (Excel)
+            </button>
           </div>
 
           {/* Teams List */}
@@ -773,7 +783,11 @@ export default function HackathonDetailPageClient({
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="text-xs font-semibold text-ink truncate">{member.name}</p>
-                                        <p className="text-[10px] text-ink-muted truncate">{member.email}</p>
+                                        {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                                          <p className="text-[10px] text-ink-muted truncate">{member.email}</p>
+                                        ) : member.email && !member.email.startsWith("mem_") ? (
+                                          <p className="text-[10px] text-ink-muted truncate">Enroll: {member.email}</p>
+                                        ) : null}
                                       </div>
                                     </div>
                                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 ml-9 text-[10px] text-ink-muted">
@@ -1565,6 +1579,19 @@ export default function HackathonDetailPageClient({
       {activeTab === "evaluation" && (
         <EvaluationTab hackathonId={hackathon.id} />
       )}
+
+      {/* ───── BULK UPLOAD EXCEL MODAL ───── */}
+      <BulkUploadModal
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        hackathonId={hackathon.id}
+        hackathonName={hackathon.name}
+        minTeamSize={hackathon.min_team_size}
+        maxTeamSize={hackathon.max_team_size}
+        onImportComplete={() => {
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
