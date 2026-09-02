@@ -361,7 +361,7 @@ export async function updateHackathon(
     const allowedTransitions: Record<string, string[]> = {
       draft: ["registration"],
       registration: ["draft", "active"],
-      active: ["completed"],
+      active: ["registration", "completed"],
       completed: [],
     };
 
@@ -371,8 +371,8 @@ export async function updateHackathon(
     }
   }
 
-  // If status is active or completed, lock registration_deadline changes
-  if (currentStatus === "active" || currentStatus === "completed") {
+  // If status is completed or staying active, lock registration_deadline changes
+  if (currentStatus === "completed" || (currentStatus === "active" && newStatus === "active")) {
     const currentDeadlineStr = new Date(hackathon.registration_deadline).toISOString();
     const newDeadlineStr = new Date(data.registration_deadline).toISOString();
     if (currentDeadlineStr !== newDeadlineStr) {
@@ -560,4 +560,79 @@ export async function toggleProblemStatementsRelease(hackathonId: number, releas
 
   revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
   return { success: true };
+}
+
+/**
+ * Toggles registration status (open/closed) for a hackathon.
+ * Setting open = true sets status to 'registration', open = false sets status to 'active'.
+ */
+export async function toggleHackathonRegistration(hackathonId: number, open: boolean) {
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "organizer") {
+    throw new Error("Unauthorized or invalid role");
+  }
+
+  const hackathon = await prisma.organizer_hackathon.findUnique({
+    where: { id: hackathonId },
+    include: { organizer_organizerprofile: true },
+  });
+
+  if (!hackathon) {
+    throw new Error("Hackathon not found");
+  }
+
+  if (hackathon.organizer_organizerprofile.user_id !== Number(session.user.id)) {
+    throw new Error("Access denied: You do not own this hackathon");
+  }
+
+  if (hackathon.status === "completed") {
+    throw new Error("Cannot modify registration status for a completed hackathon");
+  }
+
+  const targetStatus = open ? "registration" : "active";
+
+  await prisma.organizer_hackathon.update({
+    where: { id: hackathonId },
+    data: { status: targetStatus },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  revalidatePath("/organizer/dashboard");
+  revalidatePath("/participant/hackathons");
+  revalidatePath("/participant/dashboard");
+  revalidateTag("active-hackathons");
+
+  return { success: true, status: targetStatus };
+}
+
+/**
+ * Toggles GitHub repository link submission requirement for a hackathon.
+ */
+export async function toggleRequireGithubLink(hackathonId: number, enable: boolean) {
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "organizer") {
+    throw new Error("Unauthorized or invalid role");
+  }
+
+  const hackathon = await prisma.organizer_hackathon.findUnique({
+    where: { id: hackathonId },
+    include: { organizer_organizerprofile: true },
+  });
+
+  if (!hackathon) {
+    throw new Error("Hackathon not found");
+  }
+
+  if (hackathon.organizer_organizerprofile.user_id !== Number(session.user.id)) {
+    throw new Error("Access denied: You do not own this hackathon");
+  }
+
+  await prisma.organizer_hackathon.update({
+    where: { id: hackathonId },
+    data: { require_github_link: enable },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  revalidatePath(`/participant/hackathons/${hackathonId}/hub`);
+  return { success: true, require_github_link: enable };
 }
