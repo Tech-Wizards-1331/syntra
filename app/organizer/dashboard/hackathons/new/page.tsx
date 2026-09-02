@@ -9,7 +9,8 @@ import {
   CalendarRange, 
   AlertCircle, 
   Save, 
-  Sparkles 
+  Sparkles,
+  Scan
 } from "lucide-react";
 
 export default function NewHackathonPage() {
@@ -29,6 +30,7 @@ export default function NewHackathonPage() {
     is_paid: false,
     fee_type: "team",
     fee_amount: "",
+    allow_scan: true,
     status: "draft",
   });
 
@@ -318,6 +320,32 @@ export default function NewHackathonPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Card: Features & Modules */}
+          <div className="p-6 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-5">
+            <h3 className="text-[11px] font-semibold text-primary uppercase tracking-wider flex items-center gap-2">
+              <Scan className="w-4 h-4" /> Feature & Module Settings
+            </h3>
+
+            <div className="flex items-start gap-3 py-1">
+              <input
+                id="allow_scan"
+                name="allow_scan"
+                type="checkbox"
+                checked={formData.allow_scan}
+                onChange={handleChange}
+                className="w-4 h-4 mt-0.5 rounded border-black/[0.15] bg-canvas-pearl text-primary focus:ring-primary accent-primary cursor-pointer"
+              />
+              <div className="flex flex-col gap-0.5">
+                <label htmlFor="allow_scan" className="text-sm font-semibold text-ink cursor-pointer select-none">
+                  Enable Scan Feature & Participant Check-In Pass
+                </label>
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  If enabled, organizers can scan participant QR passes and participants can view their check-in pass. If disabled, the scan and check-in pass buttons will remain visible but unclickable.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Action button */}

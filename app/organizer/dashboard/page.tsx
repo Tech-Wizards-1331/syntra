@@ -230,13 +230,23 @@ export default async function OrganizerDashboard({ searchParams }: PageProps) {
 
                   {/* Actions buttons */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/organizer/scan?hackathonId=${h.id}`}
-                      className="px-3 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition apple-press-effect flex items-center gap-1.5"
-                    >
-                      <Scan className="w-3.5 h-3.5 text-ink-muted" />
-                      Scan
-                    </Link>
+                    {h.allow_scan !== false ? (
+                      <Link
+                        href={`/organizer/scan?hackathonId=${h.id}`}
+                        className="px-3 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition apple-press-effect flex items-center gap-1.5"
+                      >
+                        <Scan className="w-3.5 h-3.5 text-ink-muted" />
+                        Scan
+                      </Link>
+                    ) : (
+                      <span
+                        title="Scan feature disabled for this hackathon"
+                        className="px-3 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] text-ink/40 text-xs font-normal flex items-center gap-1.5 cursor-not-allowed opacity-50 select-none pointer-events-none"
+                      >
+                        <Scan className="w-3.5 h-3.5 text-ink-muted/40" />
+                        Scan
+                      </span>
+                    )}
                     <Link
                       href={`/organizer/dashboard/seating?hackathonId=${h.id}`}
                       className="px-3 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-canvas-parchment text-ink text-xs font-normal transition apple-press-effect flex items-center gap-1.5"
