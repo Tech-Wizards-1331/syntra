@@ -96,7 +96,7 @@ export async function bulkImportTeams(
     where: { hackathon_id: hackathonId },
     select: { name: true, leader_id: true },
   });
-  const existingTeamNames = new Set(existingTeams.map((t) => t.name.trim().toLowerCase()));
+  const existingTeamNames = new Set(existingTeams.map((t: { name: string; leader_id: number }) => t.name.trim().toLowerCase()));
 
   // Fetch existing members in this hackathon
   const existingMembers = await prisma.participant_teammember.findMany({
@@ -105,7 +105,7 @@ export async function bulkImportTeams(
     },
     select: { email: true },
   });
-  const registeredEmailsInHackathon = new Set(existingMembers.map((m) => m.email.trim().toLowerCase()));
+  const registeredEmailsInHackathon = new Set(existingMembers.map((m: { email: string }) => m.email.trim().toLowerCase()));
 
   for (let index = 0; index < teams.length; index++) {
     const rawTeam = teams[index];
@@ -113,9 +113,9 @@ export async function bulkImportTeams(
     const teamName = (rawTeam.teamName || "").trim();
     const leaderName = (rawTeam.leaderName || "").trim();
     const leaderEmail = (rawTeam.leaderEmail || "").trim().toLowerCase();
-    const college = (rawTeam.college || "Unknown College").trim();
+    const college = (rawTeam.college || "").trim();
     const semester = typeof rawTeam.semester === "number" ? rawTeam.semester : 1;
-    const degree = (rawTeam.degree || "B.Tech").trim();
+    const degree = (rawTeam.degree || "").trim();
 
     // 1. Basic Validation
     if (!teamName) {
@@ -222,7 +222,7 @@ export async function bulkImportTeams(
             date_joined: now,
             created_at: now,
             updated_at: now,
-            is_profile_complete: true,
+            is_profile_complete: false,
             role: "participant",
           },
         });

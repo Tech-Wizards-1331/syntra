@@ -168,8 +168,15 @@ export default function BulkUploadModal({
         const normalize = (str: string) =>
           str.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-        const getField = (possibleKeys: string[]) => {
+        const getField = (possibleKeys: string[], exactOnly: boolean = false) => {
           const normKeys = possibleKeys.map(normalize);
+          for (const rowKey of Object.keys(row)) {
+            const normRowKey = normalize(rowKey);
+            if (normKeys.some((nk) => normRowKey === nk)) {
+              return String(row[rowKey]).trim();
+            }
+          }
+          if (exactOnly) return "";
           for (const rowKey of Object.keys(row)) {
             const normRowKey = normalize(rowKey);
             if (normKeys.some((nk) => normRowKey === nk || normRowKey.includes(nk))) {
@@ -231,8 +238,7 @@ export default function BulkUploadModal({
           "gender",
         ]);
         const college =
-          getField(["college", "collegename", "university", "institute"]) ||
-          "College";
+          getField(["college", "collegename", "university", "institute"], true) || "";
 
         if (!teamName && !leaderName && !leaderEmail) {
           // Empty row, ignore
@@ -258,16 +264,8 @@ export default function BulkUploadModal({
           ? parseInt(rawLeaderSem.replace(/[^0-9]/g, ""), 10) || 1
           : 1;
 
-        // Build degree / info string including category & enrollment
-        const leaderDegreeParts: string[] = [];
-        if (category) leaderDegreeParts.push(`[${category}]`);
-        if (leaderEnrollment)
-          leaderDegreeParts.push(`Enroll: ${leaderEnrollment}`);
-        if (leaderGender) leaderDegreeParts.push(`(${leaderGender})`);
         const leaderDegree =
-          leaderDegreeParts.length > 0
-            ? leaderDegreeParts.join(" ")
-            : "Engineering";
+          getField(["degree", "branch", "department", "stream", "leaderdegree"], true) || "";
 
         // Parse additional members (Member 2, Member 3, Member 4, Other Members...)
         const members: BulkTeamInput["members"] = [];
@@ -329,11 +327,8 @@ export default function BulkUploadModal({
                 ? mEnroll.trim()
                 : "";
 
-            const mDegreeParts: string[] = [];
-            if (mEnroll) mDegreeParts.push(`Enroll: ${mEnroll}`);
-            if (mGender) mDegreeParts.push(`(${mGender})`);
             const mDegree =
-              mDegreeParts.length > 0 ? mDegreeParts.join(" ") : "Engineering";
+              getField([`member${m}degree`, `othermember${m}degree`, "degree", "branch"], true) || "";
 
             members.push({
               name: cleanMName,
