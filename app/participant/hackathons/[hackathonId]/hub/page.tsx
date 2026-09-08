@@ -14,9 +14,13 @@ export async function generateMetadata({
 }: {
   params: Promise<{ hackathonId: string }>;
 }) {
-  const { hackathonId } = await params;
+  const { hackathonId: hackathonIdStr } = await params;
+  const hackathonId = Number(hackathonIdStr);
+  if (isNaN(hackathonId) || !hackathonId) {
+    return { title: "Hackathon Hub | Syntra" };
+  }
   const hackathon = await prisma.organizer_hackathon.findUnique({
-    where: { id: Number(hackathonId) },
+    where: { id: hackathonId },
     select: { name: true },
   });
   return {
@@ -35,6 +39,10 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
 
   const { hackathonId: hackathonIdStr } = await params;
   const hackathonId = Number(hackathonIdStr);
+  if (isNaN(hackathonId) || !hackathonId) {
+    redirect("/participant/dashboard");
+  }
+
   const userId = Number(session.user.id);
   const userEmail = session.user.email || "";
 
