@@ -78,7 +78,8 @@ export default function EditHackathonForm({ hackathon }: EditHackathonFormProps)
     status: hackathon.status,
   });
 
-  const isLocked = hackathon.status === "active" || hackathon.status === "completed";
+  const isLocked = hackathon.status === "completed";
+  const isActive = hackathon.status === "active";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -106,11 +107,29 @@ export default function EditHackathonForm({ hackathon }: EditHackathonFormProps)
       if (!formData.end_date) throw new Error("End date is required");
       if (!formData.registration_deadline) throw new Error("Registration deadline is required");
 
+      const startDateObj = new Date(formData.start_date);
+      const endDateObj = new Date(formData.end_date);
+      const deadlineObj = new Date(formData.registration_deadline);
+
+      if (isNaN(startDateObj.getTime())) throw new Error("Invalid start date");
+      if (isNaN(endDateObj.getTime())) throw new Error("Invalid end date");
+      if (isNaN(deadlineObj.getTime())) throw new Error("Invalid registration deadline");
+
+      if (endDateObj <= startDateObj) {
+        throw new Error("End date must be after the start date");
+      }
+      if (deadlineObj >= startDateObj) {
+        throw new Error("Registration deadline must be before the start date");
+      }
+
       const parsedFeeAmount = formData.is_paid ? Number(formData.fee_amount) : null;
       const parsedMaxTeams = formData.max_teams !== "" ? Number(formData.max_teams) : null;
 
       const result = await updateHackathon(hackathon.id, {
         ...formData,
+        start_date: startDateObj.toISOString(),
+        end_date: endDateObj.toISOString(),
+        registration_deadline: deadlineObj.toISOString(),
         fee_amount: parsedFeeAmount,
         max_teams: parsedMaxTeams,
       });
@@ -270,7 +289,12 @@ export default function EditHackathonForm({ hackathon }: EditHackathonFormProps)
             />
             {isLocked && (
               <p className="text-[10px] text-warning mt-1">
-                Locked: The registration deadline cannot be changed once the event is Active or Completed.
+                Locked: The registration deadline cannot be changed once the event is Completed.
+              </p>
+            )}
+            {isActive && (
+              <p className="text-[10px] text-ink-muted mt-1">
+                Notice: Event is Active. Registration deadline must be before the start date.
               </p>
             )}
           </div>

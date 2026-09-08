@@ -169,9 +169,11 @@ export default function TeamPassClient({
                     <p className="text-sm font-medium text-ink truncate">
                       {member.name}
                     </p>
-                    <p className="text-[11px] text-ink-muted truncate">
-                      {member.email}
-                    </p>
+                    {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                      <p className="text-[11px] text-ink-muted truncate">{member.email}</p>
+                    ) : member.email && !member.email.startsWith("mem_") ? (
+                      <p className="text-[11px] text-ink-muted truncate">Enroll: {member.email}</p>
+                    ) : null}
                   </div>
                 </div>
               ))}

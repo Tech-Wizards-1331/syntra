@@ -371,12 +371,17 @@ export async function updateHackathon(
     }
   }
 
-  // If status is completed or staying active, lock registration_deadline changes
+  // If status is completed or staying active, lock registration_deadline changes (cannot extend deadline)
   if (currentStatus === "completed" || (currentStatus === "active" && newStatus === "active")) {
-    const currentDeadlineStr = new Date(hackathon.registration_deadline).toISOString();
-    const newDeadlineStr = new Date(data.registration_deadline).toISOString();
-    if (currentDeadlineStr !== newDeadlineStr) {
-      throw new Error("Registration deadline cannot be edited once the hackathon is active or completed.");
+    const currentDeadlineTime = new Date(hackathon.registration_deadline).getTime();
+    const newDeadlineTime = new Date(data.registration_deadline).getTime();
+    const isDeadlineChanged = Math.abs(currentDeadlineTime - newDeadlineTime) > 60000;
+
+    if (isDeadlineChanged) {
+      const newStartTime = new Date(data.start_date).getTime();
+      if (newDeadlineTime >= newStartTime || newDeadlineTime > currentDeadlineTime) {
+        throw new Error("Registration deadline cannot be edited once the hackathon is active or completed.");
+      }
     }
   }
 
