@@ -426,7 +426,11 @@ export default function ScannerClient({
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-ink">{member.name}</p>
-                  <p className="text-xs text-ink-muted">{member.email}</p>
+                  {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                    <p className="text-xs text-ink-muted">{member.email}</p>
+                  ) : member.email && !member.email.startsWith("mem_") ? (
+                    <p className="text-xs text-ink-muted">Enroll: {member.email}</p>
+                  ) : null}
                 </div>
                 {member.alreadyScanned && (
                   <span className="px-2 py-0.5 rounded-pill text-[10px] font-semibold bg-success-light text-success border border-success/15">

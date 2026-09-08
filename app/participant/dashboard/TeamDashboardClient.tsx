@@ -853,13 +853,19 @@ export default function TeamDashboardClient({
                           )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-ink-muted">
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-3 h-3 text-ink-muted/50" /> <span className="break-all">{member.email}</span>
-                          </span>
+                          {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3 text-ink-muted/50" /> <span className="break-all">{member.email}</span>
+                            </span>
+                          ) : member.email && !member.email.startsWith("mem_") ? (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3 text-ink-muted/50" /> <span>Enroll: {member.email}</span>
+                            </span>
+                          ) : null}
                           <span className="flex items-center gap-1">
                             <GraduationCap className="w-3 h-3 text-ink-muted/50" /> {member.college || "No College"} (Sem {member.semester || "?"})
                           </span>
-                          <span>{parsed.degree || "No Degree"}</span>
+                          {parsed.degree && <span>{parsed.degree}</span>}
                         </div>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           {getMissingFields(member) ? (

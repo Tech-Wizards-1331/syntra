@@ -243,11 +243,24 @@ export default function HubClient({
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-ink-muted">
-                  <span>{member.email}</span>
-                  <span className="text-black/[0.12]">•</span>
-                  <span>{member.college || "N/A"}</span>
-                  <span className="text-black/[0.12]">•</span>
-                  <span>Sem {member.semester || "?"}</span>
+                  {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                    <>
+                      <span>{member.email}</span>
+                      <span className="text-black/[0.12]">•</span>
+                    </>
+                  ) : member.email && !member.email.startsWith("mem_") ? (
+                    <>
+                      <span>Enroll: {member.email}</span>
+                      <span className="text-black/[0.12]">•</span>
+                    </>
+                  ) : null}
+                  {member.college && (
+                    <>
+                      <span>{member.college}</span>
+                      <span className="text-black/[0.12]">•</span>
+                    </>
+                  )}
+                  <span>Sem {member.semester || "—"}</span>
                 </div>
                 {member.skills.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
