@@ -1,20 +1,133 @@
 "use client";
 
-import React, { useActionState, useState } from "react";
+import React, { useActionState, useState, useEffect } from "react";
 import Link from "next/link";
-import { loginWithCredentials, loginWithProvider, resetPassword } from "@/app/actions/auth";
-import { Github, Lock, Mail, Loader2, ArrowRight, ChevronRight, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { loginWithCredentials, loginWithProvider, resetPasswordWithOtp, sendPasswordResetOtp, verifyPasswordResetOtp } from "@/app/actions/auth";
+import { Github, Lock, Mail, Loader2, ArrowRight, ChevronRight, X, CheckCircle2, AlertCircle, KeyRound, ArrowLeft, RefreshCw, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginWithCredentials, null);
-  const [resetState, resetAction, isResetPending] = useActionState(resetPassword, null);
+  const [resetState, resetAction, isResetPending] = useActionState(resetPasswordWithOtp, null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
-  React.useEffect(() => {
+  // Forgot password 3-stage state:
+  // 1: Enter Email & Request OTP
+  // 2: Enter & Verify 6-digit OTP only
+  // 3: OTP verified -> Enter & Submit New Password
+  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSuccessMsg, setOtpSuccessMsg] = useState<string | null>(null);
+  const [timer, setTimer] = useState<number>(300); // 5 minutes in seconds
+
+  // Timer countdown when in Step 2 or Step 3
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isForgotModalOpen && (resetStep === 2 || resetStep === 3) && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isForgotModalOpen, resetStep, timer]);
+
+  // Handle successful password reset
+  useEffect(() => {
     if (resetState?.success) {
       setIsForgotModalOpen(false);
+      setResetStep(1);
+      setResetEmail("");
+      setResetOtp("");
+      setOtpError(null);
+      setOtpSuccessMsg(null);
     }
   }, [resetState]);
+
+  const handleOpenForgotModal = () => {
+    setIsForgotModalOpen(true);
+    setResetStep(1);
+    setResetOtp("");
+    setOtpError(null);
+    setOtpSuccessMsg(null);
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail || !resetEmail.includes("@")) {
+      setOtpError("Please enter a valid email address.");
+      return;
+    }
+
+    setOtpError(null);
+    setIsSendingOtp(true);
+    try {
+      const res = await sendPasswordResetOtp(resetEmail);
+      if (res.error) {
+        setOtpError(res.error);
+      } else {
+        setOtpSuccessMsg(res.message || "OTP code sent to your email!");
+        setResetStep(2);
+        setResetOtp("");
+        setTimer(300); // Reset timer to 5 minutes
+      }
+    } catch (err: any) {
+      setOtpError("Failed to send OTP. Please try again.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetOtp || resetOtp.length !== 6) {
+      setOtpError("Please enter a valid 6-digit verification code.");
+      return;
+    }
+
+    setOtpError(null);
+    setIsVerifyingOtp(true);
+    try {
+      const res = await verifyPasswordResetOtp(resetEmail, resetOtp);
+      if (res.error) {
+        setOtpError(res.error);
+      } else {
+        setOtpSuccessMsg(res.message || "Code verified successfully!");
+        setResetStep(3); // Transition to New Password form only after OTP verified!
+      }
+    } catch (err: any) {
+      setOtpError("Failed to verify OTP. Please try again.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (isSendingOtp || !resetEmail) return;
+    setOtpError(null);
+    setIsSendingOtp(true);
+    try {
+      const res = await sendPasswordResetOtp(resetEmail);
+      if (res.error) {
+        setOtpError(res.error);
+      } else {
+        setOtpSuccessMsg("A new verification code has been sent!");
+        setTimer(300);
+      }
+    } catch (err: any) {
+      setOtpError("Failed to resend code.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <div className="min-h-screen bg-canvas-parchment text-ink flex flex-col font-sans antialiased selection:bg-primary selection:text-white">
@@ -71,7 +184,6 @@ export default function LoginPage() {
               </div>
             )}
 
-
             {/* Form */}
             <form action={formAction} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -96,7 +208,7 @@ export default function LoginPage() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIsForgotModalOpen(true)}
+                    onClick={handleOpenForgotModal}
                     className="text-[11px] text-primary hover:underline font-medium transition cursor-pointer"
                   >
                     Forgot password?
@@ -178,14 +290,25 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* ─── Forgot Password Modal ─── */}
+      {/* ─── Forgot Password Modal (3-Step: Email -> OTP Verify -> New Password) ─── */}
       {isForgotModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-canvas border border-black/[0.08] w-full max-w-md rounded-xl p-6 shadow-2xl flex flex-col gap-5 relative">
+          <div className="bg-canvas border border-black/[0.08] w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-5 relative">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-ink">Reset Password</h3>
-                <p className="text-xs text-ink-muted mt-0.5">Enter your email address and choose a new password.</p>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-pill bg-primary/10 text-primary text-[11px] font-semibold mb-1">
+                  <KeyRound className="w-3 h-3" /> Step {resetStep} of 3
+                </div>
+                <h3 className="text-lg font-semibold text-ink">
+                  {resetStep === 1 && "Reset Password"}
+                  {resetStep === 2 && "Enter Verification Code"}
+                  {resetStep === 3 && "Set New Password"}
+                </h3>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  {resetStep === 1 && "Enter your email to receive a 6-digit verification code."}
+                  {resetStep === 2 && `Enter the 6-digit code sent to ${resetEmail}`}
+                  {resetStep === 3 && "Code verified! Choose your new password below."}
+                </p>
               </div>
               <button
                 type="button"
@@ -196,91 +319,245 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {resetState?.error && (
-              <div className="p-3.5 rounded-md bg-danger-light border border-danger/15 text-danger text-xs font-medium leading-relaxed flex items-start gap-2">
+            {/* Error notifications */}
+            {(otpError || resetState?.error) && (
+              <div className="p-3.5 rounded-xl bg-danger-light border border-danger/15 text-danger text-xs font-medium leading-relaxed flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{resetState.error}</span>
+                <span>{otpError || resetState?.error}</span>
               </div>
             )}
 
-            {resetState?.success && (
-              <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
-                <span>{resetState.success}</span>
+            {/* Success info */}
+            {otpSuccessMsg && !otpError && !resetState?.error && (
+              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed flex items-start gap-2">
+                {resetStep === 3 ? (
+                  <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                )}
+                <span>{otpSuccessMsg}</span>
               </div>
             )}
 
-            <form action={resetAction} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="reset-email" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5" /> Email Address
-                </label>
-                <input
-                  id="reset-email"
-                  name="email"
-                  type="email"
-                  placeholder="name@college.edu"
-                  required
-                  disabled={isResetPending}
-                  className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
-                />
-              </div>
+            {/* ─── STEP 1: Enter Email & Request OTP ─── */}
+            {resetStep === 1 && (
+              <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="step1-email" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5" /> Email Address
+                  </label>
+                  <input
+                    id="step1-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="name@college.edu"
+                    required
+                    disabled={isSendingOtp}
+                    className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-xl focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
+                  />
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="reset-newPassword" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5" /> New Password
-                </label>
-                <input
-                  id="reset-newPassword"
-                  name="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  disabled={isResetPending}
-                  className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
-                />
-              </div>
+                <div className="flex items-center justify-end gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(false)}
+                    disabled={isSendingOtp}
+                    className="px-4 py-2 rounded-pill bg-canvas-pearl border border-black/[0.08] text-ink font-medium text-xs hover:bg-black/5 transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSendingOtp || !resetEmail}
+                    className="px-5 py-2 rounded-pill bg-primary text-white font-medium text-xs hover:bg-primary-focus flex items-center gap-2 transition apple-press-effect disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSendingOtp ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Sending Code...
+                      </>
+                    ) : (
+                      <>
+                        Send Verification Code
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
 
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="reset-confirmPassword" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5" /> Confirm New Password
-                </label>
-                <input
-                  id="reset-confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  disabled={isResetPending}
-                  className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-md focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
-                />
-              </div>
+            {/* ─── STEP 2: Enter & Verify OTP Only ─── */}
+            {resetStep === 2 && (
+              <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+                <div className="flex items-center justify-between text-xs text-ink-muted bg-canvas-pearl border border-black/[0.06] px-3.5 py-2 rounded-xl">
+                  <span>To: <strong className="text-ink">{resetEmail}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetStep(1);
+                      setOtpError(null);
+                      setOtpSuccessMsg(null);
+                    }}
+                    className="text-primary hover:underline text-[11px] font-medium flex items-center gap-1 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3 h-3" /> Change
+                  </button>
+                </div>
 
-              <div className="flex items-center justify-end gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsForgotModalOpen(false)}
-                  disabled={isResetPending}
-                  className="px-4 py-2 rounded-pill bg-canvas-pearl border border-black/[0.08] text-ink font-medium text-xs hover:bg-black/5 transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isResetPending}
-                  className="px-4 py-2 rounded-pill bg-primary text-white font-medium text-xs hover:bg-primary-focus flex items-center gap-2 transition apple-press-effect disabled:opacity-50 cursor-pointer"
-                >
-                  {isResetPending ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Resetting...
-                    </>
-                  ) : (
-                    "Reset Password"
-                  )}
-                </button>
-              </div>
-            </form>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="reset-otp" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5" /> 6-Digit Verification Code
+                    </label>
+                    <div className="text-[11px] font-mono font-medium">
+                      {timer > 0 ? (
+                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-pill border border-amber-200/60">
+                          Expires in {formatTimer(timer)}
+                        </span>
+                      ) : (
+                        <span className="text-danger bg-danger/10 px-2 py-0.5 rounded-pill">
+                          Code Expired
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    id="reset-otp"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={resetOtp}
+                    onChange={(e) => setResetOtp(e.target.value)}
+                    placeholder="123456"
+                    required
+                    disabled={isVerifyingOtp}
+                    autoFocus
+                    className="py-3 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-xl focus:outline-none focus:border-primary text-ink text-center tracking-[8px] font-mono text-xl font-bold placeholder-ink-muted/30 transition disabled:opacity-50"
+                  />
+                  <div className="flex items-center justify-end mt-0.5">
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={isSendingOtp || timer > 240}
+                      className="text-[11px] text-primary hover:underline font-medium transition disabled:opacity-40 disabled:hover:no-underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isSendingOtp ? "animate-spin" : ""}`} />
+                      {timer > 240 ? `Resend code in ${timer - 240}s` : "Resend Code"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetStep(1);
+                      setOtpError(null);
+                      setOtpSuccessMsg(null);
+                    }}
+                    disabled={isVerifyingOtp}
+                    className="px-4 py-2 rounded-pill bg-canvas-pearl border border-black/[0.08] text-ink font-medium text-xs hover:bg-black/5 transition cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isVerifyingOtp || resetOtp.length !== 6 || timer === 0}
+                    className="px-5 py-2 rounded-pill bg-primary text-white font-medium text-xs hover:bg-primary-focus flex items-center gap-2 transition apple-press-effect disabled:opacity-50 cursor-pointer"
+                  >
+                    {isVerifyingOtp ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Verifying Code...
+                      </>
+                    ) : (
+                      <>
+                        Verify OTP
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ─── STEP 3: OTP Verified -> Enter New Password & Submit ─── */}
+            {resetStep === 3 && (
+              <form action={resetAction} className="flex flex-col gap-4">
+                {/* Hidden values for email and verified OTP */}
+                <input type="hidden" name="email" value={resetEmail} />
+                <input type="hidden" name="otp" value={resetOtp} />
+
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Email & OTP Verified for <strong>{resetEmail}</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="reset-newPassword" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" /> New Password
+                  </label>
+                  <input
+                    id="reset-newPassword"
+                    name="newPassword"
+                    type="password"
+                    placeholder="•••••••• (min 6 characters)"
+                    required
+                    autoFocus
+                    disabled={isResetPending}
+                    className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-xl focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="reset-confirmPassword" className="text-[11px] text-ink-muted font-semibold tracking-wider uppercase flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" /> Confirm New Password
+                  </label>
+                  <input
+                    id="reset-confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    disabled={isResetPending}
+                    className="py-2.5 px-3.5 bg-canvas-pearl border border-black/[0.08] rounded-xl focus:outline-none focus:border-primary text-ink placeholder-ink-muted/50 transition text-sm disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetStep(2);
+                      setOtpError(null);
+                    }}
+                    disabled={isResetPending}
+                    className="px-4 py-2 rounded-pill bg-canvas-pearl border border-black/[0.08] text-ink font-medium text-xs hover:bg-black/5 transition cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResetPending}
+                    className="px-5 py-2 rounded-pill bg-primary text-white font-medium text-xs hover:bg-primary-focus flex items-center gap-2 transition apple-press-effect disabled:opacity-50 cursor-pointer"
+                  >
+                    {isResetPending ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Updating Password...
+                      </>
+                    ) : (
+                      "Set New Password"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

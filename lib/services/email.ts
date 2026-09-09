@@ -237,3 +237,84 @@ The Syntra Team`;
   }
 }
 
+export interface SendPasswordResetOtpEmailOptions {
+  receiverEmail: string;
+  otp: string;
+}
+
+export async function sendPasswordResetOtpEmail({
+  receiverEmail,
+  otp,
+}: SendPasswordResetOtpEmailOptions) {
+  const mailTransporter = getTransporter();
+  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@syntra.com";
+
+  const subject = `Your Password Reset Verification Code: ${otp}`;
+  const textContent = `Hello,
+
+You requested to reset your password for your Syntra account.
+
+Your 6-digit verification code is: ${otp}
+
+This code will expire in 5 minutes. If you did not request this password reset, please ignore this email or secure your account.
+
+Best regards,
+The Syntra Team`;
+
+  const htmlContent = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 16px; background-color: #ffffff; color: #1f2937;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #0066cc; font-size: 22px; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.5px;">Syntra Security</h1>
+        <p style="font-size: 13px; color: #6b7280; margin: 0;">Password Reset Verification</p>
+      </div>
+
+      <p style="font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 20px;">
+        We received a request to reset the password associated with this email address (<strong>${receiverEmail}</strong>).
+      </p>
+
+      <div style="background: linear-gradient(135deg, #f0f7ff 0%, #e6f0fa 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+        <p style="font-size: 12px; color: #1e40af; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 0;">Your Verification Code</p>
+        <div style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0066cc; font-family: monospace; user-select: all;">
+          ${otp}
+        </div>
+        <p style="font-size: 12px; color: #60a5fa; margin: 10px 0 0 0; font-weight: 500;">
+          ⏱️ Valid for 5 minutes only
+        </p>
+      </div>
+
+      <p style="font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 24px;">
+        Enter this code in the password reset window to choose a new password. If you didn't request a password reset, you can safely ignore this email.
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;" />
+      <p style="font-size: 11px; color: #9ca3af; text-align: center; margin: 0;">
+        This is an automated security message from Syntra. Please do not reply directly to this email.
+      </p>
+    </div>
+  `;
+
+  if (!mailTransporter) {
+    console.log("-----------------------------------------");
+    console.log(`✉️ Simulated Password Reset OTP Email sent to console:`);
+    console.log(`To: ${receiverEmail}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`OTP: ${otp} (Expires in 5 minutes)`);
+    console.log("-----------------------------------------");
+    return { success: true, simulated: true };
+  }
+
+  try {
+    await mailTransporter.sendMail({
+      from: `"Syntra Security" <${fromAddress}>`,
+      to: receiverEmail,
+      subject,
+      text: textContent,
+      html: htmlContent,
+    });
+    return { success: true, simulated: false };
+  } catch (error) {
+    console.error("❌ Failed to send password reset OTP email:", error);
+    return { success: false, error };
+  }
+}
+

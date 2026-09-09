@@ -127,30 +127,24 @@ export async function registerWithCredentials(prevState: any, formData: FormData
   }
 }
 
+import { sendPasswordResetOtpEmail } from "@/lib/services/email";
+import crypto from "crypto";
+
 export async function loginWithProvider(provider: "google" | "github") {
   await signIn(provider, { redirectTo: "/participant/dashboard" });
 }
 
-const resetPasswordSchema = z.object({
+const sendOtpSchema = z.object({
   email: z.string().email("Invalid email address"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
 });
 
-export async function resetPassword(prevState: any, formData: FormData) {
-  const email = formData.get("email") as string;
-  const newPassword = formData.get("newPassword") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
-
-  const result = resetPasswordSchema.safeParse({ email, newPassword, confirmPassword });
+export async function sendPasswordResetOtp(email: string) {
+  const result = sendOtpSchema.safeParse({ email });
   if (!result.success) {
     return { error: result.error.issues[0].message };
   }
 
-  const cleanEmail = email.toLowerCase();
+  const cleanEmail = email.toLowerCase().trim();
 
   try {
     const user = await prisma.accounts_user.findUnique({
@@ -161,8 +155,142 @@ export async function resetPassword(prevState: any, formData: FormData) {
       return { error: "No account found with this email address." };
     }
 
+    // Generate 6-digit numeric OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
+    // Mark previous unused OTPs for this email as used
+    await prisma.password_reset_otp.updateMany({
+      where: { email: cleanEmail, is_used: false },
+      data: { is_used: true },
+    });
+
+    // Store new OTP
+    await prisma.password_reset_otp.create({
+      data: {
+        email: cleanEmail,
+        otp,
+        expires_at: expiresAt,
+        is_used: false,
+      },
+    });
+
+    // Send email notification
+    await sendPasswordResetOtpEmail({
+      receiverEmail: cleanEmail,
+      otp,
+    });
+
+    return { success: true, message: `A 6-digit code has been sent to ${cleanEmail}. Valid for 5 minutes.` };
+  } catch (err: any) {
+    console.error("Send reset OTP error:", err);
+    return { error: "Failed to send verification code. Please try again." };
+  }
+}
+
+const verifyOtpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  otp: z.string().length(6, "Verification code must be 6 digits").regex(/^\d+$/, "Verification code must contain digits only"),
+});
+
+export async function verifyPasswordResetOtp(email: string, otp: string) {
+  const result = verifyOtpSchema.safeParse({ email, otp });
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanOtp = otp.trim();
+
+  try {
+    const user = await prisma.accounts_user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      return { error: "No account found with this email address." };
+    }
+
+    const otpRecord = await prisma.password_reset_otp.findFirst({
+      where: {
+        email: cleanEmail,
+        otp: cleanOtp,
+        is_used: false,
+        expires_at: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
+    if (!otpRecord) {
+      return { error: "Invalid or expired verification code. Please check and try again." };
+    }
+
+    return { success: true, message: "Code verified successfully!" };
+  } catch (err: any) {
+    console.error("Verify OTP error:", err);
+    return { error: "Failed to verify code. Please try again." };
+  }
+}
+
+const resetPasswordWithOtpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  otp: z.string().length(6, "Verification code must be 6 digits").regex(/^\d+$/, "Verification code must contain digits only"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+export async function resetPasswordWithOtp(prevState: any, formData: FormData) {
+  const email = formData.get("email") as string;
+  const otp = formData.get("otp") as string;
+  const newPassword = formData.get("newPassword") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  const result = resetPasswordWithOtpSchema.safeParse({ email, otp, newPassword, confirmPassword });
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanOtp = otp.trim();
+
+  try {
+    const user = await prisma.accounts_user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      return { error: "No account found with this email address." };
+    }
+
+    // Find valid OTP record
+    const otpRecord = await prisma.password_reset_otp.findFirst({
+      where: {
+        email: cleanEmail,
+        otp: cleanOtp,
+        is_used: false,
+        expires_at: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
+    if (!otpRecord) {
+      return { error: "Invalid or expired verification code. Please request a new code." };
+    }
+
     const hashedPassword = hashPassword(newPassword);
 
+    // Update password
     await prisma.accounts_user.update({
       where: { email: cleanEmail },
       data: {
@@ -171,10 +299,19 @@ export async function resetPassword(prevState: any, formData: FormData) {
       },
     });
 
+    // Mark OTP as used
+    await prisma.password_reset_otp.update({
+      where: { id: otpRecord.id },
+      data: { is_used: true },
+    });
+
     return { success: "Password updated successfully! You can now sign in with your new password." };
   } catch (err: any) {
-    console.error("Reset password error:", err);
+    console.error("Reset password with OTP error:", err);
     return { error: "Failed to reset password. Please try again." };
   }
 }
+
+// Keep backward compatibility if anything else imports resetPassword
+export const resetPassword = resetPasswordWithOtp;
 
