@@ -52,7 +52,7 @@ export default async function TeamPassPage({ params }: PassPageProps) {
         select: { id: true, name: true, allow_scan: true },
       },
       participant_teammember: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, enrollment_number: true },
         orderBy: { id: "asc" },
       },
     },
@@ -86,6 +86,7 @@ export default async function TeamPassPage({ params }: PassPageProps) {
           id: m.id,
           name: m.name,
           email: m.email,
+          enrollment_number: m.enrollment_number,
         })),
       };
     })

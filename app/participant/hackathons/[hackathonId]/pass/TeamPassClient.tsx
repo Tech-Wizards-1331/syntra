@@ -12,7 +12,7 @@ interface RegistrationPass {
   hackathonName: string;
   allowScan: boolean;
   qrToken: string;
-  members: { id: number; name: string; email: string }[];
+  members: { id: number; name: string; email: string; enrollment_number?: string | null }[];
 }
 
 interface TeamPassClientProps {
@@ -169,11 +169,12 @@ export default function TeamPassClient({
                     <p className="text-sm font-medium text-ink truncate">
                       {member.name}
                     </p>
-                    {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                    {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") && (
                       <p className="text-[11px] text-ink-muted truncate">{member.email}</p>
-                    ) : member.email && !member.email.startsWith("mem_") ? (
-                      <p className="text-[11px] text-ink-muted truncate">Enroll: {member.email}</p>
-                    ) : null}
+                    )}
+                    {member.enrollment_number && (
+                      <p className="text-[11px] font-mono text-primary truncate">Enroll: {member.enrollment_number}</p>
+                    )}
                   </div>
                 </div>
               ))}

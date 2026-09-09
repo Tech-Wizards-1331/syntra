@@ -30,6 +30,7 @@ interface ScannedMember {
   id: number;
   name: string;
   email: string;
+  enrollment_number?: string | null;
   alreadyScanned: boolean;
 }
 
@@ -426,10 +427,10 @@ export default function ScannerClient({
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-ink">{member.name}</p>
-                  {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
+                  {member.enrollment_number ? (
+                    <p className="text-xs text-ink-muted">Enroll: {member.enrollment_number}</p>
+                  ) : member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
                     <p className="text-xs text-ink-muted">{member.email}</p>
-                  ) : member.email && !member.email.startsWith("mem_") ? (
-                    <p className="text-xs text-ink-muted">Enroll: {member.email}</p>
                   ) : null}
                 </div>
                 {member.alreadyScanned && (

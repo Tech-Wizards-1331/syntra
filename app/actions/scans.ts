@@ -92,6 +92,7 @@ export async function scanQrToken(qrToken: string, scanCategoryId: number) {
       id: m.id,
       name: m.name,
       email: m.email,
+      enrollment_number: m.enrollment_number,
       alreadyScanned: m.organizer_scanrecord.length > 0,
     })),
   };
