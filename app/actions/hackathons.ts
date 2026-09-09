@@ -150,6 +150,7 @@ export async function getHackathonById(id: number) {
               id: true,
               name: true,
               email: true,
+              enrollment_number: true,
               college: true,
               semester: true,
               degree: true,

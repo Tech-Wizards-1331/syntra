@@ -11,7 +11,8 @@ import { randomUUID } from "crypto";
 
 export interface BulkMemberInput {
   name: string;
-  email: string;
+  email?: string;
+  enrollmentNumber?: string;
   college?: string;
   semester?: number | null;
   degree?: string;
@@ -21,6 +22,7 @@ export interface BulkTeamInput {
   teamName: string;
   leaderName: string;
   leaderEmail: string;
+  enrollmentNumber?: string;
   college?: string;
   semester?: number | null;
   degree?: string;
@@ -147,7 +149,8 @@ export async function bulkImportTeams(
       const m = rawTeam.members[mIdx];
       const mName = (m.name || "").trim();
       const rawMEmail = (m.email || "").trim().toLowerCase();
-      if (!mName && !rawMEmail) continue; // skip empty member slot
+      const mEnroll = (m.enrollmentNumber || "").trim();
+      if (!mName && !rawMEmail && !mEnroll) continue; // skip empty member slot
 
       if (!mName) {
         errors.push(`Row ${teamNum} (${teamName}): Member slot ${mIdx + 2} has missing name.`);
@@ -170,13 +173,14 @@ export async function bulkImportTeams(
         }
         memberEmail = rawMEmail;
       } else {
-        // No email provided: satisfy DB NOT NULL & UNIQUE([team_id, email]) using enrollment or fallback identifier
-        memberEmail = rawMEmail || `mem_${mIdx + 2}_${Date.now() % 100000}_${Math.floor(Math.random() * 1000)}`;
+        // Assign an internal placeholder email to satisfy DB NOT NULL & UNIQUE([team_id, email])
+        memberEmail = `mem_${teamNum}_${mIdx + 2}_${randomUUID().slice(0, 8)}@student.syntra`;
       }
 
       validMembers.push({
         name: mName,
         email: memberEmail,
+        enrollmentNumber: mEnroll || undefined,
         college: (m.college || college).trim(),
         semester: typeof m.semester === "number" ? m.semester : semester,
         degree: (m.degree || degree).trim(),
@@ -234,6 +238,7 @@ export async function bulkImportTeams(
             college,
             semester: semester || 1,
             degree,
+            enrollment_number: rawTeam.enrollmentNumber?.trim() || null,
             visibility: true,
             created_at: now,
             updated_at: now,
@@ -265,8 +270,17 @@ export async function bulkImportTeams(
               college,
               semester: semester || 1,
               degree,
+              enrollment_number: rawTeam.enrollmentNumber?.trim() || null,
               visibility: true,
               created_at: now,
+              updated_at: now,
+            },
+          });
+        } else if (rawTeam.enrollmentNumber) {
+          await prisma.participant_participantprofile.update({
+            where: { user_id: leaderUser.id },
+            data: {
+              enrollment_number: rawTeam.enrollmentNumber.trim(),
               updated_at: now,
             },
           });
@@ -295,6 +309,7 @@ export async function bulkImportTeams(
         data: {
           name: leaderName,
           email: leaderEmail,
+          enrollment_number: rawTeam.enrollmentNumber?.trim() || null,
           college,
           semester: semester || 1,
           degree,
@@ -308,7 +323,8 @@ export async function bulkImportTeams(
         await prisma.participant_teammember.create({
           data: {
             name: member.name,
-            email: member.email,
+            email: member.email || `mem_${team.id}_${randomUUID().slice(0, 8)}@student.syntra`,
+            enrollment_number: member.enrollmentNumber?.trim() || null,
             college: member.college || college,
             semester: member.semester || 1,
             degree: member.degree || degree,
@@ -316,7 +332,9 @@ export async function bulkImportTeams(
             created_at: now,
           },
         });
-        registeredEmailsInHackathon.add(member.email);
+        if (member.email && !member.email.endsWith("@student.syntra")) {
+          registeredEmailsInHackathon.add(member.email);
+        }
       }
 
       // Track registered records

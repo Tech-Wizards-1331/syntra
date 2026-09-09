@@ -73,6 +73,7 @@ interface TeamMember {
   id: number;
   name: string;
   email: string;
+  enrollment_number?: string | null;
   college: string;
   semester: number | null;
   degree: string;
@@ -859,28 +860,46 @@ export default function HackathonDetailPageClient({
                               {team.participant_teammember.length === 0 ? (
                                 <p className="text-xs text-ink-muted italic">No members added yet.</p>
                               ) : (
-                                team.participant_teammember.map(member => (
-                                  <div key={member.id} className="p-3 rounded-md bg-canvas-parchment/50 border border-black/[0.04] flex flex-col gap-0.5">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold shrink-0">
-                                        {member.name.charAt(0).toUpperCase()}
+                                team.participant_teammember.map(member => {
+                                  const isLeader =
+                                    member.email?.toLowerCase() === team.accounts_user.email?.toLowerCase();
+                                  const displayEnroll = isLeader
+                                    ? member.enrollment_number
+                                    : member.enrollment_number;
+
+                                  return (
+                                    <div key={member.id} className="p-3 rounded-md bg-canvas-parchment/50 border border-black/[0.04] flex flex-col gap-0.5">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-semibold shrink-0">
+                                          {member.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <p className="text-xs font-semibold text-ink truncate">{member.name}</p>
+                                            {isLeader && (
+                                              <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary/10 text-primary uppercase">
+                                                Leader
+                                              </span>
+                                            )}
+                                          </div>
+                                          {/* Only show email for Leader */}
+                                          {isLeader && member.email && (
+                                            <p className="text-[10px] text-ink-muted truncate">{member.email}</p>
+                                          )}
+                                          {/* Show enrollment number */}
+                                          {displayEnroll && (
+                                            <p className="text-[10px] text-primary font-mono truncate">Enroll: {displayEnroll}</p>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-semibold text-ink truncate">{member.name}</p>
-                                        {member.email && member.email.includes("@") && !member.email.endsWith("@student.syntra") ? (
-                                          <p className="text-[10px] text-ink-muted truncate">{member.email}</p>
-                                        ) : member.email && !member.email.startsWith("mem_") ? (
-                                          <p className="text-[10px] text-ink-muted truncate">Enroll: {member.email}</p>
-                                        ) : null}
+                                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 ml-9 text-[10px] text-ink-muted">
+                                        <span>{member.college}</span>
+                                        <span>Sem {member.semester ?? "—"}</span>
+                                        <span>{member.degree}</span>
                                       </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 ml-9 text-[10px] text-ink-muted">
-                                      <span>{member.college}</span>
-                                      <span>Sem {member.semester ?? "—"}</span>
-                                      <span>{member.degree}</span>
-                                    </div>
-                                  </div>
-                                ))
+                                  );
+                                })
                               )}
                             </div>
                           </div>

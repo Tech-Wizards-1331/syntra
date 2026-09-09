@@ -125,6 +125,7 @@ export default async function TeamRegisterPage(props: {
       id: -team.leader_id,
       name: team.accounts_user.full_name || team.accounts_user.email,
       email: team.accounts_user.email,
+      enrollment_number: profile.enrollment_number,
       college: profile.college,
       degree: profile.degree,
       semester: profile.semester,

@@ -209,10 +209,13 @@ export default function BulkUploadModal({
         ]);
         const leaderEnrollment = getField([
           "teamleaderenrollmentnumber",
+          "teamleaderenrollmentno",
           "teamleaderenrollment",
           "leaderenrollmentnumber",
+          "leaderenrollmentno",
           "leaderenrollment",
           "enrollmentnumber",
+          "enrollmentno",
           "enrollment",
           "leaderenroll",
         ]);
@@ -284,11 +287,16 @@ export default function BulkUploadModal({
 
           const mEnroll = getField([
             `member${m}enrollmentnumber`,
+            `member${m}enrollmentno`,
             `member${m}enrollment`,
-            `othermember${m}enrollment`,
+            `member${m}enroll`,
             `othermember${m}enrollmentnumber`,
-            m === 2 ? "enrollmentnumber" : `enrollmentnumber${m}`,
-            m === 2 ? "enrollment" : `enrollment${m}`,
+            `othermember${m}enrollmentno`,
+            `othermember${m}enrollment`,
+            `othermember${m}enroll`,
+            `teammember${m}enrollmentnumber`,
+            `teammember${m}enrollmentno`,
+            `teammember${m}enrollment`,
           ]);
 
           const mSemRaw = getField([
@@ -307,32 +315,18 @@ export default function BulkUploadModal({
             m === 2 ? "gender" : `gender${m}`,
           ]);
 
-          const mEmailRaw = getField([
-            `member${m}email`,
-            `othermember${m}email`,
-            `member${m}emailid`,
-          ]).toLowerCase();
-
           if (mName && mName.trim() !== "") {
             const cleanMName = mName.trim();
             const mSem = mSemRaw
               ? parseInt(mSemRaw.replace(/[^0-9]/g, ""), 10) || leaderSemester
               : leaderSemester;
 
-            // If member email is provided use it, otherwise use enrollment number or empty
-            const memberEmail =
-              mEmailRaw && mEmailRaw.includes("@")
-                ? mEmailRaw.trim()
-                : mEnroll
-                ? mEnroll.trim()
-                : "";
-
             const mDegree =
               getField([`member${m}degree`, `othermember${m}degree`, "degree", "branch"], true) || "";
 
             members.push({
               name: cleanMName,
-              email: memberEmail,
+              enrollmentNumber: mEnroll ? mEnroll.trim() : undefined,
               college: college,
               semester: mSem,
               degree: mDegree,
@@ -344,6 +338,7 @@ export default function BulkUploadModal({
           teamName: teamName,
           leaderName: leaderName,
           leaderEmail: leaderEmail,
+          enrollmentNumber: leaderEnrollment ? leaderEnrollment.trim() : undefined,
           college: college,
           semester: leaderSemester,
           degree: leaderDegree,
@@ -660,6 +655,9 @@ export default function BulkUploadModal({
                               <td className="p-2.5">
                                 <div className="text-ink font-medium">{t.leaderName}</div>
                                 <div className="text-[10px] text-ink-muted">{t.leaderEmail}</div>
+                                {t.enrollmentNumber && (
+                                  <div className="text-[10px] text-primary font-mono">Enroll: {t.enrollmentNumber}</div>
+                                )}
                               </td>
                               <td className="p-2.5 text-ink-muted text-[11px] truncate max-w-[140px]">
                                 {t.college}

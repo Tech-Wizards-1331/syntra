@@ -362,6 +362,7 @@ model participant_participantprofile {
   semester                              Int
   degree                                String
   visibility                            Boolean
+  enrollment_number                     String?
   created_at                            DateTime
   updated_at                            DateTime
   user_id                               Int                                  @unique(map: "sqlite_autoindex_participant_participantprofile_1")
@@ -444,6 +445,7 @@ model participant_teammember {
   created_at                    DateTime
   team_id                       Int
   email                         String
+  enrollment_number             String?
   organizer_scanrecord          organizer_scanrecord[]
   participant_team              participant_team                @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   participant_teammember_skills participant_teammember_skills[]
