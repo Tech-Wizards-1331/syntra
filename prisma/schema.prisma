@@ -597,3 +597,14 @@ model evaluation_score {
   @@index([criterion_id])
   @@index([hackathon_faculty_id])
 }
+
+model password_reset_otp {
+  id         Int      @id @default(autoincrement())
+  email      String
+  otp        String
+  expires_at DateTime
+  is_used    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@index([email])
+}
