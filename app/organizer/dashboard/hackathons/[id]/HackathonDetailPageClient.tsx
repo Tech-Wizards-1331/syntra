@@ -8,6 +8,7 @@ import {
   toggleProblemStatementsRelease,
   toggleHackathonRegistration,
   toggleRequireGithubLink,
+  togglePublishResults,
   deleteHackathon,
 } from "@/app/actions/hackathons";
 import { deleteTeamByOrganizer } from "@/app/actions/teams";
@@ -132,6 +133,7 @@ interface HackathonDetailPageClientProps {
     release_problems: boolean;
     allow_scan: boolean;
     require_github_link?: boolean;
+    publish_results?: boolean;
     room_configuration: string | null;
     seating_allocation: string | null;
     organizer_problemstatement: ProblemStatement[];
@@ -496,6 +498,21 @@ export default function HackathonDetailPageClient({
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to toggle GitHub link requirement.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Toggle publishing evaluation results to participants
+  const handleTogglePublishResults = async () => {
+    const currentStatus = hackathon.publish_results ?? false;
+    setActionLoading("toggle-publish-results");
+    setErrorMsg(null);
+    try {
+      await togglePublishResults(hackathon.id, !currentStatus);
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to toggle evaluation results visibility.");
     } finally {
       setActionLoading(null);
     }
@@ -1297,7 +1314,7 @@ export default function HackathonDetailPageClient({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Control 1: Registration Status Toggle */}
             <div className="p-4 rounded-xl bg-canvas-parchment/60 border border-black/[0.05] flex items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
@@ -1386,6 +1403,48 @@ export default function HackathonDetailPageClient({
                   <span
                     className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
                       hackathon.require_github_link ? "translate-x-5.5" : "translate-x-1"
+                    }`}
+                  />
+                )}
+              </button>
+            </div>
+
+            {/* Control 3: Publish Evaluation Results */}
+            <div className="p-4 rounded-xl bg-canvas-parchment/60 border border-black/[0.05] flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-ink">Evaluation Results</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                      hackathon.publish_results
+                        ? "bg-success-light text-success-dark border border-success/20"
+                        : "bg-black/[0.06] text-ink-muted border border-black/[0.04]"
+                    }`}
+                  >
+                    {hackathon.publish_results ? "Published" : "Unpublished"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-ink-muted leading-relaxed">
+                  {hackathon.publish_results
+                    ? "Scores & ranks are published and visible to teams in their Team Hub."
+                    : "Results are hidden from teams. Scores remain private until published."}
+                </p>
+              </div>
+
+              <button
+                onClick={handleTogglePublishResults}
+                disabled={actionLoading !== null}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                  hackathon.publish_results ? "bg-primary" : "bg-black/[0.16]"
+                }`}
+                title="Toggle publish results to participants"
+              >
+                {actionLoading === "toggle-publish-results" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto text-white" />
+                ) : (
+                  <span
+                    className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                      hackathon.publish_results ? "translate-x-5.5" : "translate-x-1"
                     }`}
                   />
                 )}
