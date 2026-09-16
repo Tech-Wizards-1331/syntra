@@ -48,6 +48,8 @@ import {
   Hash,
   Lock,
   GitBranch,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface ProblemStatement {
@@ -137,6 +139,23 @@ interface HackathonDetailPageClientProps {
     organizer_problemstatement: ProblemStatement[];
     organizer_scancategory: ScanCategory[];
     participant_team: TeamData[];
+    teamPagination?: {
+      page: number;
+      pageSize: number;
+      totalCount: number;
+      totalPages: number;
+    };
+    teamStats?: {
+      totalTeams: number;
+      registeredTeams: number;
+      totalParticipants: number;
+      githubSubmittedTeams: number;
+      totalFoodUsed: number;
+      totalFoodIssued: number;
+    };
+    teamSearch?: string;
+    teamStatusFilter?: "all" | "registered" | "draft";
+    teamPsFilter?: number | "all";
   };
 }
 
@@ -169,9 +188,9 @@ export default function HackathonDetailPageClient({
   const [activeTab, setActiveTab] = useState<"overview" | "teams" | "evaluation">("overview");
 
   // Teams tab states
-  const [teamSearch, setTeamSearch] = useState("");
-  const [teamStatusFilter, setTeamStatusFilter] = useState<"all" | "registered" | "draft">("all");
-  const [teamPsFilter, setTeamPsFilter] = useState<number | "all">("all");
+  const [teamSearch, setTeamSearch] = useState(hackathon.teamSearch ?? "");
+  const [teamStatusFilter, setTeamStatusFilter] = useState<"all" | "registered" | "draft">(hackathon.teamStatusFilter ?? "all");
+  const [teamPsFilter, setTeamPsFilter] = useState<number | "all">(hackathon.teamPsFilter ?? "all");
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
@@ -201,28 +220,32 @@ export default function HackathonDetailPageClient({
     return seats.map(s => `${s.room} / ${s.row} / Bench ${s.bench}`).join(", ");
   };
 
-  // Filter teams
-  const filteredTeams = hackathon.participant_team.filter(team => {
-    const q = teamSearch.toLowerCase();
-    const matchesSearch = !q ||
-      team.name.toLowerCase().includes(q) ||
-      team.accounts_user.full_name.toLowerCase().includes(q) ||
-      team.accounts_user.email.toLowerCase().includes(q) ||
-      team.participant_teammember.some(m => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
-    const matchesStatus = teamStatusFilter === "all" ||
-      (teamStatusFilter === "registered" && team.is_registered) ||
-      (teamStatusFilter === "draft" && !team.is_registered);
-    const matchesPs = teamPsFilter === "all" || team.selected_problem_statement_id === teamPsFilter;
-    return matchesSearch && matchesStatus && matchesPs;
-  });
+  const filteredTeams = hackathon.participant_team;
+  const teamStats = hackathon.teamStats ?? {
+    totalTeams: filteredTeams.length,
+    registeredTeams: filteredTeams.filter(t => t.is_registered).length,
+    totalParticipants: filteredTeams.reduce((sum, t) => sum + t.participant_teammember.length, 0),
+    githubSubmittedTeams: filteredTeams.filter(t => !!t.github_link && t.github_link.trim().length > 0).length,
+    totalFoodUsed: filteredTeams.reduce((sum, t) => sum + t.food_tokens_used, 0),
+    totalFoodIssued: filteredTeams.reduce((sum, t) => sum + t.food_tokens_total, 0),
+  };
+  const updateTeamQuery = (updates: Record<string, string | undefined>) => {
+    const query = new URLSearchParams(window.location.search);
+    query.set("page", "1");
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) query.set(key, value);
+      else query.delete(key);
+    });
+    router.push(`?${query.toString()}`);
+  };
 
   // Metrics
-  const totalTeams = hackathon.participant_team.length;
-  const registeredTeams = hackathon.participant_team.filter(t => t.is_registered).length;
-  const totalParticipants = hackathon.participant_team.reduce((sum, t) => sum + t.participant_teammember.length, 0);
-  const githubSubmittedTeams = hackathon.participant_team.filter(t => !!t.github_link && t.github_link.trim().length > 0).length;
-  const totalFoodUsed = hackathon.participant_team.reduce((sum, t) => sum + t.food_tokens_used, 0);
-  const totalFoodIssued = hackathon.participant_team.reduce((sum, t) => sum + t.food_tokens_total, 0);
+  const totalTeams = teamStats.totalTeams;
+  const registeredTeams = teamStats.registeredTeams;
+  const totalParticipants = teamStats.totalParticipants;
+  const githubSubmittedTeams = teamStats.githubSubmittedTeams;
+  const totalFoodUsed = teamStats.totalFoodUsed;
+  const totalFoodIssued = teamStats.totalFoodIssued;
 
   // Problem Statement Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -660,13 +683,20 @@ export default function HackathonDetailPageClient({
                 placeholder="Search by team name, leader, or member..."
                 value={teamSearch}
                 onChange={(e) => setTeamSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") updateTeamQuery({ search: e.currentTarget.value.trim() || undefined });
+                }}
                 className="w-full pl-9 pr-3 py-2.5 rounded-md bg-canvas-pearl border border-black/[0.08] focus:border-primary focus:outline-none text-xs text-ink"
               />
             </div>
             <div className="relative">
               <select
                 value={teamStatusFilter}
-                onChange={(e) => setTeamStatusFilter(e.target.value as "all" | "registered" | "draft")}
+                onChange={(e) => {
+                  const value = e.target.value as "all" | "registered" | "draft";
+                  setTeamStatusFilter(value);
+                  updateTeamQuery({ status: value === "all" ? undefined : value });
+                }}
                 className="appearance-none pl-3 pr-8 py-2.5 rounded-md bg-canvas-pearl border border-black/[0.08] focus:border-primary focus:outline-none text-xs text-ink cursor-pointer"
               >
                 <option value="all">All Status</option>
@@ -679,7 +709,11 @@ export default function HackathonDetailPageClient({
               <div className="relative">
                 <select
                   value={teamPsFilter}
-                  onChange={(e) => setTeamPsFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value === "all" ? "all" : Number(e.target.value);
+                    setTeamPsFilter(value);
+                    updateTeamQuery({ problem: value === "all" ? undefined : String(value) });
+                  }}
                   className="appearance-none pl-3 pr-8 py-2.5 rounded-md bg-canvas-pearl border border-black/[0.08] focus:border-primary focus:outline-none text-xs text-ink cursor-pointer"
                 >
                   <option value="all">All Problems</option>
@@ -1150,6 +1184,39 @@ export default function HackathonDetailPageClient({
                   </div>
                 );
               })}
+              {hackathon.teamPagination && hackathon.teamPagination.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const query = new URLSearchParams(window.location.search);
+                      query.set("page", String(hackathon.teamPagination!.page - 1));
+                      router.push(`?${query.toString()}`);
+                    }}
+                    disabled={hackathon.teamPagination.page === 1}
+                    className="p-2 rounded-md bg-canvas border border-black/[0.12] transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-canvas-pearl"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-[12px] text-ink-muted">
+                    Page {hackathon.teamPagination.page} of {hackathon.teamPagination.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const query = new URLSearchParams(window.location.search);
+                      query.set("page", String(hackathon.teamPagination!.page + 1));
+                      router.push(`?${query.toString()}`);
+                    }}
+                    disabled={hackathon.teamPagination.page === hackathon.teamPagination.totalPages}
+                    className="p-2 rounded-md bg-canvas border border-black/[0.12] transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-canvas-pearl"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

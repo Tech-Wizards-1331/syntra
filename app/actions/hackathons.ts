@@ -119,11 +119,49 @@ export async function getHackathons(options?: { limit?: number; offset?: number 
 /**
  * Fetches a single hackathon by ID, validating ownership.
  */
-export async function getHackathonById(id: number) {
+export async function getHackathonById(
+  id: number,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    status?: "all" | "registered" | "draft";
+    problemStatementId?: number;
+  }
+) {
   const session = await auth();
   if (!session || !session.user || session.user.role !== "organizer") {
     throw new Error("Unauthorized or invalid role");
   }
+
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(50, Math.max(1, options?.pageSize ?? 10));
+  const search = options?.search?.trim();
+  const teamWhere = {
+    hackathon_id: id,
+    ...(options?.status === "registered" ? { is_registered: true } : {}),
+    ...(options?.status === "draft" ? { is_registered: false } : {}),
+    ...(options?.problemStatementId ? { selected_problem_statement_id: options.problemStatementId } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" as const } },
+            { accounts_user: { full_name: { contains: search, mode: "insensitive" as const } } },
+            { accounts_user: { email: { contains: search, mode: "insensitive" as const } } },
+            {
+              participant_teammember: {
+                some: {
+                  OR: [
+                    { name: { contains: search, mode: "insensitive" as const } },
+                    { email: { contains: search, mode: "insensitive" as const } },
+                  ],
+                },
+              },
+            },
+          ],
+        }
+      : {}),
+  };
 
   const hackathon = await prisma.organizer_hackathon.findUnique({
     where: { id },
@@ -136,7 +174,9 @@ export async function getHackathonById(id: number) {
         orderBy: [{ display_order: "asc" }, { created_at: "asc" }],
       },
       participant_team: {
+        where: teamWhere,
         orderBy: { created_at: "desc" },
+        ...(options ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
         include: {
           accounts_user: {
             select: {
@@ -176,6 +216,29 @@ export async function getHackathonById(id: number) {
     throw new Error("Access denied: You do not own this hackathon");
   }
 
+  if (!options) {
+    return {
+      ...hackathon,
+      fee_amount: hackathon.fee_amount ? Number(hackathon.fee_amount) : null,
+      organizer_problemstatement: hackathon.organizer_problemstatement,
+      organizer_scancategory: hackathon.organizer_scancategory,
+      participant_team: hackathon.participant_team,
+      seating_allocation: hackathon.seating_allocation,
+    };
+  }
+
+  const [totalCount, filteredCount, registeredCount, githubSubmittedTeams, participantCount, foodTotals] = await Promise.all([
+    prisma.participant_team.count({ where: { hackathon_id: id } }),
+    prisma.participant_team.count({ where: teamWhere }),
+    prisma.participant_team.count({ where: { hackathon_id: id, is_registered: true } }),
+    prisma.participant_team.count({ where: { hackathon_id: id, github_link: { not: null } } }),
+    prisma.participant_teammember.count({ where: { participant_team: { hackathon_id: id } } }),
+    prisma.participant_team.aggregate({
+      where: { hackathon_id: id },
+      _sum: { food_tokens_used: true, food_tokens_total: true },
+    }),
+  ]);
+
   return {
     ...hackathon,
     fee_amount: hackathon.fee_amount ? Number(hackathon.fee_amount) : null,
@@ -183,6 +246,23 @@ export async function getHackathonById(id: number) {
     organizer_scancategory: hackathon.organizer_scancategory,
     participant_team: hackathon.participant_team,
     seating_allocation: hackathon.seating_allocation,
+    teamPagination: {
+      page,
+      pageSize,
+      totalCount: filteredCount,
+      totalPages: Math.ceil(filteredCount / pageSize),
+    },
+    teamStats: {
+      totalTeams: totalCount,
+      registeredTeams: registeredCount,
+      totalParticipants: participantCount,
+      githubSubmittedTeams,
+      totalFoodUsed: foodTotals._sum.food_tokens_used ?? 0,
+      totalFoodIssued: foodTotals._sum.food_tokens_total ?? 0,
+    },
+    teamSearch: search ?? "",
+    teamStatusFilter: options.status ?? "all",
+    teamPsFilter: options.problemStatementId ?? "all",
   };
 }
 
