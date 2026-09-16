@@ -267,6 +267,7 @@ model organizer_hackathon {
   release_problems               Boolean                          @default(false)
   allow_scan                     Boolean                          @default(true)
   require_github_link            Boolean                          @default(false)
+  publish_results                Boolean                          @default(false)
   organizer_organizerprofile     organizer_organizerprofile       @relation(fields: [organizer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizer_hackathoncoordinator organizer_hackathoncoordinator[]
   organizer_problemstatement     organizer_problemstatement[]

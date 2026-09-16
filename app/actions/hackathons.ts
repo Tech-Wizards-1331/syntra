@@ -341,6 +341,7 @@ export async function createHackathon(data: {
   status: string;
   allow_scan?: boolean;
   require_github_link?: boolean;
+  publish_results?: boolean;
 }) {
   const session = await auth();
   if (!session || !session.user || session.user.role !== "organizer") {
@@ -378,6 +379,7 @@ export async function createHackathon(data: {
       fee_amount: data.is_paid ? (data.fee_amount as any) : null,
       allow_scan: data.allow_scan !== undefined ? data.allow_scan : true,
       require_github_link: data.require_github_link !== undefined ? data.require_github_link : false,
+      publish_results: data.publish_results !== undefined ? data.publish_results : false,
       organizer_id: profile.id,
       room_configuration: roomConfigJson,
       created_at: new Date(),
@@ -414,6 +416,7 @@ export async function updateHackathon(
     status: string;
     allow_scan?: boolean;
     require_github_link?: boolean;
+    publish_results?: boolean;
   }
 ) {
   const session = await auth();
@@ -524,6 +527,7 @@ export async function updateHackathon(
       fee_amount: data.is_paid ? (data.fee_amount as any) : null,
       ...(data.allow_scan !== undefined && { allow_scan: data.allow_scan }),
       ...(data.require_github_link !== undefined && { require_github_link: data.require_github_link }),
+      ...(data.publish_results !== undefined && { publish_results: data.publish_results }),
       room_configuration: updatedConfigJson,
       updated_at: new Date(),
     },
@@ -774,4 +778,36 @@ export async function toggleRequireGithubLink(hackathonId: number, enable: boole
   revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
   revalidatePath(`/participant/hackathons/${hackathonId}/hub`);
   return { success: true, require_github_link: enable };
+}
+
+/**
+ * Toggles publishing evaluation results to participants for a hackathon.
+ */
+export async function togglePublishResults(hackathonId: number, publish: boolean) {
+  const session = await auth();
+  if (!session || !session.user || session.user.role !== "organizer") {
+    throw new Error("Unauthorized or invalid role");
+  }
+
+  const hackathon = await prisma.organizer_hackathon.findUnique({
+    where: { id: hackathonId },
+    include: { organizer_organizerprofile: true },
+  });
+
+  if (!hackathon) {
+    throw new Error("Hackathon not found");
+  }
+
+  if (hackathon.organizer_organizerprofile.user_id !== Number(session.user.id)) {
+    throw new Error("Access denied: You do not own this hackathon");
+  }
+
+  await prisma.organizer_hackathon.update({
+    where: { id: hackathonId },
+    data: { publish_results: publish },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  revalidatePath(`/participant/hackathons/${hackathonId}/hub`);
+  return { success: true, publish_results: publish };
 }

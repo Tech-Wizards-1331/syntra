@@ -63,6 +63,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
       release_problems: true,
       allow_scan: true,
       require_github_link: true,
+      publish_results: true,
     },
   });
 
@@ -222,7 +223,77 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     release_problems: hackathon.release_problems,
     allow_scan: hackathon.allow_scan,
     require_github_link: hackathon.require_github_link,
+    publish_results: hackathon.publish_results,
   };
+
+  // Calculate Evaluation Results & Rank if published by organizer
+  let resultData: {
+    score: number;
+    rank: number;
+    totalTeams: number;
+  } | null = null;
+
+  if (hackathon.publish_results) {
+    const [criteria, registeredTeams] = await Promise.all([
+      prisma.evaluation_criterion.findMany({
+        where: { hackathon_id: hackathonId },
+        select: { id: true },
+      }),
+      prisma.participant_team.findMany({
+        where: { hackathon_id: hackathonId, is_registered: true },
+        select: {
+          id: true,
+          evaluation_score: {
+            select: {
+              criterion_id: true,
+              score: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    // Calculate total score for each registered team (sum of average score per criterion across faculty)
+    const teamScores = registeredTeams.map((t) => {
+      const scoresByCriterion: Record<number, { total: number; count: number }> = {};
+      for (const s of t.evaluation_score) {
+        if (!scoresByCriterion[s.criterion_id]) {
+          scoresByCriterion[s.criterion_id] = { total: 0, count: 0 };
+        }
+        scoresByCriterion[s.criterion_id].total += s.score;
+        scoresByCriterion[s.criterion_id].count += 1;
+      }
+
+      let totalScore = 0;
+      for (const c of criteria) {
+        const entry = scoresByCriterion[c.id];
+        if (entry && entry.count > 0) {
+          const avg = entry.total / entry.count;
+          totalScore += avg;
+        }
+      }
+
+      return {
+        teamId: t.id,
+        score: Math.round(totalScore * 10) / 10,
+      };
+    });
+
+    // Find current team's score & rank
+    const currentTeamEntry = teamScores.find((t) => t.teamId === team.id);
+    if (currentTeamEntry) {
+      const strictlyHigherCount = teamScores.filter(
+        (t) => t.score > currentTeamEntry.score
+      ).length;
+      const currentTeamRank = strictlyHigherCount + 1;
+
+      resultData = {
+        score: currentTeamEntry.score,
+        rank: currentTeamRank,
+        totalTeams: registeredTeams.length,
+      };
+    }
+  }
 
   // Check if leader email is present in team members
   const leaderEmail = team.accounts_user.email;
@@ -318,6 +389,7 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
       <HubClient
         hackathon={hackathonData}
         team={teamData}
+        result={resultData}
         isLeader={isLeader}
         leaderName={leader?.full_name || leader?.email || "Unknown"}
         problemStatements={psWithCounts}
