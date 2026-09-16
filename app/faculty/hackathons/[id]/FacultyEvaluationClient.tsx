@@ -178,9 +178,7 @@ export default function FacultyEvaluationClient({
     return (
       t.name.toLowerCase().includes(q) ||
       t.accounts_user.full_name.toLowerCase().includes(q) ||
-      t.participant_teammember.some(
-        (m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
-      )
+      (t.organizer_problemstatement?.title.toLowerCase().includes(q) ?? false)
     );
   });
 
@@ -191,12 +189,12 @@ export default function FacultyEvaluationClient({
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">{hackathon.name}</h2>
           <p className="text-sm text-ink-muted mt-1">
-            {criteria.length} criteria · {teams.length} teams to evaluate
+            {criteria.length} criteria · {teams.length} assigned teams to evaluate
           </p>
         </div>
         <span
-          className={`px-3 py-1 text-xs font-semibold rounded-full ${
-            hackathon.status === "active"
+          className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider ${
+            hackathon.status === "ACTIVE"
               ? "bg-success-light text-success border border-success/10"
               : "bg-canvas-pearl text-ink-muted border border-black/[0.08]"
           }`}
@@ -251,7 +249,7 @@ export default function FacultyEvaluationClient({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search teams..."
+              placeholder="Search by team, leader or problem statement..."
               className="w-full pl-10 pr-4 py-2.5 rounded-md border border-black/[0.08] bg-canvas text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
             />
           </div>
@@ -293,10 +291,10 @@ export default function FacultyEvaluationClient({
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold">{team.name}</h4>
-                        <p className="text-xs text-ink-muted">
-                          Led by {team.accounts_user.full_name} · {team.participant_teammember.length} members
+                        <p className="text-xs text-ink-muted mt-0.5">
+                          Team Leader: <span className="font-medium text-ink">{team.accounts_user.full_name}</span>
                           {team.organizer_problemstatement && (
-                            <> · PS: {team.organizer_problemstatement.title}</>
+                            <> · PS: <span className="font-medium text-ink">{team.organizer_problemstatement.title}</span></>
                           )}
                         </p>
                       </div>
@@ -317,20 +315,7 @@ export default function FacultyEvaluationClient({
 
                   {/* Expanded Scoring Area */}
                   {isExpanded && (
-                    <div className="px-4 pb-5 pt-0 flex flex-col gap-4 border-t border-black/[0.04]">
-                      {/* Team Members */}
-                      <div className="flex flex-wrap gap-2 pt-3">
-                        {team.participant_teammember.map((m, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2.5 py-1 rounded-md bg-canvas-pearl border border-black/[0.06] text-[11px]"
-                          >
-                            {m.name}
-                            <span className="text-ink-muted ml-1">({m.email})</span>
-                          </span>
-                        ))}
-                      </div>
-
+                    <div className="px-4 pb-5 pt-3 flex flex-col gap-4 border-t border-black/[0.04]">
                       {/* GitHub Link */}
                       <div className="p-3 rounded-lg bg-canvas-pearl border border-black/[0.06] text-xs flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
@@ -452,10 +437,18 @@ export default function FacultyEvaluationClient({
             })}
 
             {filteredTeams.length === 0 && (
-              <div className="py-12 text-center text-ink-muted text-sm border border-dashed border-black/[0.1] rounded-xl bg-canvas-pearl/50">
-                {searchQuery
-                  ? "No teams match your search."
-                  : "No registered teams found for this hackathon."}
+              <div className="py-12 text-center text-ink-muted text-sm border border-dashed border-black/[0.1] rounded-xl bg-canvas-pearl/50 flex flex-col items-center justify-center gap-2">
+                <Users className="w-8 h-8 opacity-30" />
+                <p className="font-semibold text-ink">
+                  {searchQuery
+                    ? "No teams match your search."
+                    : "No teams assigned to you yet"}
+                </p>
+                <p className="text-xs text-ink-muted max-w-sm">
+                  {searchQuery
+                    ? "Try clearing your search query to see all your assigned teams."
+                    : "The hackathon organizer has not assigned any teams to your account for evaluation yet."}
+                </p>
               </div>
             )}
           </div>
