@@ -220,6 +220,7 @@ export default function HackathonDetailPageClient({
   const totalTeams = hackathon.participant_team.length;
   const registeredTeams = hackathon.participant_team.filter(t => t.is_registered).length;
   const totalParticipants = hackathon.participant_team.reduce((sum, t) => sum + t.participant_teammember.length, 0);
+  const githubSubmittedTeams = hackathon.participant_team.filter(t => !!t.github_link && t.github_link.trim().length > 0).length;
   const totalFoodUsed = hackathon.participant_team.reduce((sum, t) => sum + t.food_tokens_used, 0);
   const totalFoodIssued = hackathon.participant_team.reduce((sum, t) => sum + t.food_tokens_total, 0);
 
@@ -623,7 +624,7 @@ export default function HackathonDetailPageClient({
       {activeTab === "teams" && (
         <div className="flex flex-col gap-8 animate-fade-in">
           {/* Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="p-5 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-1.5">
               <span className="text-[10px] uppercase tracking-widest font-semibold text-primary">Total Teams</span>
               <span className="text-2xl font-semibold text-ink tracking-tight">{totalTeams}</span>
@@ -631,6 +632,14 @@ export default function HackathonDetailPageClient({
             <div className="p-5 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-1.5">
               <span className="text-[10px] uppercase tracking-widest font-semibold text-success">Registered</span>
               <span className="text-2xl font-semibold text-ink tracking-tight">{registeredTeams}</span>
+            </div>
+            <div className="p-5 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest font-semibold text-primary flex items-center gap-1.5">
+                <GitBranch className="w-3 h-3 text-primary" /> GitHub Submitted
+              </span>
+              <span className="text-2xl font-semibold text-ink tracking-tight">
+                {githubSubmittedTeams} <span className="text-sm text-ink-muted font-normal">/ {totalTeams}</span>
+              </span>
             </div>
             <div className="p-5 rounded-lg bg-canvas border border-black/[0.06] apple-shadow-overlay flex flex-col gap-1.5">
               <span className="text-[10px] uppercase tracking-widest font-semibold text-info">Participants</span>
@@ -828,27 +837,25 @@ export default function HackathonDetailPageClient({
                           </div>
                         </div>
 
-                        {/* GitHub Repo section if enabled */}
-                        {hackathon.require_github_link && (
-                          <div className="mt-4 p-3 rounded-md bg-canvas-parchment/60 border border-black/[0.06] flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="font-semibold text-ink">GitHub Repository:</span>
-                              {team.github_link ? (
-                                <a
-                                  href={team.github_link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline font-medium flex items-center gap-1.5"
-                                >
-                                  {team.github_link}
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              ) : (
-                                <span className="text-ink-muted italic">Not submitted yet</span>
-                              )}
-                            </div>
+                        {/* GitHub Repo section */}
+                        <div className="mt-4 p-3 rounded-md bg-canvas-parchment/60 border border-black/[0.06] flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-ink">GitHub Repository:</span>
+                            {team.github_link ? (
+                              <a
+                                href={team.github_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline font-medium flex items-center gap-1.5"
+                              >
+                                {team.github_link}
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ) : (
+                              <span className="text-ink-muted italic">Not submitted yet</span>
+                            )}
                           </div>
-                        )}
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5">
                           {/* Members List */}
