@@ -6,17 +6,35 @@ import { ChevronLeft, AlertCircle } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    status?: "all" | "registered" | "draft";
+    problem?: string;
+  }>;
 }
 
-export default async function HackathonDetailPage({ params }: PageProps) {
+export default async function HackathonDetailPage({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const hackathonId = Number(resolvedParams.id);
+  const currentPage = Math.max(1, Number(resolvedSearchParams.page || "1"));
+  const status = ["all", "registered", "draft"].includes(resolvedSearchParams.status || "")
+    ? resolvedSearchParams.status as "all" | "registered" | "draft"
+    : "all";
+  const problemStatementId = resolvedSearchParams.problem ? Number(resolvedSearchParams.problem) : undefined;
 
   let hackathon = null;
   let errorMsg = null;
 
   try {
-    hackathon = await getHackathonById(hackathonId);
+    hackathon = await getHackathonById(hackathonId, {
+      page: currentPage,
+      pageSize: 10,
+      search: resolvedSearchParams.search,
+      status,
+      problemStatementId: Number.isFinite(problemStatementId) ? problemStatementId : undefined,
+    });
   } catch (err: any) {
     errorMsg = err.message || "Failed to load hackathon details";
   }
