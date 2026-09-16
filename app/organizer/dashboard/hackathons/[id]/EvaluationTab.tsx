@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -8,12 +8,25 @@ import {
   X,
   AlertCircle,
   UserPlus,
-  Star,
   ClipboardList,
   GraduationCap,
   Edit,
   Check,
   BarChart3,
+  Users,
+  Search,
+  Filter,
+  Sparkles,
+  ChevronRight,
+  UserCheck,
+  Layers,
+  ArrowRight,
+  CheckSquare,
+  Square,
+  AlertTriangle,
+  RotateCcw,
+  GitBranch,
+  ExternalLink,
 } from "lucide-react";
 import {
   createEvaluationCriterion,
@@ -24,6 +37,11 @@ import {
   removeFaculty,
   getAssignedFaculty,
   getEvaluationReport,
+  getFacultyTeamAssignments,
+  assignTeamsToFaculty,
+  unassignTeamFromFaculty,
+  unassignAllTeamsFromFaculty,
+  autoDistributeTeams,
 } from "@/app/actions/faculty";
 
 interface Criterion {
@@ -34,16 +52,7 @@ interface Criterion {
   display_order: number;
 }
 
-interface FacultyAssignment {
-  id: number;
-  is_active: boolean;
-  assigned_at: Date;
-  accounts_user: {
-    id: number;
-    email: string;
-    full_name: string;
-  };
-}
+type FacultyAssignment = Awaited<ReturnType<typeof getAssignedFaculty>>[number];
 
 interface EvaluationScore {
   id: number;
@@ -60,6 +69,44 @@ interface TeamWithScores {
   name: string;
   accounts_user: { full_name: string };
   evaluation_score: EvaluationScore[];
+}
+
+interface ProblemStatement {
+  id: number;
+  title: string;
+  description: string;
+}
+
+interface TeamMember {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface TeamData {
+  id: number;
+  name: string;
+  github_link?: string | null;
+  accounts_user: { id: number; full_name: string; email: string };
+  organizer_problemstatement: { id: number; title: string } | null;
+  participant_teammember: TeamMember[];
+  hackathon_faculty_team?: {
+    hackathon_faculty: {
+      accounts_user: { id: number; full_name: string };
+    };
+  } | null;
+}
+
+interface AssignmentData {
+  faculty: {
+    id: number;
+    accounts_user: { id: number; email: string; full_name: string };
+  };
+  problemStatements: ProblemStatement[];
+  assignedToThisFaculty: TeamData[];
+  availableTeams: TeamData[];
+  assignedToOtherFaculty: TeamData[];
+  totalTeamsCount: number;
 }
 
 interface EvaluationTabProps {
@@ -88,6 +135,18 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
 
   // Sub-section toggle
   const [activeSection, setActiveSection] = useState<"criteria" | "faculty" | "report">("criteria");
+
+  // Team Assignment Modal State
+  const [selectedFacultyForTeams, setSelectedFacultyForTeams] = useState<FacultyAssignment | null>(null);
+  const [assignmentData, setAssignmentData] = useState<AssignmentData | null>(null);
+  const [loadingAssignmentModal, setLoadingAssignmentModal] = useState(false);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<Set<number>>(new Set());
+  const [selectedPsFilter, setSelectedPsFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [assignmentModalTab, setAssignmentModalTab] = useState<"available" | "assigned" | "other">("available");
+
+  // Auto-distribute confirmation modal
+  const [showAutoDistributeModal, setShowAutoDistributeModal] = useState(false);
 
   // ─── Data Loading ──────────────────────────────────────
   useEffect(() => {
@@ -120,6 +179,199 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
     } finally {
       setActionLoading(null);
     }
+  }
+
+  // ─── Team Assignment Modal Actions ─────────────────────
+  async function openTeamAssignmentModal(f: FacultyAssignment) {
+    setSelectedFacultyForTeams(f);
+    setSelectedTeamIds(new Set());
+    setSelectedPsFilter("all");
+    setSearchQuery("");
+    setAssignmentModalTab("available");
+    setLoadingAssignmentModal(true);
+    try {
+      const data = await getFacultyTeamAssignments(hackathonId, f.id);
+      setAssignmentData(data as any);
+      if (data.availableTeams.length === 0 && data.assignedToThisFaculty.length > 0) {
+        setAssignmentModalTab("assigned");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to load team assignment data");
+      setSelectedFacultyForTeams(null);
+    } finally {
+      setLoadingAssignmentModal(false);
+    }
+  }
+
+  async function refreshAssignmentModalData() {
+    if (!selectedFacultyForTeams) return;
+    try {
+      const data = await getFacultyTeamAssignments(hackathonId, selectedFacultyForTeams.id);
+      setAssignmentData(data as any);
+      setSelectedTeamIds(new Set());
+      await loadData(); // refresh faculty team counts in list
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to refresh assignment data");
+    }
+  }
+
+  async function handleAssignSelectedTeams() {
+    if (!selectedFacultyForTeams || selectedTeamIds.size === 0) return;
+    setActionLoading("assigning-teams");
+    setErrorMsg(null);
+    try {
+      await assignTeamsToFaculty(
+        hackathonId,
+        selectedFacultyForTeams.id,
+        Array.from(selectedTeamIds)
+      );
+      setSuccessMsg(`Successfully assigned ${selectedTeamIds.size} team(s) to ${selectedFacultyForTeams.accounts_user.full_name}!`);
+      await refreshAssignmentModalData();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to assign teams");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleUnassignSingleTeam(teamId: number) {
+    if (!selectedFacultyForTeams) return;
+    setActionLoading(`unassign-${teamId}`);
+    setErrorMsg(null);
+    try {
+      await unassignTeamFromFaculty(hackathonId, selectedFacultyForTeams.id, teamId);
+      setSuccessMsg("Team unassigned successfully!");
+      await refreshAssignmentModalData();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to unassign team");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleUnassignAllTeams() {
+    if (!selectedFacultyForTeams) return;
+    if (!confirm(`Are you sure you want to unassign all teams from ${selectedFacultyForTeams.accounts_user.full_name}?`)) return;
+    setActionLoading("unassign-all");
+    setErrorMsg(null);
+    try {
+      await unassignAllTeamsFromFaculty(hackathonId, selectedFacultyForTeams.id);
+      setSuccessMsg("All teams unassigned from this faculty member.");
+      await refreshAssignmentModalData();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to unassign all teams");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleAutoDistribute() {
+    setActionLoading("auto-distribute");
+    setErrorMsg(null);
+    try {
+      const res = await autoDistributeTeams(hackathonId);
+      setShowAutoDistributeModal(false);
+      setSuccessMsg(res.message || "Teams distributed successfully!");
+      await loadData();
+      if (selectedFacultyForTeams) {
+        await refreshAssignmentModalData();
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to auto-distribute teams");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  // ─── Filtered Teams in Modal ───────────────────────────
+  const filteredAvailableTeams = useMemo(() => {
+    if (!assignmentData) return [];
+    return assignmentData.availableTeams.filter((team) => {
+      // PS Filter
+      if (selectedPsFilter === "none") {
+        if (team.organizer_problemstatement) return false;
+      } else if (selectedPsFilter !== "all") {
+        if (team.organizer_problemstatement?.id !== Number(selectedPsFilter)) return false;
+      }
+
+      // Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = team.name.toLowerCase().includes(q);
+        const matchesLeader = team.accounts_user.full_name.toLowerCase().includes(q);
+        const matchesEmail = team.accounts_user.email.toLowerCase().includes(q);
+        const matchesPS = team.organizer_problemstatement?.title.toLowerCase().includes(q);
+        return matchesName || matchesLeader || matchesEmail || matchesPS;
+      }
+      return true;
+    });
+  }, [assignmentData, selectedPsFilter, searchQuery]);
+
+  const filteredAssignedTeams = useMemo(() => {
+    if (!assignmentData) return [];
+    return assignmentData.assignedToThisFaculty.filter((team) => {
+      if (selectedPsFilter === "none") {
+        if (team.organizer_problemstatement) return false;
+      } else if (selectedPsFilter !== "all") {
+        if (team.organizer_problemstatement?.id !== Number(selectedPsFilter)) return false;
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = team.name.toLowerCase().includes(q);
+        const matchesLeader = team.accounts_user.full_name.toLowerCase().includes(q);
+        const matchesEmail = team.accounts_user.email.toLowerCase().includes(q);
+        const matchesPS = team.organizer_problemstatement?.title.toLowerCase().includes(q);
+        return matchesName || matchesLeader || matchesEmail || matchesPS;
+      }
+      return true;
+    });
+  }, [assignmentData, selectedPsFilter, searchQuery]);
+
+  const filteredOtherTeams = useMemo(() => {
+    if (!assignmentData) return [];
+    return assignmentData.assignedToOtherFaculty.filter((team) => {
+      if (selectedPsFilter === "none") {
+        if (team.organizer_problemstatement) return false;
+      } else if (selectedPsFilter !== "all") {
+        if (team.organizer_problemstatement?.id !== Number(selectedPsFilter)) return false;
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = team.name.toLowerCase().includes(q);
+        const matchesLeader = team.accounts_user.full_name.toLowerCase().includes(q);
+        const matchesFaculty = team.hackathon_faculty_team?.hackathon_faculty.accounts_user.full_name.toLowerCase().includes(q);
+        return matchesName || matchesLeader || matchesFaculty;
+      }
+      return true;
+    });
+  }, [assignmentData, selectedPsFilter, searchQuery]);
+
+  function toggleTeamSelection(teamId: number) {
+    setSelectedTeamIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(teamId)) {
+        next.delete(teamId);
+      } else {
+        next.add(teamId);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAllFiltered() {
+    if (filteredAvailableTeams.length === 0) return;
+    const allSelected = filteredAvailableTeams.every((t) => selectedTeamIds.has(t.id));
+    setSelectedTeamIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        filteredAvailableTeams.forEach((t) => next.delete(t.id));
+      } else {
+        filteredAvailableTeams.forEach((t) => next.add(t.id));
+      }
+      return next;
+    });
   }
 
   // ─── Criteria Actions ─────────────────────────────────
@@ -254,7 +506,9 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
           <div className="flex-1">
             <p>{errorMsg}</p>
           </div>
-          <button onClick={() => setErrorMsg(null)} className="cursor-pointer"><X className="w-4 h-4" /></button>
+          <button onClick={() => setErrorMsg(null)} className="cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
       {successMsg && (
@@ -268,7 +522,7 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
       <div className="flex items-center gap-1 p-1 rounded-lg bg-canvas border border-black/[0.06] w-full sm:w-fit overflow-x-auto no-scrollbar whitespace-nowrap flex-nowrap shrink-0">
         {[
           { key: "criteria" as const, label: "Evaluation Criteria", icon: ClipboardList },
-          { key: "faculty" as const, label: "Assign Faculty", icon: GraduationCap },
+          { key: "faculty" as const, label: "Assign Faculty & Teams", icon: GraduationCap },
           { key: "report" as const, label: "Score Report", icon: BarChart3 },
         ].map(({ key, label, icon: Icon }) => (
           <button
@@ -279,7 +533,7 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
             }}
             className={`px-4 py-2 rounded-md text-xs font-medium transition-all duration-200 cursor-pointer flex items-center gap-2 ${
               activeSection === key
-                ? "bg-canvas-parchment text-ink apple-shadow-overlay"
+                ? "bg-canvas-parchment text-ink apple-shadow-overlay font-semibold"
                 : "text-ink-muted hover:text-ink"
             }`}
           >
@@ -441,22 +695,34 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
       {/* ═══ FACULTY SECTION ═══ */}
       {activeSection === "faculty" && (
         <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold tracking-tight">Assigned Faculty</h3>
+              <h3 className="text-base font-semibold tracking-tight">Assigned Faculty & Teams</h3>
               <p className="text-xs text-ink-muted mt-0.5">
-                Assign faculty members to evaluate teams. If account doesn&apos;t exist, it will be auto-created.
+                Click on any faculty member to assign or unassign specific teams filtered by Problem Statement.
               </p>
             </div>
-            {!showFacultyForm && (
-              <button
-                onClick={() => setShowFacultyForm(true)}
-                className="px-4 py-2 rounded-md bg-primary text-white text-xs font-medium hover:bg-primary-focus transition flex items-center gap-2 cursor-pointer apple-press-effect"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                Assign Faculty
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {faculty.length > 0 && (
+                <button
+                  onClick={() => setShowAutoDistributeModal(true)}
+                  className="px-3.5 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] text-xs font-semibold text-ink hover:bg-canvas transition flex items-center gap-2 cursor-pointer apple-press-effect"
+                  title="Distribute unassigned teams evenly across all faculty"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>Auto-Distribute Teams</span>
+                </button>
+              )}
+              {!showFacultyForm && (
+                <button
+                  onClick={() => setShowFacultyForm(true)}
+                  className="px-4 py-2 rounded-md bg-primary text-white text-xs font-medium hover:bg-primary-focus transition flex items-center gap-2 cursor-pointer apple-press-effect"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Assign Faculty
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Assign Form */}
@@ -534,38 +800,65 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
           {faculty.length === 0 ? (
             <div className="py-12 text-center text-ink-muted text-sm border border-dashed border-black/[0.1] rounded-xl bg-canvas-pearl/50">
               <GraduationCap className="w-8 h-8 mx-auto mb-3 opacity-30" />
-              No faculty assigned yet.
+              No faculty assigned yet. Click &quot;Assign Faculty&quot; to get started.
             </div>
           ) : (
             <div className="grid gap-3">
-              {faculty.map((f) => (
-                <div
-                  key={f.id}
-                  className="p-4 rounded-xl bg-canvas border border-black/[0.06] flex items-center justify-between apple-shadow-card hover:border-black/[0.1] transition"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-info/20 flex items-center justify-center">
-                      <GraduationCap className="w-5 h-5 text-primary" />
+              {faculty.map((f) => {
+                const assignedCount = f._count?.hackathon_faculty_team ?? 0;
+                return (
+                  <div
+                    key={f.id}
+                    onClick={() => openTeamAssignmentModal(f)}
+                    className="p-4 rounded-xl bg-canvas border border-black/[0.06] flex items-center justify-between apple-shadow-card hover:border-primary/40 hover:bg-canvas-pearl/30 transition cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-info/20 flex items-center justify-center shrink-0">
+                        <GraduationCap className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold group-hover:text-primary transition">{f.accounts_user.full_name}</h4>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              assignedCount > 0
+                                ? "bg-primary/10 text-primary border border-primary/20"
+                                : "bg-black/[0.04] text-ink-muted"
+                            }`}
+                          >
+                            {assignedCount} {assignedCount === 1 ? "Team" : "Teams"} Assigned
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-muted mt-0.5">{f.accounts_user.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-semibold">{f.accounts_user.full_name}</h4>
-                      <p className="text-xs text-ink-muted">{f.accounts_user.email}</p>
+
+                    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => openTeamAssignmentModal(f)}
+                        className="px-3 py-1.5 rounded-lg bg-canvas-pearl border border-black/[0.08] hover:bg-primary hover:text-white text-xs font-medium text-ink transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Manage Teams</span>
+                        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                      </button>
+
+                      <button
+                        onClick={() => handleRemoveFaculty(f.id)}
+                        disabled={actionLoading === `remove-${f.id}`}
+                        className="p-2 rounded-md hover:bg-danger-light text-ink-muted hover:text-danger transition cursor-pointer disabled:opacity-40"
+                        title="Remove faculty"
+                      >
+                        {actionLoading === `remove-${f.id}` ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleRemoveFaculty(f.id)}
-                    disabled={actionLoading === `remove-${f.id}`}
-                    className="p-2 rounded-md hover:bg-danger-light text-ink-muted hover:text-danger transition cursor-pointer disabled:opacity-40"
-                    title="Remove faculty"
-                  >
-                    {actionLoading === `remove-${f.id}` ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -698,6 +991,503 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
           )}
         </div>
       )}
+
+      {/* ═══ TEAM ASSIGNMENT MODAL ═══ */}
+      {selectedFacultyForTeams && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div
+            className="bg-canvas border border-black/[0.08] w-full max-w-4xl rounded-2xl apple-shadow-card flex flex-col max-h-[92vh] overflow-hidden animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-black/[0.06] flex items-center justify-between bg-canvas-pearl/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-ink">
+                      Assign Teams to {selectedFacultyForTeams.accounts_user.full_name}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-ink-muted">{selectedFacultyForTeams.accounts_user.email}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedFacultyForTeams(null)}
+                className="p-2 rounded-lg hover:bg-black/[0.05] text-ink-muted hover:text-ink transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Loading State */}
+            {loadingAssignmentModal ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                <p className="text-sm text-ink-muted">Loading teams and problem statements…</p>
+              </div>
+            ) : !assignmentData ? (
+              <div className="py-16 text-center text-ink-muted text-sm">Failed to load assignment data.</div>
+            ) : (
+              <>
+                {/* Stats Bar */}
+                <div className="px-5 py-3 bg-canvas-parchment/50 border-b border-black/[0.04] flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-1 rounded-md bg-primary/10 text-primary font-semibold">
+                      {assignmentData.assignedToThisFaculty.length} Assigned to this Faculty
+                    </span>
+                    <span className="px-2.5 py-1 rounded-md bg-success/10 text-success font-semibold">
+                      {assignmentData.availableTeams.length} Available (Unassigned)
+                    </span>
+                    {assignmentData.assignedToOtherFaculty.length > 0 && (
+                      <span className="px-2.5 py-1 rounded-md bg-black/[0.05] text-ink-muted font-medium">
+                        {assignmentData.assignedToOtherFaculty.length} Assigned to Other Faculty
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-ink-muted flex items-center gap-1.5">
+                    <GitBranch className="w-3.5 h-3.5 text-primary" />
+                    <span>Teams with Submitted Repos: <strong className="text-ink">{assignmentData.totalTeamsCount}</strong></span>
+                  </div>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div className="p-4 border-b border-black/[0.06] flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-canvas">
+                  <div className="flex flex-col sm:flex-row gap-2 flex-1">
+                    {/* Problem Statement Filter */}
+                    <div className="relative min-w-[220px] flex-1">
+                      <Filter className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+                      <select
+                        value={selectedPsFilter}
+                        onChange={(e) => setSelectedPsFilter(e.target.value)}
+                        className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-black/[0.08] bg-canvas-pearl text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition appearance-none cursor-pointer"
+                      >
+                        <option value="all">All Problem Statements</option>
+                        {assignmentData.problemStatements.map((ps) => {
+                          const availableCountForPs = assignmentData.availableTeams.filter(
+                            (t) => t.organizer_problemstatement?.id === ps.id
+                          ).length;
+                          return (
+                            <option key={ps.id} value={ps.id}>
+                              {ps.title} ({availableCountForPs} submitted available)
+                            </option>
+                          );
+                        })}
+                        <option value="none">No Problem Statement Selected</option>
+                      </select>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search team, leader or repo…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-black/[0.08] bg-canvas-pearl text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex items-center gap-1 p-1 bg-canvas-pearl rounded-lg border border-black/[0.06] shrink-0">
+                    <button
+                      onClick={() => setAssignmentModalTab("available")}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer ${
+                        assignmentModalTab === "available"
+                          ? "bg-canvas text-ink apple-shadow-overlay font-semibold"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      Available ({filteredAvailableTeams.length})
+                    </button>
+                    <button
+                      onClick={() => setAssignmentModalTab("assigned")}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer ${
+                        assignmentModalTab === "assigned"
+                          ? "bg-canvas text-ink apple-shadow-overlay font-semibold"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      Assigned ({filteredAssignedTeams.length})
+                    </button>
+                    {filteredOtherTeams.length > 0 && (
+                      <button
+                        onClick={() => setAssignmentModalTab("other")}
+                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer ${
+                          assignmentModalTab === "other"
+                            ? "bg-canvas text-ink apple-shadow-overlay font-semibold"
+                            : "text-ink-muted hover:text-ink"
+                        }`}
+                      >
+                        Others ({filteredOtherTeams.length})
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Team List Content Area */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-2.5">
+                  {/* TAB 1: AVAILABLE TEAMS */}
+                  {assignmentModalTab === "available" && (
+                    <>
+                      {filteredAvailableTeams.length > 0 && (
+                        <div className="flex items-center justify-between pb-2 border-b border-black/[0.04]">
+                          <button
+                            type="button"
+                            onClick={toggleSelectAllFiltered}
+                            className="flex items-center gap-2 text-xs font-medium text-ink hover:text-primary transition cursor-pointer select-none"
+                          >
+                            {filteredAvailableTeams.every((t) => selectedTeamIds.has(t.id)) ? (
+                              <CheckSquare className="w-4 h-4 text-primary" />
+                            ) : (
+                              <Square className="w-4 h-4 text-ink-muted" />
+                            )}
+                            <span>
+                              {filteredAvailableTeams.every((t) => selectedTeamIds.has(t.id))
+                                ? "Deselect All Filtered"
+                                : `Select All Filtered (${filteredAvailableTeams.length})`}
+                            </span>
+                          </button>
+
+                          <span className="text-[11px] text-ink-muted">
+                            {selectedTeamIds.size} team(s) selected
+                          </span>
+                        </div>
+                      )}
+
+                      {filteredAvailableTeams.length === 0 ? (
+                        <div className="py-14 text-center text-ink-muted text-sm border border-dashed border-black/[0.08] rounded-xl bg-canvas-pearl/30 flex flex-col items-center justify-center gap-2">
+                          <GitBranch className="w-8 h-8 opacity-30 text-ink-muted" />
+                          <p className="font-medium text-ink">No available teams with submitted GitHub repos</p>
+                          <p className="text-xs text-ink-muted max-w-md">
+                            {searchQuery || selectedPsFilter !== "all"
+                              ? "Try adjusting your search or problem statement filter."
+                              : "Only teams who have submitted their GitHub repository link are shown for evaluation assignment. Either all submitted teams are already assigned, or no teams have submitted their GitHub repository yet."}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                          {filteredAvailableTeams.map((team) => {
+                            const isSelected = selectedTeamIds.has(team.id);
+                            return (
+                              <div
+                                key={team.id}
+                                onClick={() => toggleTeamSelection(team.id)}
+                                className={`p-3.5 rounded-xl border transition cursor-pointer flex items-start gap-3 select-none ${
+                                  isSelected
+                                    ? "bg-primary/5 border-primary/40 apple-shadow-overlay ring-1 ring-primary/30"
+                                    : "bg-canvas border-black/[0.06] hover:border-black/[0.12] hover:bg-canvas-pearl/40"
+                                }`}
+                              >
+                                <div className="mt-0.5 shrink-0">
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-primary" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-ink-muted/60" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <h5 className="text-xs font-semibold text-ink truncate">{team.name}</h5>
+                                    <span className="text-[10px] text-ink-muted shrink-0">
+                                      {team.participant_teammember.length} {team.participant_teammember.length === 1 ? "member" : "members"}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-ink-muted mt-0.5 truncate">
+                                    Leader: {team.accounts_user.full_name}
+                                  </p>
+                                  <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                                    {team.organizer_problemstatement ? (
+                                      <span className="px-2 py-0.5 rounded-md bg-info/10 text-info text-[10px] font-semibold truncate max-w-full">
+                                        PS: {team.organizer_problemstatement.title}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-md bg-warning/10 text-warning text-[10px] font-medium">
+                                        No PS Chosen
+                                      </span>
+                                    )}
+                                    {team.github_link && (
+                                      <a
+                                        href={team.github_link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium hover:underline truncate max-w-full"
+                                        title={team.github_link}
+                                      >
+                                        <GitBranch className="w-3 h-3 shrink-0" />
+                                        <span className="truncate max-w-[140px]">Repo</span>
+                                        <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* TAB 2: ASSIGNED TEAMS */}
+                  {assignmentModalTab === "assigned" && (
+                    <>
+                      {assignmentData.assignedToThisFaculty.length > 0 && (
+                        <div className="flex items-center justify-between pb-2 border-b border-black/[0.04]">
+                          <span className="text-xs font-medium text-ink">
+                            Currently Assigned ({filteredAssignedTeams.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleUnassignAllTeams}
+                            disabled={actionLoading === "unassign-all"}
+                            className="text-[11px] text-danger hover:underline font-medium cursor-pointer disabled:opacity-40"
+                          >
+                            Unassign All Teams
+                          </button>
+                        </div>
+                      )}
+
+                      {filteredAssignedTeams.length === 0 ? (
+                        <div className="py-14 text-center text-ink-muted text-sm border border-dashed border-black/[0.08] rounded-xl bg-canvas-pearl/30">
+                          <UserCheck className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                          <p className="font-medium text-ink">No teams assigned to this faculty yet</p>
+                          <p className="text-xs text-ink-muted mt-1">
+                            Switch to the &quot;Available&quot; tab to select and assign submitted teams.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                          {filteredAssignedTeams.map((team) => (
+                            <div
+                              key={team.id}
+                              className="p-3.5 rounded-xl border border-black/[0.06] bg-canvas flex items-start justify-between gap-3"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h5 className="text-xs font-semibold text-ink truncate">{team.name}</h5>
+                                  <span className="px-1.5 py-0.5 rounded bg-success/10 text-success text-[10px] font-medium">
+                                    Assigned
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-ink-muted mt-0.5 truncate">
+                                  Leader: {team.accounts_user.full_name} ({team.accounts_user.email})
+                                </p>
+                                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                                  {team.organizer_problemstatement ? (
+                                    <span className="px-2 py-0.5 rounded-md bg-info/10 text-info text-[10px] font-semibold truncate max-w-full">
+                                      PS: {team.organizer_problemstatement.title}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-md bg-warning/10 text-warning text-[10px] font-medium">
+                                      No PS Chosen
+                                    </span>
+                                  )}
+                                  {team.github_link && (
+                                    <a
+                                      href={team.github_link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium hover:underline truncate max-w-full"
+                                      title={team.github_link}
+                                    >
+                                      <GitBranch className="w-3 h-3 shrink-0" />
+                                      <span className="truncate max-w-[140px]">Repo</span>
+                                      <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleUnassignSingleTeam(team.id)}
+                                disabled={actionLoading === `unassign-${team.id}`}
+                                className="px-2.5 py-1.5 rounded-md bg-danger-light text-danger hover:bg-danger hover:text-white transition text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-40 shrink-0"
+                                title="Unassign team"
+                              >
+                                {actionLoading === `unassign-${team.id}` ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <X className="w-3 h-3" />
+                                )}
+                                <span>Unassign</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* TAB 3: TEAMS ASSIGNED TO OTHER FACULTY */}
+                  {assignmentModalTab === "other" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {filteredOtherTeams.map((team) => (
+                        <div
+                          key={team.id}
+                          className="p-3.5 rounded-xl border border-black/[0.06] bg-canvas flex items-start justify-between gap-3 opacity-80"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <h5 className="text-xs font-semibold text-ink truncate">{team.name}</h5>
+                            <p className="text-[11px] text-ink-muted mt-0.5 truncate">
+                              Leader: {team.accounts_user.full_name}
+                            </p>
+                            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-md bg-black/[0.05] text-ink-muted text-[10px] font-medium">
+                                Assigned to: {team.hackathon_faculty_team?.hackathon_faculty.accounts_user.full_name}
+                              </span>
+                              {team.organizer_problemstatement && (
+                                <span className="px-2 py-0.5 rounded-md bg-info/10 text-info text-[10px] font-semibold truncate">
+                                  PS: {team.organizer_problemstatement.title}
+                                </span>
+                              )}
+                              {team.github_link && (
+                                <a
+                                  href={team.github_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium hover:underline truncate"
+                                  title={team.github_link}
+                                >
+                                  <GitBranch className="w-3 h-3 shrink-0" />
+                                  <span className="truncate max-w-[120px]">Repo</span>
+                                  <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTeamIds(new Set([team.id]));
+                              setAssignmentModalTab("available");
+                            }}
+                            className="px-2.5 py-1.5 rounded-md bg-canvas-pearl border border-black/[0.08] hover:bg-primary hover:text-white transition text-xs font-medium flex items-center gap-1 cursor-pointer shrink-0"
+                            title="Reassign to this faculty"
+                          >
+                            <span>Reassign</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-black/[0.06] bg-canvas-pearl/60 flex items-center justify-between gap-3">
+                  <div className="text-xs text-ink-muted">
+                    {assignmentModalTab === "available" ? (
+                      <span>
+                        <strong className="text-ink">{selectedTeamIds.size}</strong> of{" "}
+                        {filteredAvailableTeams.length} available teams selected
+                      </span>
+                    ) : (
+                      <span>
+                        Total teams assigned: <strong className="text-ink">{assignmentData.assignedToThisFaculty.length}</strong>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFacultyForTeams(null)}
+                      className="px-4 py-2 rounded-lg bg-canvas border border-black/[0.08] text-xs font-medium text-ink-muted hover:text-ink transition cursor-pointer"
+                    >
+                      Close
+                    </button>
+
+                    {assignmentModalTab === "available" && (
+                      <button
+                        type="button"
+                        onClick={handleAssignSelectedTeams}
+                        disabled={selectedTeamIds.size === 0 || actionLoading === "assigning-teams"}
+                        className="px-5 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-focus transition flex items-center gap-2 cursor-pointer disabled:opacity-40 apple-press-effect"
+                      >
+                        {actionLoading === "assigning-teams" ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        <span>Assign Selected Teams ({selectedTeamIds.size})</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ AUTO-DISTRIBUTE CONFIRMATION MODAL ═══ */}
+      {showAutoDistributeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div
+            className="bg-canvas border border-black/[0.08] w-full max-w-md rounded-2xl p-6 apple-shadow-card flex flex-col gap-4 animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-ink">Auto-Distribute Teams</h3>
+                <p className="text-xs text-ink-muted">Evenly allocate unassigned teams to faculty</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-canvas-pearl border border-black/[0.06] text-xs text-ink-muted flex flex-col gap-2">
+              <p>
+                This will automatically distribute all currently <strong className="text-ink">unassigned registered teams who have submitted their GitHub repository</strong> across all <strong className="text-ink">{faculty.length} active faculty members</strong> in a balanced round-robin manner.
+              </p>
+              <p className="text-ink text-[11px] font-medium">
+                • Teams already assigned to faculty will <span className="underline">not</span> be modified.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 mt-2">
+              <button
+                type="button"
+                onClick={() => setShowAutoDistributeModal(false)}
+                className="px-4 py-2 rounded-lg bg-canvas-pearl border border-black/[0.08] text-xs font-medium text-ink-muted hover:text-ink transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoDistribute}
+                disabled={actionLoading === "auto-distribute"}
+                className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-focus transition flex items-center gap-2 cursor-pointer disabled:opacity-40 apple-press-effect"
+              >
+                {actionLoading === "auto-distribute" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                <span>Confirm & Distribute</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

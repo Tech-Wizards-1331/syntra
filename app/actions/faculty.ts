@@ -278,9 +278,232 @@ export async function getAssignedFaculty(hackathonId: number) {
       accounts_user: {
         select: { id: true, email: true, full_name: true },
       },
+      _count: {
+        select: { hackathon_faculty_team: true },
+      },
     },
     orderBy: { assigned_at: "desc" },
   });
+}
+
+// ─── Team Assignment to Faculty (Organizer) ─────────────────────────
+
+export async function getFacultyTeamAssignments(hackathonId: number, hackathonFacultyId: number) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "organizer") {
+    throw new Error("Unauthorized");
+  }
+
+  await validateHackathonOwner(hackathonId, Number(session.user.id));
+
+  // Verify target faculty
+  const faculty = await prisma.hackathon_faculty.findUnique({
+    where: { id: hackathonFacultyId },
+    include: {
+      accounts_user: { select: { id: true, email: true, full_name: true } },
+    },
+  });
+
+  if (!faculty || faculty.hackathon_id !== hackathonId) {
+    throw new Error("Faculty assignment not found");
+  }
+
+  // Get problem statements with team counts
+  const problemStatements = await prisma.organizer_problemstatement.findMany({
+    where: { hackathon_id: hackathonId },
+    select: { id: true, title: true, description: true },
+    orderBy: { title: "asc" },
+  });
+
+  // Get all registered teams in this hackathon who have submitted their GitHub repository
+  const allTeams = await prisma.participant_team.findMany({
+    where: {
+      hackathon_id: hackathonId,
+      is_registered: true,
+      AND: [
+        { github_link: { not: null } },
+        { github_link: { not: "" } },
+      ],
+    },
+    include: {
+      accounts_user: { select: { id: true, full_name: true, email: true } },
+      organizer_problemstatement: { select: { id: true, title: true } },
+      participant_teammember: { select: { id: true, name: true, email: true } },
+      hackathon_faculty_team: {
+        include: {
+          hackathon_faculty: {
+            include: {
+              accounts_user: { select: { id: true, full_name: true } },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  // Categorize
+  const assignedToThisFaculty: typeof allTeams = [];
+  const availableTeams: typeof allTeams = [];
+  const assignedToOtherFaculty: typeof allTeams = [];
+
+  for (const team of allTeams) {
+    if (team.hackathon_faculty_team?.hackathon_faculty_id === hackathonFacultyId) {
+      assignedToThisFaculty.push(team);
+    } else if (!team.hackathon_faculty_team) {
+      availableTeams.push(team);
+    } else {
+      assignedToOtherFaculty.push(team);
+    }
+  }
+
+  return {
+    faculty,
+    problemStatements,
+    assignedToThisFaculty,
+    availableTeams,
+    assignedToOtherFaculty,
+    totalTeamsCount: allTeams.length,
+  };
+}
+
+export async function assignTeamsToFaculty(
+  hackathonId: number,
+  hackathonFacultyId: number,
+  teamIds: number[]
+) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "organizer") {
+    throw new Error("Unauthorized");
+  }
+
+  await validateHackathonOwner(hackathonId, Number(session.user.id));
+
+  if (!teamIds || teamIds.length === 0) {
+    throw new Error("No teams selected");
+  }
+
+  // Verify faculty belongs to this hackathon
+  const faculty = await prisma.hackathon_faculty.findUnique({
+    where: { id: hackathonFacultyId },
+  });
+  if (!faculty || faculty.hackathon_id !== hackathonId) {
+    throw new Error("Faculty assignment not found");
+  }
+
+  // Remove existing assignments for these teams (if any reassignment occurs)
+  await prisma.hackathon_faculty_team.deleteMany({
+    where: {
+      team_id: { in: teamIds },
+    },
+  });
+
+  // Create assignments
+  await prisma.hackathon_faculty_team.createMany({
+    data: teamIds.map((teamId) => ({
+      hackathon_faculty_id: hackathonFacultyId,
+      team_id: teamId,
+    })),
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  return { success: true, count: teamIds.length };
+}
+
+export async function unassignTeamFromFaculty(
+  hackathonId: number,
+  hackathonFacultyId: number,
+  teamId: number
+) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "organizer") {
+    throw new Error("Unauthorized");
+  }
+
+  await validateHackathonOwner(hackathonId, Number(session.user.id));
+
+  await prisma.hackathon_faculty_team.deleteMany({
+    where: {
+      hackathon_faculty_id: hackathonFacultyId,
+      team_id: teamId,
+    },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  return { success: true };
+}
+
+export async function unassignAllTeamsFromFaculty(
+  hackathonId: number,
+  hackathonFacultyId: number
+) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "organizer") {
+    throw new Error("Unauthorized");
+  }
+
+  await validateHackathonOwner(hackathonId, Number(session.user.id));
+
+  const result = await prisma.hackathon_faculty_team.deleteMany({
+    where: {
+      hackathon_faculty_id: hackathonFacultyId,
+    },
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  return { success: true, count: result.count };
+}
+
+export async function autoDistributeTeams(hackathonId: number) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "organizer") {
+    throw new Error("Unauthorized");
+  }
+
+  await validateHackathonOwner(hackathonId, Number(session.user.id));
+
+  const activeFaculty = await prisma.hackathon_faculty.findMany({
+    where: { hackathon_id: hackathonId, is_active: true },
+    orderBy: { id: "asc" },
+  });
+
+  if (activeFaculty.length === 0) {
+    throw new Error("No active faculty assigned to this hackathon. Please assign faculty first.");
+  }
+
+  // Find unassigned registered teams in this hackathon who have submitted their GitHub repository
+  const unassignedTeams = await prisma.participant_team.findMany({
+    where: {
+      hackathon_id: hackathonId,
+      is_registered: true,
+      hackathon_faculty_team: null,
+      AND: [
+        { github_link: { not: null } },
+        { github_link: { not: "" } },
+      ],
+    },
+    orderBy: [
+      { selected_problem_statement_id: "asc" },
+      { id: "asc" },
+    ],
+  });
+
+  if (unassignedTeams.length === 0) {
+    return { success: true, count: 0, message: "All teams with submitted GitHub repositories are already assigned to faculty." };
+  }
+
+  // Distribute round-robin
+  const assignments = unassignedTeams.map((team, index) => ({
+    hackathon_faculty_id: activeFaculty[index % activeFaculty.length].id,
+    team_id: team.id,
+  }));
+
+  await prisma.hackathon_faculty_team.createMany({
+    data: assignments,
+  });
+
+  revalidatePath(`/organizer/dashboard/hackathons/${hackathonId}`);
+  return { success: true, count: assignments.length, message: `Successfully distributed ${assignments.length} submitted teams across ${activeFaculty.length} faculty members.` };
 }
 
 // ─── Faculty Evaluation (Faculty) ───────────────────────────────────
@@ -338,12 +561,18 @@ export async function getFacultyHackathonDetail(hackathonId: number) {
     throw new Error("You are not assigned to this hackathon");
   }
 
+  // Fetch only teams assigned to this faculty
   const hackathon = await prisma.organizer_hackathon.findUnique({
     where: { id: hackathonId },
     include: {
       evaluation_criterion: { orderBy: { display_order: "asc" } },
       participant_team: {
-        where: { is_registered: true },
+        where: {
+          is_registered: true,
+          hackathon_faculty_team: {
+            hackathon_faculty_id: assignment.id,
+          },
+        },
         include: {
           accounts_user: { select: { full_name: true, email: true } },
           participant_teammember: {
