@@ -27,7 +27,10 @@ import {
   RotateCcw,
   GitBranch,
   ExternalLink,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   createEvaluationCriterion,
   updateEvaluationCriterion,
@@ -60,14 +63,16 @@ interface EvaluationScore {
   comment: string;
   evaluation_criterion: { name: string; max_score: number };
   hackathon_faculty: {
-    accounts_user: { full_name: string };
+    accounts_user: { full_name: string; email?: string };
   };
 }
 
 interface TeamWithScores {
   id: number;
   name: string;
-  accounts_user: { full_name: string };
+  github_link?: string | null;
+  accounts_user: { full_name: string; email?: string };
+  organizer_problemstatement?: { title: string } | null;
   evaluation_score: EvaluationScore[];
 }
 
@@ -111,9 +116,10 @@ interface AssignmentData {
 
 interface EvaluationTabProps {
   hackathonId: number;
+  hackathonName?: string;
 }
 
-export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
+export default function EvaluationTab({ hackathonId, hackathonName }: EvaluationTabProps) {
   // ─── State ─────────────────────────────────────────────
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [faculty, setFaculty] = useState<FacultyAssignment[]>([]);
@@ -176,6 +182,192 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
       setReport(data);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to load report");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleExportExcel() {
+    let reportData = report;
+    if (!reportData) {
+      setActionLoading("exporting");
+      try {
+        reportData = await getEvaluationReport(hackathonId);
+        setReport(reportData);
+      } catch (err: any) {
+        setErrorMsg(err.message || "Failed to load report for export");
+        setActionLoading(null);
+        return;
+      }
+    }
+
+    if (!reportData || reportData.teams.length === 0) {
+      setErrorMsg("No team score data available to export");
+      setActionLoading(null);
+      return;
+    }
+
+    setActionLoading("exporting");
+    try {
+      const maxTotal = reportData.criteria.reduce((sum, c) => sum + c.max_score, 0);
+
+      // Filter only teams who have submitted their GitHub repository link
+      const validTeams = reportData.teams.filter(
+        (t) => t.github_link === undefined || (t.github_link !== null && t.github_link.trim().length > 0)
+      );
+
+      if (validTeams.length === 0) {
+        setErrorMsg("No teams with submitted GitHub repository links found to export");
+        setActionLoading(null);
+        return;
+      }
+
+      // Process teams and calculate criterion averages and totals
+      const processedTeams = validTeams.map((team) => {
+        const scoresByCriterion: Record<number, { total: number; count: number }> = {};
+        for (const score of team.evaluation_score) {
+          const cName = score.evaluation_criterion.name;
+          const criterion = reportData.criteria.find((c) => c.name === cName);
+          if (criterion) {
+            if (!scoresByCriterion[criterion.id]) {
+              scoresByCriterion[criterion.id] = { total: 0, count: 0 };
+            }
+            scoresByCriterion[criterion.id].total += score.score;
+            scoresByCriterion[criterion.id].count += 1;
+          }
+        }
+
+        let totalAvg = 0;
+        const criterionAvgs: Record<number, number> = {};
+        for (const c of reportData.criteria) {
+          const entry = scoresByCriterion[c.id];
+          if (entry && entry.count > 0) {
+            const avg = Math.round((entry.total / entry.count) * 10) / 10;
+            criterionAvgs[c.id] = avg;
+            totalAvg += avg;
+          } else {
+            criterionAvgs[c.id] = 0;
+          }
+        }
+
+        const roundedTotal = Math.round(totalAvg * 10) / 10;
+        const percentage = maxTotal > 0 ? `${((roundedTotal / maxTotal) * 100).toFixed(1)}%` : "0%";
+
+        return {
+          team,
+          criterionAvgs,
+          totalScore: roundedTotal,
+          percentage,
+        };
+      });
+
+      // Sort by total score descending for ranking
+      processedTeams.sort((a, b) => b.totalScore - a.totalScore);
+
+      // Sheet 1: Score Summary
+      const summaryHeaders = [
+        "Rank",
+        "Team Name",
+        "Leader Name",
+        "Leader Email",
+        "Problem Statement",
+        ...reportData.criteria.map((c) => `${c.name} (Max ${c.max_score})`),
+        "Total Score",
+        "Max Possible Score",
+        "Percentage",
+      ];
+
+      const summaryRows = processedTeams.map((item, idx) => {
+        const criterionValues = reportData.criteria.map((c) => item.criterionAvgs[c.id] || 0);
+        return [
+          idx + 1,
+          item.team.name,
+          item.team.accounts_user?.full_name || "—",
+          item.team.accounts_user?.email || "—",
+          item.team.organizer_problemstatement?.title || "Not Assigned",
+          ...criterionValues,
+          item.totalScore,
+          maxTotal,
+          item.percentage,
+        ];
+      });
+
+      // Sheet 2: Detailed Faculty Evaluations
+      const detailHeaders = [
+        "Sr. No.",
+        "Team Name",
+        "Leader Name",
+        "Problem Statement",
+        "Faculty Evaluator",
+        "Evaluator Email",
+      ];
+
+      const detailRows: (string | number)[][] = [];
+      let detailSrNo = 1;
+      for (const item of processedTeams) {
+        if (item.team.evaluation_score && item.team.evaluation_score.length > 0) {
+          const seenFaculty = new Set<string>();
+          for (const score of item.team.evaluation_score) {
+            const facultyName = score.hackathon_faculty?.accounts_user?.full_name || "Faculty";
+            const facultyEmail = score.hackathon_faculty?.accounts_user?.email || "—";
+            const facultyKey = `${facultyName}|${facultyEmail}`;
+            if (!seenFaculty.has(facultyKey)) {
+              seenFaculty.add(facultyKey);
+              detailRows.push([
+                detailSrNo++,
+                item.team.name,
+                item.team.accounts_user?.full_name || "—",
+                item.team.organizer_problemstatement?.title || "Not Assigned",
+                facultyName,
+                facultyEmail,
+              ]);
+            }
+          }
+        } else {
+          detailRows.push([
+            detailSrNo++,
+            item.team.name,
+            item.team.accounts_user?.full_name || "—",
+            item.team.organizer_problemstatement?.title || "Not Assigned",
+            "Not Evaluated",
+            "—",
+          ]);
+        }
+      }
+
+      // Create Workbook & Sheets
+      const wb = XLSX.utils.book_new();
+
+      const wsSummary = XLSX.utils.aoa_to_sheet([summaryHeaders, ...summaryRows]);
+      wsSummary["!cols"] = summaryHeaders.map((header, colIdx) => {
+        let maxLen = header.length;
+        for (const row of summaryRows) {
+          const cellVal = row[colIdx] != null ? String(row[colIdx]) : "";
+          if (cellVal.length > maxLen) maxLen = cellVal.length;
+        }
+        return { wch: Math.min(Math.max(maxLen + 3, 10), 50) };
+      });
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Score Summary");
+
+      const wsDetails = XLSX.utils.aoa_to_sheet([detailHeaders, ...detailRows]);
+      wsDetails["!cols"] = detailHeaders.map((header, colIdx) => {
+        let maxLen = header.length;
+        for (const row of detailRows) {
+          const cellVal = row[colIdx] != null ? String(row[colIdx]) : "";
+          if (cellVal.length > maxLen) maxLen = cellVal.length;
+        }
+        return { wch: Math.min(Math.max(maxLen + 3, 10), 60) };
+      });
+      XLSX.utils.book_append_sheet(wb, wsDetails, "Detailed Evaluations");
+
+      const safeName = (hackathonName || "Hackathon").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const fileName = `${safeName}_Score_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      setSuccessMsg("Score report exported successfully!");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err: any) {
+      console.error("Failed to export score report to Excel:", err);
+      setErrorMsg(err.message || "Failed to export score report to Excel");
     } finally {
       setActionLoading(null);
     }
@@ -874,18 +1066,35 @@ export default function EvaluationTab({ hackathonId }: EvaluationTabProps) {
                 View aggregated scores from all assigned faculty
               </p>
             </div>
-            <button
-              onClick={loadReport}
-              disabled={actionLoading === "report"}
-              className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] text-xs font-medium hover:bg-canvas transition flex items-center gap-2 cursor-pointer disabled:opacity-40"
-            >
-              {actionLoading === "report" ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <BarChart3 className="w-3.5 h-3.5" />
-              )}
-              Refresh Report
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                disabled={actionLoading === "exporting" || actionLoading === "report"}
+                className="px-4 py-2 rounded-md bg-primary text-white text-xs font-semibold hover:bg-primary-focus transition flex items-center gap-2 cursor-pointer disabled:opacity-40 apple-press-effect"
+                title="Export all score report details to Excel"
+              >
+                {actionLoading === "exporting" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                )}
+                <span>Export Excel</span>
+              </button>
+              <button
+                type="button"
+                onClick={loadReport}
+                disabled={actionLoading === "report" || actionLoading === "exporting"}
+                className="px-4 py-2 rounded-md bg-canvas-pearl border border-black/[0.08] text-xs font-medium hover:bg-canvas transition flex items-center gap-2 cursor-pointer disabled:opacity-40"
+              >
+                {actionLoading === "report" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <BarChart3 className="w-3.5 h-3.5" />
+                )}
+                <span>Refresh Report</span>
+              </button>
+            </div>
           </div>
 
           {actionLoading === "report" && !report && (
