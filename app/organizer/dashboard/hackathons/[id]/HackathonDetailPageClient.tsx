@@ -1964,7 +1964,7 @@ export default function HackathonDetailPageClient({
 
       {/* ───── EVALUATION TAB ───── */}
       {activeTab === "evaluation" && (
-        <EvaluationTab hackathonId={hackathon.id} />
+        <EvaluationTab hackathonId={hackathon.id} hackathonName={hackathon.name} />
       )}
 
       {/* ───── BULK UPLOAD EXCEL MODAL ───── */}

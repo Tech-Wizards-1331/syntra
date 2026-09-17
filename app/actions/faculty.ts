@@ -675,21 +675,28 @@ export async function getEvaluationReport(hackathonId: number) {
     orderBy: { display_order: "asc" },
   });
 
-  const teams = await prisma.participant_team.findMany({
-    where: { hackathon_id: hackathonId, is_registered: true },
+  const rawTeams = await prisma.participant_team.findMany({
+    where: {
+      hackathon_id: hackathonId,
+      is_registered: true,
+      github_link: { not: null },
+    },
     include: {
-      accounts_user: { select: { full_name: true } },
+      accounts_user: { select: { full_name: true, email: true } },
+      organizer_problemstatement: { select: { title: true } },
       evaluation_score: {
         include: {
           evaluation_criterion: { select: { name: true, max_score: true } },
           hackathon_faculty: {
-            include: { accounts_user: { select: { full_name: true } } },
+            include: { accounts_user: { select: { full_name: true, email: true } } },
           },
         },
       },
     },
     orderBy: { name: "asc" },
   });
+
+  const teams = rawTeams.filter((t) => !!t.github_link && t.github_link.trim().length > 0);
 
   return { criteria, teams };
 }
