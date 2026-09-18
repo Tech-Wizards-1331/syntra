@@ -226,23 +226,31 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
     publish_results: hackathon.publish_results,
   };
 
-  // Calculate Evaluation Results & Rank if published by organizer
+  // Calculate Evaluation Results & Rank if published by organizer (matching organizer export excel logic)
   let resultData: {
     score: number;
     rank: number;
     totalTeams: number;
+    maxScore: number;
   } | null = null;
 
   if (hackathon.publish_results) {
-    const [criteria, registeredTeams] = await Promise.all([
+    const [criteria, rawRegisteredTeams, totalRegisteredTeamsCount] = await Promise.all([
       prisma.evaluation_criterion.findMany({
         where: { hackathon_id: hackathonId },
-        select: { id: true },
+        select: { id: true, name: true, max_score: true, display_order: true },
+        orderBy: { display_order: "asc" },
       }),
       prisma.participant_team.findMany({
-        where: { hackathon_id: hackathonId, is_registered: true },
+        where: {
+          hackathon_id: hackathonId,
+          is_registered: true,
+          github_link: { not: null },
+        },
         select: {
           id: true,
+          name: true,
+          github_link: true,
           evaluation_score: {
             select: {
               criterion_id: true,
@@ -250,11 +258,25 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
             },
           },
         },
+        orderBy: { name: "asc" },
+      }),
+      prisma.participant_team.count({
+        where: {
+          hackathon_id: hackathonId,
+          is_registered: true,
+        },
       }),
     ]);
 
+    const maxTotal = criteria.reduce((sum, c) => sum + c.max_score, 0);
+
+    // Filter only teams who have submitted their GitHub repository link (matching getEvaluationReport)
+    const validTeams = rawRegisteredTeams.filter(
+      (t) => !!t.github_link && t.github_link.trim().length > 0
+    );
+
     // Calculate total score for each registered team (sum of average score per criterion across faculty)
-    const teamScores = registeredTeams.map((t) => {
+    const processedTeams = validTeams.map((t) => {
       const scoresByCriterion: Record<number, { total: number; count: number }> = {};
       for (const s of t.evaluation_score) {
         if (!scoresByCriterion[s.criterion_id]) {
@@ -264,33 +286,42 @@ export default async function HackathonHubPage({ params }: HubPageProps) {
         scoresByCriterion[s.criterion_id].count += 1;
       }
 
-      let totalScore = 0;
+      let totalAvg = 0;
       for (const c of criteria) {
         const entry = scoresByCriterion[c.id];
         if (entry && entry.count > 0) {
-          const avg = entry.total / entry.count;
-          totalScore += avg;
+          const avg = Math.round((entry.total / entry.count) * 10) / 10;
+          totalAvg += avg;
         }
       }
 
+      const roundedTotal = Math.round(totalAvg * 10) / 10;
+
       return {
         teamId: t.id,
-        score: Math.round(totalScore * 10) / 10,
+        teamName: t.name,
+        totalScore: roundedTotal,
       };
     });
 
-    // Find current team's score & rank
-    const currentTeamEntry = teamScores.find((t) => t.teamId === team.id);
-    if (currentTeamEntry) {
-      const strictlyHigherCount = teamScores.filter(
-        (t) => t.score > currentTeamEntry.score
-      ).length;
-      const currentTeamRank = strictlyHigherCount + 1;
+    // Sort by total score descending for ranking (matching EvaluationTab handleExportExcel)
+    // For ties, secondary sort by team name ascending
+    processedTeams.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) {
+        return b.totalScore - a.totalScore;
+      }
+      return a.teamName.localeCompare(b.teamName);
+    });
 
+    // Find current team's score & rank (1-indexed rank matching export excel row idx + 1)
+    const teamIndex = processedTeams.findIndex((t) => t.teamId === team.id);
+    if (teamIndex !== -1) {
+      const currentTeamEntry = processedTeams[teamIndex];
       resultData = {
-        score: currentTeamEntry.score,
-        rank: currentTeamRank,
-        totalTeams: registeredTeams.length,
+        score: currentTeamEntry.totalScore,
+        rank: teamIndex + 1,
+        totalTeams: totalRegisteredTeamsCount,
+        maxScore: maxTotal > 0 ? maxTotal : 100,
       };
     }
   }
