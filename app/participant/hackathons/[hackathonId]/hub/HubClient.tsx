@@ -92,6 +92,7 @@ interface ResultData {
   score: number;
   rank: number;
   totalTeams: number;
+  maxScore?: number;
 }
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -502,106 +503,126 @@ export default function HubClient({
           <span
             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
               hackathon.publish_results
-                ? "bg-success-light text-success-dark border border-success/20"
+                ? result
+                  ? "bg-success-light text-success-dark border border-success/20"
+                  : "bg-danger-light text-danger border border-danger/20"
                 : "bg-black/[0.06] text-ink-muted border border-black/[0.04]"
             }`}
           >
-            {hackathon.publish_results ? "Official Results Published" : "Results Pending"}
+            {hackathon.publish_results
+              ? result
+                ? "Official Results Published"
+                : "Disqualified"
+              : "Results Pending"}
           </span>
         </div>
 
-        {hackathon.publish_results && result ? (
-          <div className="flex flex-col gap-5">
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Card 1: Team Standing / Rank */}
-              <div
-                className={`p-5 rounded-lg border flex flex-col justify-between gap-3 relative overflow-hidden ${
-                  result.rank === 1
-                    ? "bg-amber-500/[0.05] border-amber-500/25"
-                    : result.rank === 2
-                    ? "bg-slate-400/[0.07] border-slate-400/25"
-                    : result.rank === 3
-                    ? "bg-amber-700/[0.05] border-amber-700/25"
-                    : "bg-canvas-parchment/60 border-black/[0.06]"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest font-semibold text-ink-muted">
-                    Team Standing
-                  </span>
-                  {result.rank === 1 ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 text-[10px] font-bold flex items-center gap-1">
-                      <Crown className="w-3 h-3 text-amber-600" /> 1st Place Winner
+        {hackathon.publish_results ? (
+          result ? (
+            <div className="flex flex-col gap-5">
+              {/* KPI Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Card 1: Team Standing / Rank */}
+                <div
+                  className={`p-5 rounded-lg border flex flex-col justify-between gap-3 relative overflow-hidden ${
+                    result.rank === 1
+                      ? "bg-amber-500/[0.05] border-amber-500/25"
+                      : result.rank === 2
+                      ? "bg-slate-400/[0.07] border-slate-400/25"
+                      : result.rank === 3
+                      ? "bg-amber-700/[0.05] border-amber-700/25"
+                      : "bg-canvas-parchment/60 border-black/[0.06]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-widest font-semibold text-ink-muted">
+                      Team Standing
                     </span>
-                  ) : result.rank === 2 ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-500/15 border border-slate-500/30 text-slate-700 text-[10px] font-bold flex items-center gap-1">
-                      <Medal className="w-3 h-3 text-slate-600" /> 2nd Place Finalist
+                    {result.rank === 1 ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 text-[10px] font-bold flex items-center gap-1">
+                        <Crown className="w-3 h-3 text-amber-600" /> 1st Place Winner
+                      </span>
+                    ) : result.rank === 2 ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-500/15 border border-slate-500/30 text-slate-700 text-[10px] font-bold flex items-center gap-1">
+                        <Medal className="w-3 h-3 text-slate-600" /> 2nd Place Finalist
+                      </span>
+                    ) : result.rank === 3 ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-800/15 border border-amber-800/30 text-amber-900 text-[10px] font-bold flex items-center gap-1">
+                        <Award className="w-3 h-3 text-amber-800" /> 3rd Place Finalist
+                      </span>
+                    ) : result.rank <= 10 ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Top 10 Finisher
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] border border-black/[0.05] text-ink-muted text-[10px] font-medium">
+                        Participant
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+                      #{result.rank}
                     </span>
-                  ) : result.rank === 3 ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-800/15 border border-amber-800/30 text-amber-900 text-[10px] font-bold flex items-center gap-1">
-                      <Award className="w-3 h-3 text-amber-800" /> 3rd Place Finalist
+                    <span className="text-xs text-ink-muted font-normal">
+                      out of {result.totalTeams} participated {result.totalTeams === 1 ? "team" : "teams"}
                     </span>
-                  ) : result.rank <= 10 ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Top 10 Finisher
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] border border-black/[0.05] text-ink-muted text-[10px] font-medium">
-                      Participant
-                    </span>
-                  )}
+                  </div>
                 </div>
 
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl sm:text-4xl font-bold tracking-tight text-ink">
-                    #{result.rank}
-                  </span>
-                  <span className="text-xs text-ink-muted font-normal">
-                    out of {result.totalTeams} registered {result.totalTeams === 1 ? "team" : "teams"}
-                  </span>
+                {/* Card 2: Total Score */}
+                <div className="p-5 rounded-lg bg-canvas-parchment/60 border border-black/[0.06] flex flex-col justify-between gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-widest font-semibold text-primary flex items-center gap-1">
+                      <BarChart3 className="w-3 h-3" /> Evaluation Score
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      Max: {result.maxScore || 100} pts
+                    </span>
+                  </div>
+
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+                      {result.score}
+                    </span>
+                    <span className="text-sm font-semibold text-ink-muted">/ {result.maxScore || 100}</span>
+                  </div>
+
+                  {/* Score progress bar */}
+                  <div className="w-full bg-black/[0.06] h-2 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${Math.min(100, Math.max(0, (result.score / (result.maxScore && result.maxScore > 0 ? result.maxScore : 100)) * 100))}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Card 2: Total Score out of 100 */}
-              <div className="p-5 rounded-lg bg-canvas-parchment/60 border border-black/[0.06] flex flex-col justify-between gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest font-semibold text-primary flex items-center gap-1">
-                    <BarChart3 className="w-3 h-3" /> Evaluation Score
-                  </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    Max: 100 pts
-                  </span>
-                </div>
-
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl sm:text-4xl font-bold tracking-tight text-ink">
-                    {result.score}
-                  </span>
-                  <span className="text-sm font-semibold text-ink-muted">/ 100</span>
-                </div>
-
-                {/* Score progress bar */}
-                <div className="w-full bg-black/[0.06] h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${Math.min(100, Math.max(0, result.score))}%` }}
-                  />
-                </div>
+              <p className="text-[11px] text-ink-muted italic">
+                * This is your team&apos;s final aggregated evaluation score awarded by the faculty evaluation panel and certified by the organizer.
+              </p>
+            </div>
+          ) : (
+            <div className="p-5 rounded-lg bg-danger-light/50 border border-danger/20 flex items-start gap-3.5">
+              <AlertTriangle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-danger">
+                  Disqualified from Official Standings
+                </span>
+                <p className="text-xs text-ink leading-relaxed">
+                  Your team has been disqualified and was not evaluated for final ranking because your GitHub repository link was not submitted prior to the evaluation deadline. Only teams with valid repository submissions were reviewed and scored by the evaluation panel.
+                </p>
               </div>
             </div>
-
-            <p className="text-[11px] text-ink-muted italic">
-              * This is your team&apos;s final aggregated evaluation score awarded by the faculty evaluation panel and certified by the organizer.
-            </p>
-          </div>
+          )
         ) : (
           <div className="p-5 rounded-lg bg-canvas-parchment/60 border border-black/[0.04] flex items-center gap-3.5">
             <Clock className="w-5 h-5 text-ink-muted shrink-0" />
             <div className="flex flex-col gap-0.5">
               <span className="text-xs font-semibold text-ink">Evaluation Results Pending</span>
               <p className="text-xs text-ink-muted leading-relaxed">
-                The evaluation panel is currently reviewing submissions. Once the organizer publishes the official standings, your team score (out of 100) and final rank will be displayed here.
+                The evaluation panel is currently reviewing submissions. Once the organizer publishes the official standings, your team score and final rank will be displayed here.
               </p>
             </div>
           </div>
